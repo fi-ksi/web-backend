@@ -7,3 +7,4 @@ from resource.thread import Thread, Threads
 from resource.user import User, Users
 from resource.profile import Profile
 from resource.organisators import Organisator, Organisators
+from resource.debug import Debug

@@ -1,6 +1,8 @@
 class Profile(object):
-    def schema_generator(self):
-        return {'profile': [{'id': 1}]}
+    def _schema(self, req):
+        return {'profile': [
+            {'id': 1, 'is_logged': bool(req.env['PERMISSIONS'])}
+        ]}
 
     def on_get(self, req, resp):
-        req.context['result'] = self.schema_generator()
+        req.context['result'] = self._schema(req)

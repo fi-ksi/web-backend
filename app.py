@@ -5,7 +5,7 @@ from talons.auth import middleware, interfaces
 from talons.auth import basicauth, external
 
 import model
-import resource
+import endpoint
 from db import engine, session
 
 
@@ -14,7 +14,7 @@ class JSONTranslator(object):
     def process_request(self, req, resp):
         return
 
-    def process_response(self, req, resp, resource):
+    def process_response(self, req, resp, endpoint):
         if 'result' not in req.context:
             return
 
@@ -51,7 +51,7 @@ def authorize(identity, request):
     print(challenge)
 
     if challenge:
-        if challenge.admin == True:
+        if challenge.admin is True:
             request.request.env['PERMISSIONS'] = 2
         else:
             request.request.env['PERMISSIONS'] = 1
@@ -73,21 +73,21 @@ api = falcon.API(before=[cors_middleware, auth_middleware],
 
 model.Base.metadata.create_all(engine)
 
-api.add_route('/articles', resource.Articles())
-api.add_route('/articles/{id}', resource.Article())
-api.add_route('/achivements', resource.Achievements())
-api.add_route('/achivements/{id}', resource.Achievement())
-api.add_route('/categories', resource.Categories())
-api.add_route('/categories/{id}', resource.Category())
-api.add_route('/posts', resource.Posts())
-api.add_route('/posts/{id}', resource.Post())
-api.add_route('/tasks', resource.Tasks())
-api.add_route('/tasks/{id}', resource.Task())
-api.add_route('/threads', resource.Threads())
-api.add_route('/threads/{id}', resource.Thread())
-api.add_route('/users', resource.Users())
-api.add_route('/users/{id}', resource.User())
-api.add_route('/profile', resource.Profile())
-api.add_route('/organisators', resource.Organisators())
-api.add_route('/organisators/{id}', resource.Organisator())
-api.add_route('/debug', resource.Debug())
+api.add_route('/articles', endpoint.Articles())
+api.add_route('/articles/{id}', endpoint.Article())
+api.add_route('/achivements', endpoint.Achievements())
+api.add_route('/achivements/{id}', endpoint.Achievement())
+api.add_route('/categories', endpoint.Categories())
+api.add_route('/categories/{id}', endpoint.Category())
+api.add_route('/posts', endpoint.Posts())
+api.add_route('/posts/{id}', endpoint.Post())
+api.add_route('/tasks', endpoint.Tasks())
+api.add_route('/tasks/{id}', endpoint.Task())
+api.add_route('/threads', endpoint.Threads())
+api.add_route('/threads/{id}', endpoint.Thread())
+api.add_route('/users', endpoint.Users())
+api.add_route('/users/{id}', endpoint.User())
+api.add_route('/profile', endpoint.Profile())
+api.add_route('/organisators', endpoint.Organisators())
+api.add_route('/organisators/{id}', endpoint.Organisator())
+api.add_route('/debug', endpoint.Debug())

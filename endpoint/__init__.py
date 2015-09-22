@@ -8,3 +8,4 @@ from endpoint.user import User, Users
 from endpoint.profile import Profile
 from endpoint.organisators import Organisator, Organisators
 from endpoint.debug import Debug
+from endpoint.oauth2 import Auth, Token

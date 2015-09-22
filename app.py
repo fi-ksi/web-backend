@@ -1,12 +1,12 @@
 import falcon
 import json
 
-from talons.auth import middleware, interfaces
-from talons.auth import basicauth, external
+from oauthlib.oauth2 import RequestValidator
+from oauthlib.oauth2 import WebApplicationServer
 
 import model
 import endpoint
-from db import engine, session
+from db import engine
 
 
 class JSONTranslator(object):
@@ -21,11 +21,13 @@ class JSONTranslator(object):
         resp.body = json.dumps(req.context['result'], sort_keys=True, indent=4)
 
 
-class SkipIdentifier(interfaces.Identifies):
-    def identify(self, request):
-        identity = interfaces.Identity(None, key=None)
-        request.env[self.IDENTITY_ENV_KEY] = identity
+class MyRequestValidator(RequestValidator):
+
+    def validate_client_id(self, client_id, request):
         return True
+
+    def get_default_redirect_uri(sellf, client_id, *args, **kwargs):
+        return '127.0.0.1'
 
 
 def cors_middleware(request, response, params):
@@ -38,37 +40,11 @@ def cors_middleware(request, response, params):
     response.set_header('Access-Control-Allow-Methods', 'OPTIONS')
 
 
-def authenticate(identity):
-    return True
+validator = MyRequestValidator()
+authz = WebApplicationServer(validator)
 
 
-def authorize(identity, request):
-    challenge = session.query(model.User).filter(
-        model.User.name_nick == identity.login,
-        model.User.password == identity.key).first()
-    print(identity.login)
-    print(identity.key)
-    print(challenge)
-
-    if challenge:
-        if challenge.admin is True:
-            request.request.env['PERMISSIONS'] = 2
-        else:
-            request.request.env['PERMISSIONS'] = 1
-    else:
-        request.request.env['PERMISSIONS'] = 0
-
-    print(request.request.env['PERMISSIONS'])
-
-    return True
-
-
-auth_middleware = middleware.create_middleware(
-    identify_with=[basicauth.Identifier, SkipIdentifier],
-    authenticate_with=[external.Authenticator(external_authfn=authenticate)],
-    authorize_with=external.Authorizer(external_authz_callable=authorize))
-
-api = falcon.API(before=[cors_middleware, auth_middleware],
+api = falcon.API(before=[cors_middleware],
                  middleware=[JSONTranslator()])
 
 model.Base.metadata.create_all(engine)
@@ -91,3 +67,5 @@ api.add_route('/profile', endpoint.Profile())
 api.add_route('/organisators', endpoint.Organisators())
 api.add_route('/organisators/{id}', endpoint.Organisator())
 api.add_route('/debug', endpoint.Debug())
+api.add_route('/v1/oauth2/auth', endpoint.Auth())
+api.add_route('/v1/oauth2/token', endpoint.Token())

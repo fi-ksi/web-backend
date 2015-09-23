@@ -1,12 +1,9 @@
 import falcon
 import json
 
-from oauthlib.oauth2 import RequestValidator
-from oauthlib.oauth2 import WebApplicationServer
-
 import model
 import endpoint
-from db import engine
+from db import engine, session
 
 
 class JSONTranslator(object):
@@ -21,13 +18,21 @@ class JSONTranslator(object):
         resp.body = json.dumps(req.context['result'], sort_keys=True, indent=4)
 
 
-class MyRequestValidator(RequestValidator):
+class Authorizer(object):
 
-    def validate_client_id(self, client_id, request):
-        return True
+    def process_request(self, req, resp):
+        if req.auth:
+            token = session.query(model.Token).get(req.auth.split(' ')[-1])
 
-    def get_default_redirect_uri(sellf, client_id, *args, **kwargs):
-        return '127.0.0.1'
+            try:
+                req.context['id_user'] = token.owner.id
+
+                if token.owner.admin:
+                    req.context['permissions'] = 2
+                else:
+                    req.context['permissions'] = 1
+            except AttributeError:
+                req.context['permissions'] = 0
 
 
 def cors_middleware(request, response, params):
@@ -40,12 +45,8 @@ def cors_middleware(request, response, params):
     response.set_header('Access-Control-Allow-Methods', 'OPTIONS')
 
 
-validator = MyRequestValidator()
-authz = WebApplicationServer(validator)
-
-
 api = falcon.API(before=[cors_middleware],
-                 middleware=[JSONTranslator()])
+                 middleware=[JSONTranslator(), Authorizer()])
 
 model.Base.metadata.create_all(engine)
 

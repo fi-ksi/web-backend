@@ -1,6 +1,7 @@
 import datetime
 
 from sqlalchemy import Column, Integer, String, DateTime, Boolean
+from sqlalchemy.orm import relationship
 
 from . import Base
 
@@ -14,3 +15,5 @@ class User(Base):
     password = Column(String)
     admin = Column(Boolean, default=False)
     time_created = Column(DateTime, default=datetime.datetime.utcnow)
+
+    child = relationship('Token', uselist=False, backref='owner')

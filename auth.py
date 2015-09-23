@@ -16,26 +16,30 @@ def _generate_token():
                     x in range(TOKEN_LENGTH)])
 
 
-class AuthorizationError:
+class Error:
     INVALID_REQUEST = 'invalid_request'
     UNAUTHORIZED_CLIENT = 'unauthorized_client'
-    ACCESS_DENIED = 'access_denied'
-    UNSUPPORTED_RESPONSE_TYPE = 'unsupported_response_type'
-    INVALID_SCOPE = 'invalid_scope'
-    SERVER_ERROR = 'server_error'
-    TEMPORARILY_UNAVAILABLE = 'temporarily_unavailable'
 
 
-class ResponseType:
-    CODE = 'code'
+class GrantType:
+    CODE = 'password'
 
 
 class OAuth2Token(object):
-    def __init__(self):
+    def __init__(self, client_id):
         self.value = _generate_token()
         self.expire = 3600
         self.kind = 'Bearer'
         self.refresh = _generate_token()
+
+        token = model.Token()
+        token.access = self.value
+        token.expire = self.expire
+        token.refresh = self.expire
+        token.id_user = client_id
+
+        session.add(token)
+        session.commit()
 
     @property
     def data(self):
@@ -49,57 +53,20 @@ class OAuth2Token(object):
 
 class Provider(object):
 
-    def _valid_client_id(self, client_id):
-        return session.query(model.User).get(client_id)
+    def request_access_token(self, req, resp):
+        grant_type, username, password = (
+            req.get_param('grant_type'),
+            req.get_param('username'),
+            req.get_param('password'))
 
-    def _authorize(self):
-        return self.OAuth2Token().data
+        challenge = session.query(model.User).filter(
+            model.User.name_nick == username,
+            model.User.password == password).first()
 
-    def authorization_request(self, req, resp):
-        def success(uri, code):
-            query_params = urllib.parse.parse_qs(uri.query)
-            query_params['code'] = code
+        if challenge:
+            req.context['result'] = OAuth2Token(challenge.id).data
+            resp.status = falcon.HTTP_200
+        else:
+            req.context['result'] = {'error': Error.UNAUTHORIZED_CLIENT}
+            resp.status = falcon.HTTP_400
 
-            return query_params
-
-        def failure(uri, error):
-            query_params = urllib.parse.parse_qs(uri.query)
-            query_params['error'] = error
-
-            return query_params
-
-        response_type, client_id, redirect_uri = (
-            req.get_param('response_type'),
-            req.get_param('client_id'),
-            req.get_param('redirect_uri'))
-
-        uri = urllib.parse.urlparse(redirect_uri)
-
-        if not any((response_type, client_id, redirect_uri)):
-            failure(uri, AuthorizationError.INVALID_REQUEST)
-
-        if response_type != ResponseType.CODE:
-            failure(uri, AuthorizationError.UNSUPPORTED_RESPONSE_TYPE)
-
-        code = _generate_token()
-
-        query_params = success(uri, code)
-        resp.location = urllib.parse.urlunparse(
-            (uri.scheme,
-             uri.netloc,
-             uri.path,
-             uri.params,
-             urllib.parse.urlencode(query_params),
-             uri.fragment))
-        resp.status = falcon.HTTP_302
-
-    def access_token_request(self, req, resp):
-        response_type, client_id, redirect_uri = (
-            req.get_param('response_type'),
-            req.get_param('client_id'),
-            req.get_param('redirect_uri'))
-
-        req.context['result'] = OAuth2Token().data
-        resp.status = falcon.HTTP_200
-
-    def authorization_request(self, req, resp):

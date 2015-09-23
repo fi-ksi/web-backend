@@ -4,8 +4,8 @@ import auth
 class Auth(object):
     provider = auth.Provider()
 
-    def on_get(self, req, resp):
-        self.provider.authorization_request(req, resp)
+    def on_post(self, req, resp):
+        self.provider.request_access_token(req, resp)
 
 
 class Token(object):

@@ -23,6 +23,7 @@ class Error:
 
 class GrantType:
     CODE = 'password'
+    CODE = 'refresh_token'
 
 
 class OAuth2Token(object):
@@ -70,3 +71,15 @@ class Provider(object):
             req.context['result'] = {'error': Error.UNAUTHORIZED_CLIENT}
             resp.status = falcon.HTTP_400
 
+    def refresh_access_token(self, req, resp):
+        grant_type, refresh_token = (
+            req.get_param('grant_type'),
+            req.get_param('refresh_token'))
+
+        challenge = session.query(model.Token).filter(
+            model.Token.refresh_token == refresh_token).first()
+
+        if challenge:
+            session.delete(challenge)
+            req.context['result'] = OAuth2Token(challenge.id).data
+            resp.status = falcon.HTTP_200

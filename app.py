@@ -32,7 +32,9 @@ class Authorizer(object):
                 else:
                     req.context['permissions'] = 1
             except AttributeError:
-                req.context['permissions'] = 0
+                pass
+
+        req.context['permissions'] = 0
 
 
 def cors_middleware(request, response, params):

@@ -16,6 +16,7 @@ class JSONTranslator(object):
 			return
 
 		resp.body = json.dumps(req.context['result'], sort_keys=True, indent=4)
+		print req.method + ' ' + req.url + ' ' + resp.status
 
 
 #~ class Authorizer(object):

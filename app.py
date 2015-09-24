@@ -8,47 +8,47 @@ from db import engine, session
 
 class JSONTranslator(object):
 
-    def process_request(self, req, resp):
-        return
+	def process_request(self, req, resp):
+		return
 
-    def process_response(self, req, resp, endpoint):
-        if 'result' not in req.context:
-            return
+	def process_response(self, req, resp, endpoint):
+		if 'result' not in req.context:
+			return
 
-        resp.body = json.dumps(req.context['result'], sort_keys=True, indent=4)
+		resp.body = json.dumps(req.context['result'], sort_keys=True, indent=4)
 
 
-class Authorizer(object):
-
-    def process_request(self, req, resp):
-        if req.auth:
-            token = session.query(model.Token).get(req.auth.split(' ')[-1])
-
-            try:
-                req.context['id_user'] = token.owner.id
-
-                if token.owner.admin:
-                    req.context['permissions'] = 2
-                else:
-                    req.context['permissions'] = 1
-            except AttributeError:
-                pass
-
-        req.context['permissions'] = 0
+#~ class Authorizer(object):
+#~
+	#~ def process_request(self, req, resp):
+		#~ if req.auth:
+			#~ token = session.query(model.Token).get(req.auth.split(' ')[-1])
+#~
+			#~ try:
+				#~ req.context['id_user'] = token.owner.id
+#~
+				#~ if token.owner.admin:
+					#~ req.context['permissions'] = 2
+				#~ else:
+					#~ req.context['permissions'] = 1
+			#~ except AttributeError:
+				#~ pass
+#~
+		#~ req.context['permissions'] = 0
 
 
 def cors_middleware(request, response, params):
-    origin = request.get_header('Origin')
+	origin = request.get_header('Origin')
 
-    if origin in ('http://localhost:4200',):
-        response.set_header('Access-Control-Allow-Origin', origin)
+	if origin in ('http://localhost:4200',):
+		response.set_header('Access-Control-Allow-Origin', origin)
 
-    response.set_header('Access-Control-Allow-Headers', 'Content-Type')
-    response.set_header('Access-Control-Allow-Methods', 'OPTIONS')
+	response.set_header('Access-Control-Allow-Headers', 'Content-Type')
+	response.set_header('Access-Control-Allow-Methods', 'OPTIONS')
 
 
 api = falcon.API(before=[cors_middleware],
-                 middleware=[JSONTranslator(), Authorizer()])
+				 middleware=[JSONTranslator()]) #, Authorizer()])
 
 model.Base.metadata.create_all(engine)
 

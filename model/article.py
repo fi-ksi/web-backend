@@ -1,16 +1,22 @@
 import datetime
 
-from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, text
+from sqlalchemy.types import TIMESTAMP
 
 from . import Base
 
-
 class Article(Base):
-    __tablename__ = 'articles'
-    id = Column(Integer, primary_key=True)
-    title = Column(String)
-    body = Column(Text)
-    time_created = Column(DateTime, default=datetime.datetime.utcnow)
+	__tablename__ = 'articles'
+	__table_args__ = {
+		'mysql_engine': 'InnoDB',
+		'mysql_charset': 'utf8'
+	}
 
-    id_author = Column(Integer, ForeignKey('users.id', ondelete="SET NULL"),
-                       nullable=True)
+	id = Column(Integer, primary_key=True, nullable=False)
+	title = Column(String(255), nullable=False)
+	body = Column(Text)
+	picture = Column(String(255))
+	time_created = Column(TIMESTAMP, default=datetime.datetime.utcnow, server_default=text('CURRENT_TIMESTAMP'))
+
+	#~ id_author = Column(Integer, ForeignKey('users.id', ondelete="SET NULL"),
+					   #~ nullable=True)

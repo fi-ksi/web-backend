@@ -23,5 +23,22 @@ class Organisators(object):
         ]}
 
     def on_get(self, req, resp):
-        organisators = session.query(model.User).all()
-        req.context['result'] = self._schema(organisators)
+        #organisators = session.query(model.User).all()
+        #req.context['result'] = self._schema(organisators)
+
+        req.context['result'] = { "organisators": [
+    {
+      "id": 1,
+      "first_name": "Honza",
+      "last_name": "Mrazek",
+      "nick_name": "",
+      "profile_picture": "http://placehold.it/50x50"
+    },
+    {
+      "id": 2,
+      "first_name": "Henrich",
+      "last_name": "Lauko",
+      "nick_name": "Heno",
+      "profile_picture": "http://placehold.it/50x50"
+    }
+  ]}

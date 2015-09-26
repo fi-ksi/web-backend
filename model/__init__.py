@@ -8,5 +8,5 @@ from model.article import Article
 from model.post import Post
 #~ from model.task import Task
 from model.thread import Thread
-#~ from model.user import User
+from model.user import User
 #~ from model.auth import Token

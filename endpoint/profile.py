@@ -2,6 +2,7 @@ import json, falcon
 
 from db import session
 import model
+from achievement import achievements_ids
 
 class Profile(object):
 	def _schema(self, req):
@@ -38,7 +39,7 @@ class Profile(object):
 			'school_country': profile.school_country,
 			'school_finish': profile.school_finish,
 			'tshirt_size': profile.tshirt_size,
-			'achievements': [ 1, 2, 3, 4 ],
+			'achievements': achievements_ids(user.achievements),
 			'percentile': 69,
 			'score': 42,
 			'seasons': 1.5,

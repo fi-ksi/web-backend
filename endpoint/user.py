@@ -1,10 +1,11 @@
 from db import session
 import model
+from achievement import achievements_ids
 
 def _user_to_json(user):
 	return { 'id': user.id, 'first_name': user.first_name, 'last_name': user.last_name,
 			'score': 150, 'tasks_num': 16, 'profile_picture': 'http://placehold.it/50x50',
-			'achievements': [ achievement.id for achievement in user.achievements ] }
+			'achievements': achievements_ids(user.achievements) }
 
 
 class User(object):

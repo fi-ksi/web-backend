@@ -1,6 +1,9 @@
 from db import session
 import model
 
+def achievements_ids(achievements):
+	return [ achievement.id for achievement in achievements ]
+
 def _achievement_to_json(achievement):
 	return { 'id': achievement.id, 'title': achievement.title, 'active': True, 'picture_active': 'img/achievements/' + achievement.code + '.svg' }
 

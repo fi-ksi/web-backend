@@ -3,6 +3,7 @@ from sqlalchemy import and_
 
 from db import session
 import model
+import util
 
 def _thread_to_json(thread):
 	unread = 3
@@ -27,9 +28,7 @@ class Thread(object):
 class Threads(object):
 
 	def on_options(self, req, resp):
-		resp.set_header('Access-Control-Allow-Credentials', 'true')
-		resp.set_header('Access-Control-Allow-Headers', 'content-type')
-		resp.set_header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE')
+		util.fake_auth(req, resp)
 
 	def on_post(self, req, resp):
 		data = json.loads(req.stream.read())

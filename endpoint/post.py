@@ -2,6 +2,7 @@ import json
 
 from db import session
 import model
+import util
 
 from thread import Thread
 
@@ -12,9 +13,7 @@ def _post_to_json(post, reactions):
 class Post(object):
 
 	def on_options(self, req, resp, id):
-		resp.set_header('Access-Control-Allow-Credentials', 'true')
-		resp.set_header('Access-Control-Allow-Headers', 'content-type')
-		resp.set_header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE')
+		util.fake_auth(req, resp)
 
 	def on_get(self, req, resp, id):
 		post = session.query(model.Post).get(id)
@@ -31,9 +30,7 @@ class Posts(object):
 		]}
 
 	def on_options(self, req, resp):
-		resp.set_header('Access-Control-Allow-Credentials', 'true')
-		resp.set_header('Access-Control-Allow-Headers', 'content-type')
-		resp.set_header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE')
+		util.fake_auth(req, resp)
 
 	def on_post(self, req, resp):
 		data = json.loads(req.stream.read())

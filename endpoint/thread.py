@@ -1,5 +1,6 @@
 import json
 from sqlalchemy import and_
+
 from db import session
 import model
 
@@ -32,8 +33,11 @@ class Threads(object):
 
 	def on_post(self, req, resp):
 		data = json.loads(req.stream.read())
-		session.add(model.Thread(title=data['thread']['title']))
+		thread = model.Thread(title=data['thread']['title'])
+
+		session.add(thread)
 		session.commit()
+		req.context['result'] = { 'thread': _thread_to_json(thread) }
 		session.close()
 
 	def on_get(self, req, resp):

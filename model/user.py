@@ -15,6 +15,7 @@ class User(Base):
 
 	id = Column(Integer, primary_key=True)
 	email = Column(String(255), nullable=False, unique=True)
+	phone = Column(String(15))
 	first_name = Column(String(255), nullable=False)
 	last_name = Column(String(255), nullable=False)
 	sex = Column(Enum('male', 'female'), nullable=False)

@@ -1,5 +1,5 @@
-import falcon
-import json
+import falcon, json
+from datetime import datetime
 
 import model
 import endpoint
@@ -16,7 +16,6 @@ class JSONTranslator(object):
 			return
 
 		resp.body = json.dumps(req.context['result'], sort_keys=True, indent=4)
-		print req.method + ' ' + req.url + ' ' + resp.status
 
 
 #~ class Authorizer(object):
@@ -37,6 +36,21 @@ class JSONTranslator(object):
 #~
 		#~ req.context['permissions'] = 0
 
+def log(req, resp):
+	try:
+		ip = req.env['HTTP_X_FORWARDED_FOR'].split(',')[-1].strip()
+	except KeyError:
+		ip = req.env['REMOTE_ADDR']
+
+	print '[%s] [%s] [%s] [%s] %s' % (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), ip, req.method, resp.status, req.relative_uri)
+
+def log_middleware(req, resp, params):
+	log(req, resp)
+
+def log_sink(req, resp):
+	resp.status = falcon.HTTP_404
+
+	log(req, resp)
 
 def cors_middleware(request, response, params):
 	origin = request.get_header('Origin')
@@ -48,8 +62,9 @@ def cors_middleware(request, response, params):
 	response.set_header('Access-Control-Allow-Methods', 'OPTIONS')
 
 
-api = falcon.API(before=[cors_middleware],
+api = falcon.API(before=[cors_middleware, log_middleware],
 				 middleware=[JSONTranslator()]) #, Authorizer()])
+
 
 model.Base.metadata.create_all(engine)
 
@@ -74,3 +89,4 @@ api.add_route('/organisators/{id}', endpoint.Organisator())
 api.add_route('/debug', endpoint.Debug())
 api.add_route('/v1/oauth2/authorize', endpoint.Authorize())
 api.add_route('/v1/oauth2/refresh', endpoint.Refresh())
+api.add_sink(log_sink)

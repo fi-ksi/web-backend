@@ -5,6 +5,7 @@ from endpoint.post import Post, Posts
 from endpoint.task import Task, Tasks
 from endpoint.thread import Thread, Threads
 from endpoint.user import User, Users
+from endpoint.registration import Registration
 from endpoint.profile import Profile
 from endpoint.organisators import Organisator, Organisators
 from endpoint.debug import Debug

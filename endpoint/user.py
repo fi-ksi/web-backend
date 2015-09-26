@@ -4,7 +4,7 @@ import model
 def _user_to_json(user):
 	return { 'id': user.id, 'first_name': user.first_name, 'last_name': user.last_name,
 			'score': 150, 'tasks_num': 16, 'profile_picture': 'http://placehold.it/50x50',
-			'achievements': [ 1, 2, 3 ] }
+			'achievements': [ achievement.id for achievement in user.achievements ] }
 
 
 class User(object):

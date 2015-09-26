@@ -1,25 +1,20 @@
 from db import session
 import model
 
+def _achievement_to_json(achievement):
+	return { 'id': achievement.id, 'title': achievement.title, 'active': True, 'picture_active': 'img/achievements/' + achievement.code + '.svg' }
 
 class Achievement(object):
-    def schema_generator(self, model_instances):
-        inst = model_instances
-        return {'achievements': {
-            'id': inst.id, 'title': inst.title
-        }}
 
-    def on_get(self, req, resp, id):
-        achievements = session.query(model.Achievement).get(id)
-        req.context['result'] = self.schema_generator(achievements)
+	def on_get(self, req, resp, id):
+		achievement = session.query(model.Achievement).get(id)
+
+		req.context['result'] = { 'achievement': _achievement_to_json(achievement) }
 
 
 class Achievements(object):
-    def schema_generator(self, model_instances):
-        return {'achievements': [
-            {'id': inst.id, 'title': inst.title} for inst in model_instances
-        ]}
 
-    def on_get(self, req, resp):
-        achievements = session.query(model.Achievement).all()
-        req.context['result'] = self.schema_generator(achievements)
+	def on_get(self, req, resp):
+		achievements = session.query(model.Achievement).all()
+
+		req.context['result'] = { 'achievements': [ _achievement_to_json(achievement) for achievement in achievements ] }

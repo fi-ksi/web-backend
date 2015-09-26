@@ -5,6 +5,7 @@ from sqlalchemy.types import TIMESTAMP
 from sqlalchemy.orm import relationship
 
 from . import Base
+from user_achievement import UserAchievement
 
 class User(Base):
 	__tablename__ = 'users'
@@ -23,5 +24,7 @@ class User(Base):
 	role = Column(Enum('admin', 'org', 'participant'), nullable=False, default='participant', server_default='participant')
 	enabled = Column(Integer, nullable=False, default=1, server_default='1')
 	registered = Column(TIMESTAMP, nullable=False, default=datetime.datetime.utcnow, server_default=text('CURRENT_TIMESTAMP'))
+
+	achievements = relationship("Achievement", secondary=UserAchievement.__tablename__)
 
 	#child = relationship('Token', uselist=False, backref='owner')

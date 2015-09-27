@@ -11,14 +11,21 @@ class Module(object):
 		module = session.query(model.Module).get(id)
 		module_json = _module_to_json(module)
 
-		if module.type == 'quiz':
+		if module.type == 'programming':
+			code = self._build_programming(module.id)
+			module_json['code'] = code
+			module_json['default_code'] = code
+		elif module.type == 'quiz':
 			module_json['questions'] = self._build_quiz(module.id)
-		elif module.type == 'programming':
-			pass
 		elif module.type == 'sortable':
 			module_json['sortable_list'] = self._build_sortable(module.id)
 
 		req.context['result'] = { 'module': module_json }
+
+	def _build_programming(self, module_id):
+		programming = session.query(model.Programming).filter(model.Programming.module == module_id).first()
+
+		return programming.default_code
 
 	def _quiz_question_to_json(self, question):
 		return {

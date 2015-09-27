@@ -9,6 +9,7 @@ from model.post import Post
 from model.task import Task
 from model.prerequisite import Prerequisite
 from model.module import Module
+from model.programming import Programming
 from model.quiz import QuizQuestion, QuizOption
 from model.sortable import Sortable
 from model.thread import Thread

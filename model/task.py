@@ -29,6 +29,7 @@ class Task(Base):
 
 	parents = relationship('TaskParents', primaryjoin='Task.id==TaskParents.task_id')
 	prerequisite_obj = relationship('Prerequisite', primaryjoin='Task.prerequisite==Prerequisite.id', uselist=False)
+	modules = relationship('Module', primaryjoin='Task.id==Module.task', order_by='Module.order')
 
 class TaskParents(Base):
 	__tablename__ = 'task_parents'

@@ -11,8 +11,14 @@ class Organisator(object):
                 }
 
     def on_get(self, req, resp, id):
-        organisator = session.query(model.User).get(id)
-        req.context['result'] = self._schema(organisator)
+        #organisator = session.query(model.User).get(id)
+        req.context['result'] = {'organisator': {
+      "id": 1,
+      "first_name": "Honza",
+      "last_name": "Mrazek",
+      "nick_name": "",
+      "profile_picture": "http://placehold.it/50x50"
+    } }
 
 
 class Organisators(object):

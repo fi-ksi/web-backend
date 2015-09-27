@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, Enum, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, Integer, SmallInteger, String, Text, Enum, ForeignKey, UniqueConstraint
 
 from . import Base
 
@@ -15,3 +15,4 @@ class Module(Base):
 	task = Column(Integer, ForeignKey('tasks.id'), nullable=False)
 	type = Column(Enum('general', 'programming', 'quiz', 'sortable'), nullable=False)
 	description = Column(Text)
+	order = Column(SmallInteger, nullable=False, default=1, server_default='1')

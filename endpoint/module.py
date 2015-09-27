@@ -15,6 +15,8 @@ class Module(object):
 			module_json['questions'] = self._build_quiz(module.id)
 		elif module.type == 'programming':
 			pass
+		elif module.type == 'sortable':
+			module_json['sortable_list'] = self._build_sortable(module.id)
 
 		req.context['result'] = { 'module': module_json }
 
@@ -29,3 +31,12 @@ class Module(object):
 		questions = session.query(model.QuizQuestion).filter(model.QuizQuestion.module == module_id).order_by(model.QuizQuestion.order).all()
 
 		return [ self._quiz_question_to_json(question) for question in questions ]
+
+	def _sortable_type_to_json(self, sortable_type):
+		return [ { 'content': row.content, 'style': row.style } for row in sortable_type ]
+
+	def _build_sortable(self, module_id):
+		fixed = session.query(model.Sortable).filter(model.Sortable.module == module_id, model.Sortable.type == 'fixed').order_by(model.Sortable.order).all()
+		movable = session.query(model.Sortable).filter(model.Sortable.module == module_id, model.Sortable.type == 'movable').order_by(model.Sortable.order).all()
+
+		return { 'fixed': self._sortable_type_to_json(fixed), 'movable': self._sortable_type_to_json(movable) }

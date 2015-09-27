@@ -10,6 +10,7 @@ from model.task import Task
 from model.prerequisite import Prerequisite
 from model.module import Module
 from model.quiz import QuizQuestion, QuizOption
+from model.sortable import Sortable
 from model.thread import Thread
 from model.user import User
 from model.profile import Profile

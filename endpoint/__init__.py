@@ -3,7 +3,7 @@ from endpoint.achievement import Achievement, Achievements
 from endpoint.category import Category, Categories
 from endpoint.post import Post, Posts
 from endpoint.task import Task, Tasks
-from endpoint.module import Module, Modules
+from endpoint.module import Module
 from endpoint.thread import Thread, Threads
 from endpoint.user import User, Users
 from endpoint.registration import Registration

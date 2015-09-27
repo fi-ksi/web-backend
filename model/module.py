@@ -15,4 +15,5 @@ class Module(Base):
 	task = Column(Integer, ForeignKey('tasks.id'), nullable=False)
 	type = Column(Enum('general', 'programming', 'quiz', 'sortable'), nullable=False)
 	description = Column(Text)
+	points = Column(Integer, nullable=False)
 	order = Column(SmallInteger, nullable=False, default=1, server_default='1')

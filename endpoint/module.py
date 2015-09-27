@@ -1,9 +1,13 @@
+import json
+
 from db import session
 import model
 
 def _module_to_json(module):
 	return { 'id': module.id, 'type': module.type, 'description': module.description }
 
+def _load_questions(module_id):
+	return session.query(model.QuizQuestion).filter(model.QuizQuestion.module == module_id).order_by(model.QuizQuestion.order).all()
 
 class Module(object):
 
@@ -35,7 +39,7 @@ class Module(object):
 		}
 
 	def _build_quiz(self, module_id):
-		questions = session.query(model.QuizQuestion).filter(model.QuizQuestion.module == module_id).order_by(model.QuizQuestion.order).all()
+		questions = _load_questions(module_id)
 
 		return [ self._quiz_question_to_json(question) for question in questions ]
 
@@ -47,3 +51,32 @@ class Module(object):
 		movable = session.query(model.Sortable).filter(model.Sortable.module == module_id, model.Sortable.type == 'movable').order_by(model.Sortable.order).all()
 
 		return { 'fixed': self._sortable_type_to_json(fixed), 'movable': self._sortable_type_to_json(movable) }
+
+def quiz_evaluate(task, module, data):
+	report = '=== Evaluating quiz id ' + str(module) + ' for task id ' + str(task) + ' ===\n\n'
+	report += ' Raw data: ' + json.dumps(data) + '\n'
+	report += ' Evaluation:\n'
+
+	overall_results = True
+	questions = _load_questions(module)
+	i = 0
+
+	for question in questions:
+		answers_user = [ int(item) for item in data[i] ]
+		answers_correct = []
+
+		j = 0
+		for option in question.options:
+			if option.is_correct:
+				answers_correct.append(j)
+			j += 1
+
+		is_correct = (answers_user == answers_correct)
+
+		report += '  [%s] Question %d (id: %d) -- user answers: %s, correct answers: %s\n' % ('y' if is_correct else 'n', i, question.id, answers_user, answers_correct)
+		overall_results &= is_correct
+		i += 1
+
+	report += '\n Overall result: [' + ('y' if overall_results else 'n') + ']'
+
+	return (overall_results, report)

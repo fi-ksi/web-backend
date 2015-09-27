@@ -1,7 +1,10 @@
+import json
+
 from db import session
 import model
 
-from util import PrerequisitiesEvaluator
+from util import PrerequisitiesEvaluator, decode_form_data
+import endpoint.module
 
 # FAKE DATA!!!!
 fake_valuation = { 1 : True, 2 : False }
@@ -47,3 +50,29 @@ class Tasks(object):
 		tasks = session.query(model.Task).all()
 
 		req.context['result'] = { 'tasks': [ _task_to_json(task) for task in tasks ] }
+
+class TaskSubmit(object):
+
+	def on_post(self, req, resp, id):
+		data = decode_form_data(req)
+		points = {}
+		report = ''
+
+		for (key, val) in data.items():
+			val = val[0]
+			module = int(key.split('_')[1])
+			solution = json.loads(val)['solution']
+
+			module = session.query(model.Module).get(module)
+
+			if module.type == 'quiz':
+				result, eval_report = endpoint.module.quiz_evaluate(id, 1, solution)
+				report += eval_report + '\n'
+
+			points[int(module.id)] = module.points if result else 0
+
+		report += '\n===========================\n'
+		report += 'Points per module: ' + str(points) + '\n'
+		report += '  => Overall points: ' + str(sum(points.values())) + '\n'
+
+		print report

@@ -16,6 +16,7 @@ class Task(Base):
 	title = Column(String(255), nullable=False)
 	author = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
 	category = Column(Integer, ForeignKey('categories.id', ondelete='SET NULL'), nullable=True)
+	prerequisite = Column(Integer, ForeignKey('prerequisities.id'), nullable=True)
 	intro = Column(String(500), nullable=False)
 	body = Column(Text, nullable=False)
 	max_score = Column(Integer, nullable=False, default=0, server_default="0")
@@ -27,6 +28,7 @@ class Task(Base):
 	time_deadline = Column(DateTime, default=datetime.datetime.utcnow)
 
 	parents = relationship('TaskParents', primaryjoin='Task.id==TaskParents.task_id')
+	prerequisite_obj = relationship('Prerequisite', primaryjoin='Task.prerequisite==Prerequisite.id', uselist=False)
 
 class TaskParents(Base):
 	__tablename__ = 'task_parents'

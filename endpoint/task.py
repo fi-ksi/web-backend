@@ -1,6 +1,11 @@
 from db import session
 import model
 
+from util import PrerequisitiesEvaluator
+
+# FAKE DATA!!!!
+fake_valuation = { 1 : True, 2 : False }
+
 def _task_to_json(task):
 	return {
 		'id': task.id,
@@ -15,7 +20,7 @@ def _task_to_json(task):
 		'time_published': task.time_published.isoformat(),
 		'time_deadline': task.time_deadline.isoformat(),
 		'node_parent': [ parent.parent_id for parent in task.parents ],
-		'active': True,
+		'active': True if task.prerequisite_obj is None else PrerequisitiesEvaluator(fake_valuation, task.prerequisite_obj).evaluate(),
 		'modules': [ 0 ],
 		'best_scores': [ 1 ],
 		'my_score': 2,

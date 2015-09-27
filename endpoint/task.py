@@ -25,7 +25,7 @@ def _task_to_json(task):
 		'best_scores': [ 1 ],
 		'my_score': 2,
 		'solution': 'Prehledne vysvetlene reseni prikladu. Cely priklad spocival v blabla',
-		'prerequisities': [] if len(task.parents) == 0 else { "id": 1, "parents": [ 1 ] },
+		'prerequisities': [],
 		'submissions': [ ],
 		'picture_active': 'img/nodes/vlna-1/node-uloha1.svg',
 		'picture_locked': 'img/nodes/vlna-1/node-uloha2.svg',
@@ -44,6 +44,6 @@ class Task(object):
 class Tasks(object):
 
 	def on_get(self, req, resp):
-		tasks = session.query(model.Task).filter(model.Task.id == 1).all()
+		tasks = session.query(model.Task).all()
 
 		req.context['result'] = { 'tasks': [ _task_to_json(task) for task in tasks ] }

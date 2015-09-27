@@ -7,13 +7,16 @@ import util
 from thread import Thread
 
 def _post_to_json(post, reactions):
-	return { 'id': post.id, 'parent_thread': post.thread, 'author': post.author, 'body': post.body,
+	return { 'id': post.id, 'thread': post.thread, 'author': post.author, 'body': post.body,
 		'published_at': post.published_at.isoformat(), 'reaction': reactions, 'is_new': False }
 
 class Post(object):
 
 	def on_options(self, req, resp, id):
 		util.fake_auth(req, resp)
+
+	def on_put(self, req, resp, id):
+		self.on_get(req, resp, id)
 
 	def on_get(self, req, resp, id):
 		post = session.query(model.Post).get(id)
@@ -34,7 +37,7 @@ class Posts(object):
 
 	def on_post(self, req, resp):
 		data = json.loads(req.stream.read())
-		post = model.Post(thread=data['post']['parent_thread'], body=data['post']['body'])
+		post = model.Post(thread=data['post']['thread'], body=data['post']['body'], parent=data['post']['parent'])
 
 		session.add(post)
 		session.commit()

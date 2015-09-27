@@ -27,10 +27,10 @@ def _task_to_json(task):
 		'solution': 'Prehledne vysvetlene reseni prikladu. Cely priklad spocival v blabla',
 		'prerequisities': [],
 		'submissions': [ ],
-		'picture_active': 'img/nodes/vlna-1/node-uloha1.svg',
-		'picture_locked': 'img/nodes/vlna-1/node-uloha2.svg',
-		'picture_submitted': 'img/nodes/vlna-1/node-uloha2.svg',
-		'picture_finished': 'img/nodes/vlna-1/node-uloha1.svg',
+		'picture_active': 'img/nodes/vlna-1/node-big-travelling/base.svg',
+		'picture_locked': 'img/nodes/vlna-1/node-big-travelling/base.svg',
+		'picture_submitted': 'img/nodes/vlna-1/node-big-travelling/base.svg',
+		'picture_finished': 'img/nodes/vlna-1/node-big-travelling/base.svg',
 	}
 
 class Task(object):

@@ -4,7 +4,7 @@ from sqlalchemy.orm import relationship
 from . import Base
 
 class Sortable(Base):
-	__tablename__ = 'sortable'
+	__tablename__ = 'sortables'
 	__table_args__ = {
 		'mysql_engine': 'InnoDB',
 		'mysql_charset': 'utf8',

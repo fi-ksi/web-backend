@@ -55,8 +55,7 @@ class TaskSubmit(object):
 
 	def on_post(self, req, resp, id):
 		data = decode_form_data(req)
-		points = {}
-		report = ''
+		evaluations = {}
 
 		for (key, val) in data.items():
 			val = val[0]
@@ -66,17 +65,19 @@ class TaskSubmit(object):
 			module = session.query(model.Module).get(module_id)
 
 			if module.type == 'quiz':
-				result, eval_report = endpoint.module.quiz_evaluate(id, module_id, solution)
-				report += eval_report
+				result, report = endpoint.module.quiz_evaluate(id, module_id, solution)
 			elif module.type == 'sortable':
-				result, eval_report = endpoint.module.sortable_evaluate(id, module_id, solution)
-				report += eval_report
+				result, report = endpoint.module.sortable_evaluate(id, module_id, solution)
 
-			points[int(module.id)] = module.points if result else 0
-			report += '\n\n\n'
+			evaluations[module.id] = (module.points if result else 0, report)
 
-		report += '===========================\n'
-		report += 'Points per module: ' + str(points) + '\n'
-		report += '  => Overall points: ' + str(sum(points.values())) + '\n'
+		submission = model.Submission(task=id, user=1)
+		session.add(submission)
+		session.commit()
 
-		print report
+		for module, data in evaluations.items():
+			evaluation = model.Evaluation(submission=submission.id, module=module, points=data[0], full_report=data[1])
+			session.add(evaluation)
+
+		session.commit()
+		session.close()

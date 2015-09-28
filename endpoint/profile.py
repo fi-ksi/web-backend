@@ -14,27 +14,11 @@ def _load_points_for_user(user_id):
 def _sum_points(user_id):
 	return sum([ item.points for item in _load_points_for_user(user_id) ])
 
-class Profile(object):
-	def _schema(self, req):
-		return {'profile': [
-			{'id': 1, 'is_logged': bool(req.env['PERMISSIONS'])}
-		]}
+def _profile_to_json(user, profile):
+	points = _sum_points(user.id)
+	successful = round((float(points)/sum(max_points_dict().values())) * 100)
 
-	def on_options(self, req, resp):
-		pass
-		#resp.set_header('Access-Control-Allow-Credentials', 'true')
-		#resp.set_header('Access-Control-Allow-Headers', 'authorization')
-		#resp.set_header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE')
-
-		#resp.status = falcon.HTTP_204
-
-	def on_get(self, req, resp):
-		user, profile = session.query(model.User).filter(model.User.id == 1).outerjoin(model.Profile, model.User.id == model.Profile.user_id).add_entity(model.Profile).first()
-
-		points = _sum_points(user.id)
-		successful = round((float(points)/sum(max_points_dict().values())) * 100)
-
-		req.context['result'] = { 'profile': [ {
+	return { 'profile': [ {
 			'id': user.id,
 			'signed_in': True,
 			'first_name': user.first_name,
@@ -59,3 +43,51 @@ class Profile(object):
 			'seasons': 1.5,
 			'successful': int(successful),
 			'results': [ 1, 2] } ] }
+
+class Profile(object):
+	def _schema(self, req):
+		return {'profile': [
+			{'id': 1, 'is_logged': bool(req.env['PERMISSIONS'])}
+		]}
+
+	def on_options(self, req, resp):
+		pass
+		#resp.set_header('Access-Control-Allow-Credentials', 'true')
+		#resp.set_header('Access-Control-Allow-Headers', 'authorization')
+		#resp.set_header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE')
+
+		#resp.status = falcon.HTTP_204
+
+	def on_put(self, req, resp):
+		data = json.loads(req.stream.read())
+		user, profile = session.query(model.User).filter(model.User.id == 1).outerjoin(model.Profile, model.User.id == model.Profile.user_id).add_entity(model.Profile).first()
+
+		user.first_name = data['first_name']
+		user.last_name = data['last_name']
+		user.email = data['email']
+
+		profile.short_info = data['short_info']
+		profile.addr_street = data['addr_street']
+		profile.addr_city = data['addr_city']
+		profile.addr_zip = data['addr_zip']
+		profile.addr_country = data['addr_country']
+		profile.school_name = data['school_name']
+		profile.school_street = data['school_street']
+		profile.school_city = data['school_city']
+		profile.school_zip = data['school_zip']
+		profile.school_country = data['school_country']
+		profile.school_finish = data['school_finish']
+		profile.tshirt_size = data['tshirt_size']
+
+		session.add(user)
+		session.add(profile)
+		session.commit()
+
+		req.context['result'] = _profile_to_json(user, profile)
+		session.close()
+
+
+	def on_get(self, req, resp):
+		user, profile = session.query(model.User).filter(model.User.id == 1).outerjoin(model.Profile, model.User.id == model.Profile.user_id).add_entity(model.Profile).first()
+
+		req.context['result'] = _profile_to_json(user, profile)

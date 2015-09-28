@@ -56,10 +56,10 @@ def cors_middleware(request, response, params):
 		response.set_header('Access-Control-Allow-Origin', origin)
 
 	response.set_header('Access-Control-Allow-Headers', 'authorization,content-type')
-	response.set_header('Access-Control-Allow-Methods', 'OPTIONS,PUT')
+	response.set_header('Access-Control-Allow-Methods', 'OPTIONS,PUT,POST,GET')
 
 
-api = falcon.API(before=[cors_middleware, log_middleware],
+api = falcon.API(before=[ cors_middleware ], after=[ log_middleware ],
 				 middleware=[JSONTranslator(), Authorizer()])
 
 

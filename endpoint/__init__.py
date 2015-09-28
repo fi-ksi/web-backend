@@ -7,6 +7,7 @@ from endpoint.submission import Submission
 from endpoint.module import Module
 from endpoint.thread import Thread, Threads
 from endpoint.user import User, Users
+from endpoint.score import Score
 from endpoint.registration import Registration
 from endpoint.profile import Profile
 from endpoint.organisators import Organisator, Organisators

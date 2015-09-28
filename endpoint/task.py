@@ -33,7 +33,7 @@ def _load_points_for_user(task_id, user_id):
 		filter(model.Submission.task == task_id, model.Submission.user == user_id).\
 		group_by(model.Evaluation.module).all()
 
-def _sum_points(task_id, user_id):
+def sum_points(task_id, user_id):
 	return sum([ item.points for item in _load_points_for_user(task_id, user_id) ])
 
 def _task_to_json(task, points=None):
@@ -58,7 +58,7 @@ def _task_to_json(task, points=None):
 		'active': True if task.prerequisite_obj is None else PrerequisitiesEvaluator(fake_valuation, task.prerequisite_obj).evaluate(),
 		'modules': [ module.id for module in task.modules ],
 		'best_scores': [ 1 ],
-		'my_score': _sum_points(task.id, 1),
+		'my_score': sum_points(task.id, 1),
 		'solution': 'Prehledne vysvetlene reseni prikladu. Cely priklad spocival v blabla',
 		'prerequisities': [],
 		'submissions': [ submission.id for submission in _load_submissions(task.id, 1) ],

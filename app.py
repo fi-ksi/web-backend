@@ -55,7 +55,7 @@ def cors_middleware(request, response, params):
 	if origin in ('http://localhost:4200',):
 		response.set_header('Access-Control-Allow-Origin', origin)
 
-	response.set_header('Access-Control-Allow-Headers', 'Content-Type')
+	response.set_header('Access-Control-Allow-Headers', 'authorization,content-type')
 	response.set_header('Access-Control-Allow-Methods', 'OPTIONS')
 
 

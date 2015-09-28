@@ -22,9 +22,10 @@ class Profile(object):
 		]}
 
 	def on_options(self, req, resp):
-		resp.set_header('Access-Control-Allow-Credentials', 'true')
-		resp.set_header('Access-Control-Allow-Headers', 'authorization')
-		resp.set_header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE')
+		pass
+		#resp.set_header('Access-Control-Allow-Credentials', 'true')
+		#resp.set_header('Access-Control-Allow-Headers', 'authorization')
+		#resp.set_header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE')
 
 		#resp.status = falcon.HTTP_204
 

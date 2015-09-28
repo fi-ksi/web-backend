@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, SmallInteger, String, Text, Enum, ForeignKey
+from sqlalchemy import Column, Integer, SmallInteger, String, Text, Enum, Boolean, ForeignKey, text
 
 from . import Base
 
@@ -14,4 +14,5 @@ class Module(Base):
 	type = Column(Enum('general', 'programming', 'quiz', 'sortable'), nullable=False)
 	description = Column(Text)
 	max_points = Column(Integer, nullable=False)
+	autocorrect = Column(Boolean, nullable=False, default=False, server_default=text('FALSE'))
 	order = Column(SmallInteger, nullable=False, default=1, server_default='1')

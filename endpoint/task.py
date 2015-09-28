@@ -97,6 +97,9 @@ class TaskSubmit(object):
 
 			module = session.query(model.Module).get(module_id)
 
+			if not module.autocorrect:
+				continue
+
 			if module.type == 'quiz':
 				result, report = endpoint.module.quiz_evaluate(id, module_id, solution)
 			elif module.type == 'sortable':

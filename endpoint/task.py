@@ -13,14 +13,21 @@ fake_valuation = { 1 : True, 2 : False }
 def _load_submissions(task_id, user_id):
 	return session.query(model.Submission).filter(model.Submission.task == task_id, model.Submission.user == user_id).all()
 
-def _load_max_points(task_id, user_id):
+def _sum_max_points(task_id):
+	points = session.query(func.sum(model.Module.max_points).label('points')).\
+		join(model.Task, model.Module.task == model.Task.id).\
+		filter(model.Task.id == task_id).first().points
+
+	return int(points) if points else 0
+
+def _load_points_for_user(task_id, user_id):
 	return session.query(model.Evaluation.module, func.max(model.Evaluation.points).label('points')).\
 		join(model.Submission, model.Evaluation.submission == model.Submission.id).\
 		filter(model.Submission.task == task_id, model.Submission.user == user_id).\
 		group_by(model.Evaluation.module).all()
 
 def _sum_points(task_id, user_id):
-	return sum([ item.points for item in _load_max_points(task_id, user_id) ])
+	return sum([ item.points for item in _load_points_for_user(task_id, user_id) ])
 
 def _task_to_json(task):
 	return {
@@ -30,7 +37,7 @@ def _task_to_json(task):
 		'category': task.category,
 		'intro': task.intro,
 		'body': task.body,
-		'max_score': task.max_score,
+		'max_score': _sum_max_points(task.id),
 		'position': [ task.position_x, task.position_y ],
 		'thread': task.thread,
 		'time_published': task.time_published.isoformat(),
@@ -83,7 +90,7 @@ class TaskSubmit(object):
 			elif module.type == 'sortable':
 				result, report = endpoint.module.sortable_evaluate(id, module_id, solution)
 
-			evaluations[module.id] = (module.points if result else 0, report)
+			evaluations[module.id] = (module.max_points if result else 0, report)
 
 		submission = model.Submission(task=id, user=1)
 		session.add(submission)

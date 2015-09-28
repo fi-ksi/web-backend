@@ -4,6 +4,7 @@ from datetime import datetime
 import model
 import endpoint
 from db import engine, session
+from util import UserInfo
 
 
 class JSONTranslator(object):
@@ -18,23 +19,19 @@ class JSONTranslator(object):
 		resp.body = json.dumps(req.context['result'], sort_keys=True, indent=4)
 
 
-#~ class Authorizer(object):
-#~
-	#~ def process_request(self, req, resp):
-		#~ if req.auth:
-			#~ token = session.query(model.Token).get(req.auth.split(' ')[-1])
-#~
-			#~ try:
-				#~ req.context['id_user'] = token.owner.id
-#~
-				#~ if token.owner.admin:
-					#~ req.context['permissions'] = 2
-				#~ else:
-					#~ req.context['permissions'] = 1
-			#~ except AttributeError:
-				#~ pass
-#~
-		#~ req.context['permissions'] = 0
+class Authorizer(object):
+
+	def process_request(self, req, resp):
+		if req.auth:
+			token = session.query(model.Token).get(req.auth.split(' ')[-1])
+
+			try:
+				req.context['user'] = UserInfo(session.query(model.User).get(token.id_user))
+				return
+			except AttributeError:
+				pass
+
+		req.context['user'] = UserInfo()
 
 def log(req, resp):
 	try:
@@ -63,7 +60,7 @@ def cors_middleware(request, response, params):
 
 
 api = falcon.API(before=[cors_middleware, log_middleware],
-				 middleware=[JSONTranslator()]) #, Authorizer()])
+				 middleware=[JSONTranslator(), Authorizer()])
 
 
 model.Base.metadata.create_all(engine)

@@ -17,5 +17,4 @@ from model.user import User
 from model.profile import Profile
 from model.submission import Submission
 from model.evaluation import Evaluation
-
-#~ from model.auth import Token
+from model.auth import Token

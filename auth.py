@@ -61,7 +61,7 @@ class Provider(object):
             req.get_param('password'))
 
         challenge = session.query(model.User).filter(
-            model.User.name_nick == username,
+            model.User.email == username,
             model.User.password == password).first()
 
         if challenge:

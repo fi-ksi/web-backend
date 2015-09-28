@@ -9,6 +9,12 @@ def _module_to_json(module):
 def _load_questions(module_id):
 	return session.query(model.QuizQuestion).filter(model.QuizQuestion.module == module_id).order_by(model.QuizQuestion.order).all()
 
+def _load_sortable(module_id):
+	fixed = session.query(model.Sortable).filter(model.Sortable.module == module_id, model.Sortable.type == 'fixed').order_by(model.Sortable.order).all()
+	movable = session.query(model.Sortable).filter(model.Sortable.module == module_id, model.Sortable.type == 'movable').order_by(model.Sortable.order).all()
+
+	return (fixed, movable)
+
 class Module(object):
 
 	def on_get(self, req, resp, id):
@@ -47,13 +53,12 @@ class Module(object):
 		return [ { 'content': row.content, 'style': row.style } for row in sortable_type ]
 
 	def _build_sortable(self, module_id):
-		fixed = session.query(model.Sortable).filter(model.Sortable.module == module_id, model.Sortable.type == 'fixed').order_by(model.Sortable.order).all()
-		movable = session.query(model.Sortable).filter(model.Sortable.module == module_id, model.Sortable.type == 'movable').order_by(model.Sortable.order).all()
+		fixed, movable = _load_sortable(module_id)
 
 		return { 'fixed': self._sortable_type_to_json(fixed), 'movable': self._sortable_type_to_json(movable) }
 
 def quiz_evaluate(task, module, data):
-	report = '=== Evaluating quiz id ' + str(module) + ' for task id ' + str(task) + ' ===\n\n'
+	report = '=== Evaluating quiz id \'%s\' for task id \'%s\' ===\n\n' % (module, task)
 	report += ' Raw data: ' + json.dumps(data) + '\n'
 	report += ' Evaluation:\n'
 
@@ -80,3 +85,32 @@ def quiz_evaluate(task, module, data):
 	report += '\n Overall result: [' + ('y' if overall_results else 'n') + ']'
 
 	return (overall_results, report)
+
+def sortable_evaluate(task, module, data):
+	report = '=== Evaluating sortable id \'%s\' for task id \'%s\' ===\n\n' % (module, task)
+	report += ' Raw data: ' + json.dumps(data) + '\n'
+	report += ' Evaluation:\n'
+
+	sortable = session.query(model.Sortable).filter(model.Sortable.module == module).order_by(model.Sortable.order).all()
+	correct_order = {}
+	user_order = { i: data[i].encode('utf-8') for i in range(len(data)) }
+
+	i = 0
+	j = 0
+	for item in sortable:
+		if item.type == 'fixed':
+			value = 'a' + str(i)
+			i += 1
+		else:
+			value = 'b' + str(j)
+			j += 1
+
+		correct_order[item.correct_position - 1] = value
+
+	result = (correct_order == user_order)
+
+	report += '  User order: %s\n' % user_order
+	report += '  Correct order: %s\n' % correct_order
+	report += '\n Overall result: [%s]' % ('y' if result else 'n')
+
+	return (result, report)

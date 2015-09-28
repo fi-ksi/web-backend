@@ -60,18 +60,22 @@ class TaskSubmit(object):
 
 		for (key, val) in data.items():
 			val = val[0]
-			module = int(key.split('_')[1])
+			module_id = int(key.split('_')[1])
 			solution = json.loads(val)['solution']
 
-			module = session.query(model.Module).get(module)
+			module = session.query(model.Module).get(module_id)
 
 			if module.type == 'quiz':
-				result, eval_report = endpoint.module.quiz_evaluate(id, 1, solution)
-				report += eval_report + '\n'
+				result, eval_report = endpoint.module.quiz_evaluate(id, module_id, solution)
+				report += eval_report
+			elif module.type == 'sortable':
+				result, eval_report = endpoint.module.sortable_evaluate(id, module_id, solution)
+				report += eval_report
 
 			points[int(module.id)] = module.points if result else 0
+			report += '\n\n\n'
 
-		report += '\n===========================\n'
+		report += '===========================\n'
 		report += 'Points per module: ' + str(points) + '\n'
 		report += '  => Overall points: ' + str(sum(points.values())) + '\n'
 

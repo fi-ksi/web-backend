@@ -5,6 +5,7 @@ from db import session
 import model
 from achievement import achievements_ids
 from task import max_points_dict
+import multipart
 
 def _load_points_for_user(user_id):
 	return session.query(model.Evaluation.module, func.max(model.Evaluation.points).label('points')).\
@@ -91,3 +92,32 @@ class Profile(object):
 		user, profile = session.query(model.User).filter(model.User.id == 1).outerjoin(model.Profile, model.User.id == model.Profile.user_id).add_entity(model.Profile).first()
 
 		req.context['result'] = _profile_to_json(user, profile)
+
+class PictureUploader(object):
+
+	def on_post(self, req, resp):
+		if not req.context['user'].is_logged_in():
+			resp.status = falcon.HTTP_400
+			return
+
+		files = multipart.MultiDict()
+
+		content_type, options = multipart.parse_options_header(req.content_type)
+		boundary = options.get('boundary','')
+
+		if not boundary:
+			raise multipart.MultipartError("No boundary for multipart/form-data.")
+
+		for part in multipart.MultipartParser(req.stream, boundary, req.content_length):
+			files[part.name] = part
+
+		file = files.get('file')
+
+		if file.content_type != 'image/jpeg':
+			print "unsupported type"
+			resp.status = falcon.HTTP_400
+			return
+
+		user_id = req.context['user'].get_id()
+
+		file.save_as('images/profile/user_%d.jpg' % user_id)

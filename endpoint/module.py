@@ -4,7 +4,7 @@ from db import session
 import model
 
 def _module_to_json(module):
-	return { 'id': module.id, 'type': module.type, 'description': module.description }
+	return { 'id': module.id, 'type': module.type, 'name': module.name, 'description': module.description }
 
 def _load_questions(module_id):
 	return session.query(model.QuizQuestion).filter(model.QuizQuestion.module == module_id).order_by(model.QuizQuestion.order).all()

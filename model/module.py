@@ -12,6 +12,7 @@ class Module(Base):
 	id = Column(Integer, primary_key=True)
 	task = Column(Integer, ForeignKey('tasks.id'), nullable=False)
 	type = Column(Enum('general', 'programming', 'quiz', 'sortable'), nullable=False)
+	name = Column(String(255), nullable=False)
 	description = Column(Text)
 	max_points = Column(Integer, nullable=False)
 	autocorrect = Column(Boolean, nullable=False, default=False, server_default=text('FALSE'))

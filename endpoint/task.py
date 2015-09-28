@@ -13,10 +13,17 @@ fake_valuation = { 1 : True, 2 : False }
 def _load_submissions(task_id, user_id):
 	return session.query(model.Submission).filter(model.Submission.task == task_id, model.Submission.user == user_id).all()
 
-def _sum_max_points(task_id):
+def _max_points_dict():
+	points_per_task = session.query(model.Module.task.label('id'), func.sum(model.Module.max_points).label('points')).\
+		group_by(model.Module.task).all()
+
+	print { task.id: int(task.points) for task in points_per_task }
+
+	return { task.id: int(task.points) for task in points_per_task }
+
+def _max_points_for_task(task_id):
 	points = session.query(func.sum(model.Module.max_points).label('points')).\
-		join(model.Task, model.Module.task == model.Task.id).\
-		filter(model.Task.id == task_id).first().points
+		filter(model.Module.task == task_id).first().points
 
 	return int(points) if points else 0
 
@@ -29,7 +36,12 @@ def _load_points_for_user(task_id, user_id):
 def _sum_points(task_id, user_id):
 	return sum([ item.points for item in _load_points_for_user(task_id, user_id) ])
 
-def _task_to_json(task):
+def _task_to_json(task, points=None):
+	try:
+		max_score = points[task.id] if points else _max_points_for_task(task.id)
+	except KeyError:
+		max_score = 0
+
 	return {
 		'id': task.id,
 		'title': task.title,
@@ -37,7 +49,7 @@ def _task_to_json(task):
 		'category': task.category,
 		'intro': task.intro,
 		'body': task.body,
-		'max_score': _sum_max_points(task.id),
+		'max_score': max_score,
 		'position': [ task.position_x, task.position_y ],
 		'thread': task.thread,
 		'time_published': task.time_published.isoformat(),
@@ -60,7 +72,6 @@ class Task(object):
 
 	def on_get(self, req, resp, id):
 		task = session.query(model.Task).get(id)
-		_sum_points(id, 1)
 
 		req.context['result'] = { 'task': _task_to_json(task) }
 
@@ -69,8 +80,9 @@ class Tasks(object):
 
 	def on_get(self, req, resp):
 		tasks = session.query(model.Task).all()
+		points_dict = _max_points_dict()
 
-		req.context['result'] = { 'tasks': [ _task_to_json(task) for task in tasks ] }
+		req.context['result'] = { 'tasks': [ _task_to_json(task, points_dict) for task in tasks ] }
 
 class TaskSubmit(object):
 

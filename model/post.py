@@ -14,8 +14,8 @@ class Post(Base):
 	}
 
 	id = Column(Integer, primary_key=True)
-	thread = Column(Integer, ForeignKey(Thread.id))
+	thread = Column(Integer, ForeignKey(Thread.id), nullable=False)
+	author = Column(Integer, ForeignKey('users.id'), nullable=False)
 	body = Column(Text, nullable=False)
-	published_at = Column(TIMESTAMP, default=datetime.datetime.utcnow, server_default=text('CURRENT_TIMESTAMP'))
-	author = Column(Integer,)
+	published_at = Column(TIMESTAMP, nullable=False, default=datetime.datetime.utcnow, server_default=text('CURRENT_TIMESTAMP'))
 	parent = Column(Integer, ForeignKey(__tablename__ + '.id'))

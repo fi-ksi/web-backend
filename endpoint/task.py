@@ -57,10 +57,8 @@ def _task_to_json(task, points=None):
 		'solution': 'Prehledne vysvetlene reseni prikladu. Cely priklad spocival v blabla',
 		'submissions': [],
 		'prerequisities': [],
-		'picture_active': 'img/nodes/vlna-1/node-big-travelling/base.svg',
-		'picture_locked': 'img/nodes/vlna-1/node-big-travelling/base.svg',
-		'picture_submitted': 'img/nodes/vlna-1/node-big-travelling/base.svg',
-		'picture_finished': 'img/nodes/vlna-1/node-big-travelling/base.svg',
+		'picture_base': task.picture_base,
+		'picture_suffix': '.svg'
 	}
 
 class Task(object):

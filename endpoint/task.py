@@ -8,7 +8,7 @@ from util import PrerequisitiesEvaluator, decode_form_data
 import endpoint.module
 
 # FAKE DATA!!!!
-fake_valuation = { 1 : True, 2 : False }
+fake_valuation = { 1: True, 2: False, 3: True, 4: True, 5: True, 6: True }
 
 def max_points_dict():
 	points_per_task = session.query(model.Module.task.label('id'), func.sum(model.Module.max_points).label('points')).\
@@ -30,6 +30,23 @@ def _load_points_for_user(task_id, user_id):
 
 def sum_points(task_id, user_id):
 	return sum([ item.points for item in _load_points_for_user(task_id, user_id) ])
+
+def _prerequisities_to_json(prereq):
+		if(prereq.type == 'ATOMIC'):
+			return [ [ prereq.task ] ]
+
+		if(prereq.type == 'AND'):
+			return [ [ child.task for child in prereq.children ] ]
+
+		if(prereq.type == 'OR'):
+			return [ _prerequisities_to_json2(child) for child in prereq.children ]
+
+def _prerequisities_to_json2(prereq):
+		if(prereq.type == 'ATOMIC'):
+			return [ prereq.task ]
+
+		if(prereq.type == 'AND'):
+			return [ child.task for child in prereq.children ]
 
 def _task_to_json(task, points=None):
 	try:
@@ -56,7 +73,7 @@ def _task_to_json(task, points=None):
 		'my_score': sum_points(task.id, 1),
 		'solution': 'Prehledne vysvetlene reseni prikladu. Cely priklad spocival v blabla',
 		'submissions': [],
-		'prerequisities': [],
+		'prerequisities': [] if not task.prerequisite_obj else _prerequisities_to_json(task.prerequisite_obj),
 		'picture_base': task.picture_base,
 		'picture_suffix': '.svg'
 	}

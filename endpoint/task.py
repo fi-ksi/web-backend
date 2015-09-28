@@ -66,7 +66,6 @@ def _task_to_json(task, points=None):
 		'thread': task.thread,
 		'time_published': task.time_published.isoformat(),
 		'time_deadline': task.time_deadline.isoformat(),
-		'node_parent': [ parent.parent_id for parent in task.parents ],
 		'active': True if task.prerequisite_obj is None else PrerequisitiesEvaluator(fake_valuation, task.prerequisite_obj).evaluate(),
 		'modules': [ module.id for module in task.modules ],
 		'best_scores': [ 1 ],

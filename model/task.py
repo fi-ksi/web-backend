@@ -27,16 +27,5 @@ class Task(Base):
 	time_published = Column(DateTime, default=datetime.datetime.utcnow)
 	time_deadline = Column(DateTime, default=datetime.datetime.utcnow)
 
-	parents = relationship('TaskParents', primaryjoin='Task.id==TaskParents.task_id')
 	prerequisite_obj = relationship('Prerequisite', primaryjoin='Task.prerequisite==Prerequisite.id', uselist=False)
 	modules = relationship('Module', primaryjoin='Task.id==Module.task', order_by='Module.order')
-
-class TaskParents(Base):
-	__tablename__ = 'task_parents'
-	__table_args__ = {
-		'mysql_engine': 'InnoDB',
-		'mysql_charset': 'utf8'
-	}
-
-	task_id = Column(Integer, ForeignKey(Task.id), primary_key=True, nullable=False)
-	parent_id = Column(Integer, ForeignKey(Task.id), primary_key=True, nullable=False)

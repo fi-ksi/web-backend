@@ -13,7 +13,7 @@ fake_valuation = { 1 : True, 2 : False }
 def _load_submissions(task_id, user_id):
 	return session.query(model.Submission).filter(model.Submission.task == task_id, model.Submission.user == user_id).all()
 
-def _max_points_dict():
+def max_points_dict():
 	points_per_task = session.query(model.Module.task.label('id'), func.sum(model.Module.max_points).label('points')).\
 		group_by(model.Module.task).all()
 
@@ -80,7 +80,7 @@ class Tasks(object):
 
 	def on_get(self, req, resp):
 		tasks = session.query(model.Task).all()
-		points_dict = _max_points_dict()
+		points_dict = max_points_dict()
 
 		req.context['result'] = { 'tasks': [ _task_to_json(task, points_dict) for task in tasks ] }
 

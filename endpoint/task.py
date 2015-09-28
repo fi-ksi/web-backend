@@ -10,14 +10,9 @@ import endpoint.module
 # FAKE DATA!!!!
 fake_valuation = { 1 : True, 2 : False }
 
-def _load_submissions(task_id, user_id):
-	return session.query(model.Submission).filter(model.Submission.task == task_id, model.Submission.user == user_id).all()
-
 def max_points_dict():
 	points_per_task = session.query(model.Module.task.label('id'), func.sum(model.Module.max_points).label('points')).\
 		group_by(model.Module.task).all()
-
-	print { task.id: int(task.points) for task in points_per_task }
 
 	return { task.id: int(task.points) for task in points_per_task }
 
@@ -29,8 +24,8 @@ def _max_points_for_task(task_id):
 
 def _load_points_for_user(task_id, user_id):
 	return session.query(model.Evaluation.module, func.max(model.Evaluation.points).label('points')).\
-		join(model.Submission, model.Evaluation.submission == model.Submission.id).\
-		filter(model.Submission.task == task_id, model.Submission.user == user_id).\
+		join(model.Module, model.Evaluation.module == model.Module.id).\
+		filter(model.Module.task == task_id, model.Evaluation.user == user_id).\
 		group_by(model.Evaluation.module).all()
 
 def sum_points(task_id, user_id):
@@ -60,8 +55,8 @@ def _task_to_json(task, points=None):
 		'best_scores': [ 1 ],
 		'my_score': sum_points(task.id, 1),
 		'solution': 'Prehledne vysvetlene reseni prikladu. Cely priklad spocival v blabla',
+		'submissions': [],
 		'prerequisities': [],
-		'submissions': [ submission.id for submission in _load_submissions(task.id, 1) ],
 		'picture_active': 'img/nodes/vlna-1/node-big-travelling/base.svg',
 		'picture_locked': 'img/nodes/vlna-1/node-big-travelling/base.svg',
 		'picture_submitted': 'img/nodes/vlna-1/node-big-travelling/base.svg',
@@ -107,12 +102,8 @@ class TaskSubmit(object):
 
 			evaluations[module.id] = (module.max_points if result else 0, report)
 
-		submission = model.Submission(task=id, user=1)
-		session.add(submission)
-		session.commit()
-
 		for module, data in evaluations.items():
-			evaluation = model.Evaluation(submission=submission.id, module=module, points=data[0], full_report=data[1])
+			evaluation = model.Evaluation(user=1, module=module, points=data[0], full_report=data[1])
 			session.add(evaluation)
 
 		session.commit()

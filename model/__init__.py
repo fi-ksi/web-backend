@@ -15,6 +15,5 @@ from model.sortable import Sortable
 from model.thread import Thread
 from model.user import User
 from model.profile import Profile
-from model.submission import Submission
 from model.evaluation import Evaluation
 from model.auth import Token

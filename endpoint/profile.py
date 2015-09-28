@@ -8,8 +8,7 @@ from task import max_points_dict
 
 def _load_points_for_user(user_id):
 	return session.query(model.Evaluation.module, func.max(model.Evaluation.points).label('points')).\
-		join(model.Submission, model.Evaluation.submission == model.Submission.id).\
-		filter(model.Submission.user == user_id).\
+		filter(model.Evaluation.user == user_id).\
 		group_by(model.Evaluation.module).all()
 
 def _sum_points(user_id):

@@ -1,4 +1,5 @@
 import json
+from sqlalchemy import func
 
 from db import session
 import model
@@ -8,6 +9,18 @@ import endpoint.module
 
 # FAKE DATA!!!!
 fake_valuation = { 1 : True, 2 : False }
+
+def _load_submissions(task_id, user_id):
+	return session.query(model.Submission).filter(model.Submission.task == task_id, model.Submission.user == user_id).all()
+
+def _load_max_points(task_id, user_id):
+	return session.query(model.Evaluation.module, func.max(model.Evaluation.points).label('points')).\
+		join(model.Submission, model.Evaluation.submission == model.Submission.id).\
+		filter(model.Submission.task == task_id, model.Submission.user == user_id).\
+		group_by(model.Evaluation.module).all()
+
+def _sum_points(task_id, user_id):
+	return sum([ item.points for item in _load_max_points(task_id, user_id) ])
 
 def _task_to_json(task):
 	return {
@@ -26,10 +39,10 @@ def _task_to_json(task):
 		'active': True if task.prerequisite_obj is None else PrerequisitiesEvaluator(fake_valuation, task.prerequisite_obj).evaluate(),
 		'modules': [ module.id for module in task.modules ],
 		'best_scores': [ 1 ],
-		'my_score': 2,
+		'my_score': _sum_points(task.id, 1),
 		'solution': 'Prehledne vysvetlene reseni prikladu. Cely priklad spocival v blabla',
 		'prerequisities': [],
-		'submissions': [ ],
+		'submissions': [ submission.id for submission in _load_submissions(task.id, 1) ],
 		'picture_active': 'img/nodes/vlna-1/node-big-travelling/base.svg',
 		'picture_locked': 'img/nodes/vlna-1/node-big-travelling/base.svg',
 		'picture_submitted': 'img/nodes/vlna-1/node-big-travelling/base.svg',
@@ -40,6 +53,7 @@ class Task(object):
 
 	def on_get(self, req, resp, id):
 		task = session.query(model.Task).get(id)
+		_sum_points(id, 1)
 
 		req.context['result'] = { 'task': _task_to_json(task) }
 

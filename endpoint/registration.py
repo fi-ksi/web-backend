@@ -2,6 +2,7 @@ import json, falcon
 
 from db import session
 import model
+import auth
 
 class Registration(object):
 
@@ -11,7 +12,7 @@ class Registration(object):
 	def on_post(self, req, resp):
 		data = json.loads(req.stream.read())
 
-		user = model.User(email=data['email'], password=data['password'], first_name=data['first_name'], last_name=data['last_name'], sex='male', short_info=data["short_info"])
+		user = model.User(email=data['email'], password=auth.get_hashed_password(data['password']), first_name=data['first_name'], last_name=data['last_name'], sex='male', short_info=data["short_info"])
 		session.add(user)
 		session.commit()
 

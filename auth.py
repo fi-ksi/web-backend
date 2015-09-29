@@ -1,4 +1,4 @@
-import string, random, urllib, falcon
+import string, random, urllib, falcon, bcrypt
 
 from db import session
 import model
@@ -17,6 +17,12 @@ class GrantType:
 	CODE = 'password'
 	CODE = 'refresh_token'
 
+
+def get_hashed_password(plain_text_password):
+	return bcrypt.hashpw(plain_text_password, bcrypt.gensalt())
+
+def check_password(plain_text_password, hashed_password):
+	return bcrypt.checkpw(plain_text_password, hashed_password)
 
 class OAuth2Token(object):
 	def __init__(self, client_id):

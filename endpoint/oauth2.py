@@ -15,10 +15,9 @@ class Authorize(object):
 		password = req.get_param('password')
 
 		challenge = session.query(model.User).filter(
-			model.User.email == username,
-			model.User.password == password).first()
+			model.User.email == username).first()
 
-		if challenge:
+		if challenge and auth.check_password(password, challenge.password):
 			req.context['result'] = auth.OAuth2Token(challenge.id).data
 		else:
 			req.context['result'] = {'error': Error.UNAUTHORIZED_CLIENT}

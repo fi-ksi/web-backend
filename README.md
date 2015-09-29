@@ -13,6 +13,7 @@ Je vhodne vyuzit virtualenv - pip install virtualenv, virtualenv env, source env
 * talons (0.3)
 * SQLAlchemy (1.0.8)
 * python-magic
+* py-bcrypt
 
 ## Spusteni
 
@@ -24,4 +25,4 @@ A backend pobezi na 127.0.0.1:8000. Je mozno predat gunicornu --bind parametr (n
 ## Testovani auth
 
 * dojit na http://server:port/debug - dojde k vytvoreni uzivatele 'user' s heslem '1234'
-* http://server:port/profile - pri spravnem basic auth (base64 user:password v Authenticate headeru HTTP requestu) is_logged vraci true 
+* http://server:port/profile - pri spravnem basic auth (base64 user:password v Authenticate headeru HTTP requestu) is_logged vraci true

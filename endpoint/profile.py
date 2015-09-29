@@ -7,8 +7,10 @@ from achievement import achievements_ids
 from task import max_points_dict
 import multipart
 
-ALLOWED_MIME_TYPES = ('image/jpeg', 'image/pjpeg', 'image/png', 'image/gif')
+ALLOWED_MIME_TYPES = { 'image/jpeg': 'jpg', 'image/pjpeg': 'jpg', 'image/png': 'png', 'image/gif': 'gif' }
 THUMB_SIZE = 263, 263
+DEFAULT_PROFILE_IMAGE = '/img/avatar-default.svg'
+PROFILE_PICTURE_URL = 'http://localhost:3000/images/profile/%d'
 
 def _load_points_for_user(user_id):
 	return session.query(model.Evaluation.module, func.max(model.Evaluation.points).label('points')).\
@@ -27,7 +29,7 @@ def _profile_to_json(user, profile):
 			'signed_in': True,
 			'first_name': user.first_name,
 			'last_name': user.last_name,
-			'profile_picture': '/img/avatar-default.svg',
+			'profile_picture': PROFILE_PICTURE_URL % user.id if os.path.isfile(user.profile_picture) else DEFAULT_PROFILE_IMAGE,
 			'short_info': profile.short_info,
 			'email': user.email,
 			'addr_street': profile.addr_street,
@@ -120,12 +122,15 @@ class PictureUploader(object):
 		img.save(dest)
 
 	def on_post(self, req, resp):
-		if not req.context['user'].is_logged_in():
+		userinfo = req.context['user']
+
+		if not userinfo.is_logged_in():
 			resp.status = falcon.HTTP_400
 			return
 
-		files = multipart.MultiDict()
+		user = session.query(model.User).filter(model.User.id == userinfo.get_id()).first()
 
+		files = multipart.MultiDict()
 		content_type, options = multipart.parse_options_header(req.content_type)
 		boundary = options.get('boundary','')
 
@@ -138,6 +143,7 @@ class PictureUploader(object):
 		file = files.get('file')
 		user_id = req.context['user'].get_id()
 		tmpfile = tempfile.NamedTemporaryFile(delete = False)
+
 		file.save_as(tmpfile.name)
 
 		mime = magic.Magic(mime=True).from_file(tmpfile.name)
@@ -146,5 +152,16 @@ class PictureUploader(object):
 			resp.status = falcon.HTTP_400
 			return
 
-		self._crop(tmpfile.name, 'images/profile/user_%d.jpg' % user_id)
+		new_picture = 'images/profile/user_%d.%s' % (user_id, ALLOWED_MIME_TYPES[mime])
+
+		self._crop(tmpfile.name, new_picture)
 		os.remove(tmpfile.name)
+
+		if user.profile_picture:
+			os.remove(user.profile_picture)
+
+		user.profile_picture = new_picture
+
+		session.add(user)
+		session.commit()
+		session.close()

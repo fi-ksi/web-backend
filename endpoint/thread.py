@@ -9,8 +9,10 @@ def _thread_to_json(thread, user_id):
 	count = session.query(model.Post).filter(model.Post.thread == thread.id).count()
 
 	if user_id:
-		last_visit = session.query(model.ThreadVisit).filter(model.ThreadVisit.user == user_id, model.ThreadVisit.thread == thread.id).first()
-		unread = count if not last_visit else session.query(model.Post).filter(model.Post.thread == thread.id, model.Post.published_at > last_visit.time).count()
+		visit = session.query(model.ThreadVisit).\
+			filter(model.ThreadVisit.user == user_id, model.ThreadVisit.thread == thread.id).first()
+
+		unread = count if not visit else session.query(model.Post).filter(model.Post.thread == thread.id, model.Post.published_at > visit.last_visit).count()
 	else:
 		unread = 0
 
@@ -32,14 +34,16 @@ class Thread(object):
 		if not user_id:
 			return
 
-		last_visit = session.query(model.ThreadVisit).filter(model.ThreadVisit.user == user_id, model.ThreadVisit.thread == id).first()
+		visit = session.query(model.ThreadVisit).filter(model.ThreadVisit.user == user_id, model.ThreadVisit.thread == id).first()
 
-		if not last_visit:
-			last_visit = model.ThreadVisit(thread=id, user=user_id)
+		if visit:
+			visit.last_last_visit = visit.last_visit
+		else:
+			visit = model.ThreadVisit(thread=id, user=user_id)
 
-		last_visit.time = text('CURRENT_TIMESTAMP')
+		visit.last_visit = text('CURRENT_TIMESTAMP')
 
-		session.add(last_visit)
+		session.add(visit)
 		session.commit()
 		session.close()
 

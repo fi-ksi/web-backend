@@ -2,8 +2,10 @@ from db import session
 import model
 import json
 
+DEFAULT_IMAGE = 'img/box-ksi.svg'
+
 def _artice_to_json(inst):
-	return {'id': inst.id, 'title': inst.title, 'body': inst.body, 'time_published': inst.time_created.isoformat(), 'picture': inst.picture}
+	return { 'id': inst.id, 'title': inst.title, 'body': inst.body, 'time_published': inst.time_created.isoformat(), 'picture': inst.picture if inst.picture else DEFAULT_IMAGE }
 
 class Article(object):
 

@@ -1,4 +1,4 @@
-import json, falcon, magic, tempfile, shutil
+import json, falcon, magic, tempfile, shutil, Image, os
 from sqlalchemy import func
 
 from db import session
@@ -8,6 +8,7 @@ from task import max_points_dict
 import multipart
 
 ALLOWED_MIME_TYPES = ('image/jpeg', 'image/pjpeg', 'image/png', 'image/gif')
+THUMB_SIZE = 263, 263
 
 def _load_points_for_user(user_id):
 	return session.query(model.Evaluation.module, func.max(model.Evaluation.points).label('points')).\
@@ -97,6 +98,27 @@ class Profile(object):
 
 class PictureUploader(object):
 
+	def _crop(self, src, dest):
+		img = Image.open(src)
+		width, height = img.size
+
+		if width > height:
+			delta = width - height
+			left = int(delta/2)
+			upper = 0
+			right = height + left
+			lower = height
+		else:
+			delta = height - width
+			left = 0
+			upper = int(delta/2)
+			right = width
+			lower = width + upper
+
+		img = img.crop((left, upper, right, lower))
+		img.thumbnail(THUMB_SIZE, Image.ANTIALIAS)
+		img.save(dest)
+
 	def on_post(self, req, resp):
 		if not req.context['user'].is_logged_in():
 			resp.status = falcon.HTTP_400
@@ -124,4 +146,5 @@ class PictureUploader(object):
 			resp.status = falcon.HTTP_400
 			return
 
-		shutil.move(tmpfile.name, 'images/profile/user_%d.jpg' % user_id)
+		self._crop(tmpfile.name, 'images/profile/user_%d.jpg' % user_id)
+		os.remove(tmpfile.name)

@@ -5,12 +5,11 @@ from db import session
 import model
 from achievement import achievements_ids
 from task import max_points_dict
+from user import get_profile_picture
 import multipart
 
 ALLOWED_MIME_TYPES = { 'image/jpeg': 'jpg', 'image/pjpeg': 'jpg', 'image/png': 'png', 'image/gif': 'gif' }
 THUMB_SIZE = 263, 263
-DEFAULT_PROFILE_IMAGE = '/img/avatar-default.svg'
-PROFILE_PICTURE_URL = 'http://localhost:3000/images/profile/%d'
 
 def _load_points_for_user(user_id):
 	return session.query(model.Evaluation.module, func.max(model.Evaluation.points).label('points')).\
@@ -29,8 +28,8 @@ def _profile_to_json(user, profile):
 			'signed_in': True,
 			'first_name': user.first_name,
 			'last_name': user.last_name,
-			'profile_picture': PROFILE_PICTURE_URL % user.id if os.path.isfile(user.profile_picture) else DEFAULT_PROFILE_IMAGE,
-			'short_info': profile.short_info,
+			'profile_picture': get_profile_picture(user),
+			'short_info': user.short_info,
 			'email': user.email,
 			'addr_street': profile.addr_street,
 			'addr_city': profile.addr_city,

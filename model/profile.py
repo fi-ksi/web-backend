@@ -1,6 +1,6 @@
 import datetime
 
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, Enum, Text, ForeignKey, text
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, Enum, ForeignKey, text
 from sqlalchemy.types import TIMESTAMP
 from sqlalchemy.orm import relationship
 
@@ -26,5 +26,4 @@ class Profile(Base):
 	school_zip = Column(String(20), nullable=False)
 	school_country = Column(countries, nullable=False)
 	school_finish = Column(Integer, nullable=False)
-	short_info = Column(Text, nullable=False)
 	tshirt_size = Column(Enum('XS', 'S', 'M', 'L', 'XL') , nullable=False)

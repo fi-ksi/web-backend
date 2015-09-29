@@ -1,6 +1,6 @@
 import datetime
 
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, Enum, text
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, Enum, Text, text
 from sqlalchemy.types import TIMESTAMP
 from sqlalchemy.orm import relationship
 
@@ -22,11 +22,13 @@ class User(Base):
 	last_name = Column(String(50), nullable=False)
 	sex = Column(Enum('male', 'female'), nullable=False)
 	password = Column(String(255), nullable=False)
+	short_info = Column(Text, nullable=False)
 	profile_picture = Column(String(255))
 	role = Column(Enum('admin', 'org', 'participant'), nullable=False, default='participant', server_default='participant')
 	enabled = Column(Integer, nullable=False, default=1, server_default='1')
 	registered = Column(TIMESTAMP, nullable=False, default=datetime.datetime.utcnow, server_default=text('CURRENT_TIMESTAMP'))
 
 	achievements = relationship("Achievement", secondary=UserAchievement.__tablename__)
+	tasks = relationship("Task", primaryjoin='User.id == Task.author')
 
 	#child = relationship('Token', uselist=False, backref='owner')

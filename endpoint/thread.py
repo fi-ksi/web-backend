@@ -1,5 +1,5 @@
 import json
-from sqlalchemy import and_
+from sqlalchemy import and_, text
 
 from db import session
 import model
@@ -25,6 +25,23 @@ def _thread_to_json(thread, user_id):
 		}
 
 class Thread(object):
+
+	def on_put(self, req, resp, id):
+		user_id = None if not req.context['user'].is_logged_in() else req.context['user'].get_id()
+
+		if not user_id:
+			return
+
+		last_visit = session.query(model.ThreadVisit).filter(model.ThreadVisit.user == user_id, model.ThreadVisit.thread == id).first()
+
+		if not last_visit:
+			last_visit = model.ThreadVisit(thread=id, user=user_id)
+
+		last_visit.time = text('CURRENT_TIMESTAMP')
+
+		session.add(last_visit)
+		session.commit()
+		session.close()
 
 	def on_get(self, req, resp, id):
 		user_id = None if not req.context['user'].is_logged_in() else req.context['user'].get_id()

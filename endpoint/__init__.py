@@ -12,4 +12,4 @@ from endpoint.profile import Profile, PictureUploader
 from endpoint.organisators import Organisator, Organisators
 from endpoint.image import Image
 from endpoint.debug import Debug
-from endpoint.oauth2 import Authorize, Refresh
+from endpoint.oauth2 import Authorize

@@ -29,15 +29,15 @@ class GrantType:
 class OAuth2Token(object):
     def __init__(self, client_id):
         self.value = _generate_token()
-        self.expire = 3600
+        self.expire = 30
         self.kind = 'Bearer'
         self.refresh = _generate_token()
 
         token = model.Token()
-        token.access = self.value
+        token.access_token = self.value
         token.expire = self.expire
-        token.refresh = self.expire
-        token.id_user = client_id
+        token.refresh_token = self.refresh
+        token.user = client_id
 
         session.add(token)
         session.commit()
@@ -50,36 +50,3 @@ class OAuth2Token(object):
             'expires_in': self.expire,
             'refresh_token': self.refresh
         }
-
-
-class Provider(object):
-
-    def request_access_token(self, req, resp):
-        grant_type, username, password = (
-            req.get_param('grant_type'),
-            req.get_param('username'),
-            req.get_param('password'))
-
-        challenge = session.query(model.User).filter(
-            model.User.email == username,
-            model.User.password == password).first()
-
-        if challenge:
-            req.context['result'] = OAuth2Token(challenge.id).data
-            resp.status = falcon.HTTP_200
-        else:
-            req.context['result'] = {'error': Error.UNAUTHORIZED_CLIENT}
-            resp.status = falcon.HTTP_400
-
-    def refresh_access_token(self, req, resp):
-        grant_type, refresh_token = (
-            req.get_param('grant_type'),
-            req.get_param('refresh_token'))
-
-        challenge = session.query(model.Token).filter(
-            model.Token.refresh_token == refresh_token).first()
-
-        if challenge:
-            session.delete(challenge)
-            req.context['result'] = OAuth2Token(challenge.id).data
-            resp.status = falcon.HTTP_200

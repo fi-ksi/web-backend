@@ -16,4 +16,4 @@ from model.thread import Thread, ThreadVisit
 from model.user import User
 from model.profile import Profile
 from model.evaluation import Evaluation
-from model.auth import Token
+from model.token import Token

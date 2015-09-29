@@ -1,4 +1,4 @@
-import json
+import json, falcon, os, magic, multipart
 
 from db import session
 import model
@@ -117,6 +117,50 @@ def sortable_evaluate(task, module, data):
 
 class ModuleSubmit(object):
 
+	def _upload_files(self, req, module, user_id, resp):
+		report = '=== Uploading files for module id \'%s\' for task id \'%s\' ===\n\n' % (module.id, module.task)
+
+		evaluation = model.Evaluation(user=user_id, module=module.id)
+		session.add(evaluation)
+		session.commit()
+
+		dir = 'submissions/module_%d/user_%d' % (module.id, user_id)
+
+		try:
+			os.makedirs(dir)
+		except OSError:
+			pass
+
+		if not os.path.isdir(dir):
+			resp.status = falcon.HTTP_400
+			req.context['result'] = { 'result': 'incorrect' }
+			return
+
+		files = multipart.MultiDict()
+		content_type, options = multipart.parse_options_header(req.content_type)
+		boundary = options.get('boundary','')
+
+		if not boundary:
+			raise multipart.MultipartError("No boundary for multipart/form-data.")
+
+		for part in multipart.MultipartParser(req.stream, boundary, req.content_length):
+			path = '%s/%d_%s' % (dir, evaluation.id, part.filename)
+			part.save_as(path)
+			mime = magic.Magic(mime=True).from_file(path)
+
+			report += '  [y] uploaded file: \'%s\' (mime: %s) to file %s\n' % (part.filename, mime, path)
+			submitted_file = model.SubmittedFile(evaluation=evaluation.id, mime=mime, path=path)
+
+			session.add(submitted_file)
+
+		evaluation.report = report
+		session.add(evaluation)
+		session.commit()
+		session.close()
+
+		req.context['result'] = { 'result': 'correct' }
+
+
 	def on_post(self, req, resp, id):
 		user = req.context['user']
 
@@ -124,8 +168,13 @@ class ModuleSubmit(object):
 			resp.status = falcon.HTTP_400
 			return
 
-		data = json.loads(req.stream.read())['content']
 		module = session.query(model.Module).get(id)
+
+		if module.type == 'general':
+			self._upload_files(req, module, user.id, resp)
+			return
+
+		data = json.loads(req.stream.read())['content']
 
 		if not module.autocorrect:
 			return

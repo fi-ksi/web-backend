@@ -1,4 +1,5 @@
 import json, falcon, os, magic, multipart
+from sqlalchemy import func
 
 from db import session
 import model
@@ -18,8 +19,21 @@ def _load_sortable(module_id):
 class Module(object):
 
 	def on_get(self, req, resp, id):
+		user = req.context['user']
+
+		if not user.is_logged_in():
+			resp.status = falcon.HTTP_400
+			return
+
 		module = session.query(model.Module).get(id)
 		module_json = _module_to_json(module)
+		status = session.query(func.max(model.Evaluation.points).label('points')).\
+			filter(model.Evaluation.user == user.id, model.Evaluation.module == id).first()
+
+		if status:
+			module_json['state'] = 'correct' if status.points == module.max_points else 'incorrect'
+		else:
+			module_json['state'] = 'blank'
 
 		if module.type == 'programming':
 			code = self._build_programming(module.id)
@@ -29,6 +43,8 @@ class Module(object):
 			module_json['questions'] = self._build_quiz(module.id)
 		elif module.type == 'sortable':
 			module_json['sortable_list'] = self._build_sortable(module.id)
+		elif module.type == 'general':
+			module_json['state'] = 'correct' if status else 'blank'
 
 		req.context['result'] = { 'module': module_json }
 

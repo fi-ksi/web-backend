@@ -48,22 +48,16 @@ def _profile_to_json(user, profile):
 			'results': [ 1, 2] } ] }
 
 class Profile(object):
-	def _schema(self, req):
-		return {'profile': [
-			{'id': 1, 'is_logged': bool(req.env['PERMISSIONS'])}
-		]}
-
-	def on_options(self, req, resp):
-		pass
-		#resp.set_header('Access-Control-Allow-Credentials', 'true')
-		#resp.set_header('Access-Control-Allow-Headers', 'authorization')
-		#resp.set_header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE')
-
-		#resp.status = falcon.HTTP_204
 
 	def on_put(self, req, resp):
+		userinfo = req.context['user']
+
+		if not userinfo.is_logged_in():
+			resp.status = falcon.HTTP_400
+			return
+
 		data = json.loads(req.stream.read())
-		user, profile = session.query(model.User).filter(model.User.id == 1).outerjoin(model.Profile, model.User.id == model.Profile.user_id).add_entity(model.Profile).first()
+		user, profile = session.query(model.User).filter(model.User.id == userinfo.get_id()).outerjoin(model.Profile, model.User.id == model.Profile.user_id).add_entity(model.Profile).first()
 
 		user.first_name = data['first_name']
 		user.last_name = data['last_name']
@@ -91,7 +85,13 @@ class Profile(object):
 
 
 	def on_get(self, req, resp):
-		user, profile = session.query(model.User).filter(model.User.id == 1).outerjoin(model.Profile, model.User.id == model.Profile.user_id).add_entity(model.Profile).first()
+		userinfo = req.context['user']
+
+		if not userinfo.is_logged_in():
+			resp.status = falcon.HTTP_400
+			return
+
+		user, profile = session.query(model.User).filter(model.User.id == userinfo.get_id()).outerjoin(model.Profile, model.User.id == model.Profile.user_id).add_entity(model.Profile).first()
 
 		req.context['result'] = _profile_to_json(user, profile)
 

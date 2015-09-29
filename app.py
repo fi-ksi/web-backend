@@ -23,10 +23,11 @@ class Authorizer(object):
 
 	def process_request(self, req, resp):
 		if req.auth:
-			token = session.query(model.Token).get(req.auth.split(' ')[-1])
+			token_str = req.auth.split(' ')[-1]
+			token = session.query(model.Token).get(token_str)
 
 			try:
-				req.context['user'] = UserInfo(session.query(model.User).get(token.user))
+				req.context['user'] = UserInfo(session.query(model.User).get(token.user), token_str)
 				return
 			except AttributeError:
 				pass
@@ -89,4 +90,5 @@ api.add_route('/registration', endpoint.Registration())
 api.add_route('/organisators/{id}', endpoint.Organisator())
 api.add_route('/debug', endpoint.Debug())
 api.add_route('/v1/oauth2/authorize', endpoint.Authorize())
+api.add_route('/logout', endpoint.Logout())
 api.add_sink(log_sink)

@@ -45,3 +45,18 @@ class Authorize(object):
 			self._refresh(req, resp)
 		else:
 			resp.status = falcon.HTTP_400
+
+class Logout(object):
+
+	def on_get(self, req, resp):
+		if not req.context['user'].is_logged_in():
+			return
+
+		token = session.query(model.Token).filter(model.Token.access_token == req.context['user'].token).first()
+
+		if not token:
+			return
+
+		session.delete(token)
+		session.commit()
+		session.close()

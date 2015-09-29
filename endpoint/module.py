@@ -114,3 +114,30 @@ def sortable_evaluate(task, module, data):
 	report += '\n Overall result: [%s]' % ('y' if result else 'n')
 
 	return (result, report)
+
+class ModuleSubmit(object):
+
+	def on_post(self, req, resp, id):
+		user = req.context['user']
+
+		if not user.is_logged_in():
+			resp.status = falcon.HTTP_400
+			return
+
+		data = json.loads(req.stream.read())['content']
+		module = session.query(model.Module).get(id)
+
+		if not module.autocorrect:
+			return
+
+		if module.type == 'quiz':
+			result, report = quiz_evaluate(module.task, id, data)
+		elif module.type == 'sortable':
+			result, report = sortable_evaluate(module.task, id, data)
+
+		evaluation = model.Evaluation(user=user.id, module=module.id, points=(module.max_points if result else 0), full_report=report)
+		req.context['result'] = { 'result': 'correct' if result else 'incorrect' }
+
+		session.add(evaluation)
+		session.commit()
+		session.close()

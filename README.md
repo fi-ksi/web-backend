@@ -11,7 +11,8 @@ Je vhodne vyuzit virtualenv - pip install virtualenv, virtualenv env, source env
 * falcon (0.3.0)
 * gunicorn (19.3.0)
 * talons (0.3)
-* SQLAlchemy (1.0.8) 
+* SQLAlchemy (1.0.8)
+* python-magic
 
 ## Spusteni
 

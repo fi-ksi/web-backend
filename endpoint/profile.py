@@ -1,4 +1,4 @@
-import json, falcon
+import json, falcon, magic, tempfile, shutil
 from sqlalchemy import func
 
 from db import session
@@ -6,6 +6,8 @@ import model
 from achievement import achievements_ids
 from task import max_points_dict
 import multipart
+
+ALLOWED_MIME_TYPES = ('image/jpeg', 'image/pjpeg', 'image/png', 'image/gif')
 
 def _load_points_for_user(user_id):
 	return session.query(model.Evaluation.module, func.max(model.Evaluation.points).label('points')).\
@@ -112,12 +114,14 @@ class PictureUploader(object):
 			files[part.name] = part
 
 		file = files.get('file')
+		user_id = req.context['user'].get_id()
+		tmpfile = tempfile.NamedTemporaryFile(delete = False)
+		file.save_as(tmpfile.name)
 
-		if file.content_type != 'image/jpeg':
-			print "unsupported type"
+		mime = magic.Magic(mime=True).from_file(tmpfile.name)
+
+		if mime not in ALLOWED_MIME_TYPES:
 			resp.status = falcon.HTTP_400
 			return
 
-		user_id = req.context['user'].get_id()
-
-		file.save_as('images/profile/user_%d.jpg' % user_id)
+		shutil.move(tmpfile.name, 'images/profile/user_%d.jpg' % user_id)

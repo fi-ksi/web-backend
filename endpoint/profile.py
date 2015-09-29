@@ -5,22 +5,14 @@ from db import session
 import model
 from achievement import achievements_ids
 from task import max_points_dict
-from user import get_profile_picture
+from user import get_profile_picture, get_overall_points
 import multipart
 
 ALLOWED_MIME_TYPES = { 'image/jpeg': 'jpg', 'image/pjpeg': 'jpg', 'image/png': 'png', 'image/gif': 'gif' }
 THUMB_SIZE = 263, 263
 
-def _load_points_for_user(user_id):
-	return session.query(model.Evaluation.module, func.max(model.Evaluation.points).label('points')).\
-		filter(model.Evaluation.user == user_id).\
-		group_by(model.Evaluation.module).all()
-
-def _sum_points(user_id):
-	return sum([ item.points for item in _load_points_for_user(user_id) ])
-
 def _profile_to_json(user, profile):
-	points = _sum_points(user.id)
+	points = get_overall_points(user.id)
 	successful = round((float(points)/sum(max_points_dict().values())) * 100)
 
 	return { 'profile': [ {

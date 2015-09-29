@@ -13,10 +13,8 @@ class Article(Base):
 	}
 
 	id = Column(Integer, primary_key=True, nullable=False)
+	author = Column(Integer, ForeignKey('users.id'), nullable=False)
 	title = Column(String(255), nullable=False)
 	body = Column(Text)
 	picture = Column(String(255))
 	time_created = Column(TIMESTAMP, default=datetime.datetime.utcnow, server_default=text('CURRENT_TIMESTAMP'))
-
-	#~ id_author = Column(Integer, ForeignKey('users.id', ondelete="SET NULL"),
-					   #~ nullable=True)

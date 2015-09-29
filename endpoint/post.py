@@ -9,7 +9,7 @@ from thread import Thread
 def _post_to_json(post, reactions, user_id):
 	if user_id:
 		last_visit = session.query(model.ThreadVisit).filter(model.ThreadVisit.user == user_id, model.ThreadVisit.thread == post.thread).first()
-		is_new = last_visit.time < post.published_at
+		is_new = True if not last_visit else last_visit.time < post.published_at
 	else:
 		is_new = False
 

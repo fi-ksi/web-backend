@@ -92,33 +92,3 @@ class Tasks(object):
 		points_dict = max_points_dict()
 
 		req.context['result'] = { 'tasks': [ _task_to_json(task, points_dict) for task in tasks ] }
-
-class TaskSubmit(object):
-
-	def on_post(self, req, resp, id):
-		data = decode_form_data(req)
-		evaluations = {}
-
-		for (key, val) in data.items():
-			val = val[0]
-			module_id = int(key.split('_')[1])
-			solution = json.loads(val)['solution']
-
-			module = session.query(model.Module).get(module_id)
-
-			if not module.autocorrect:
-				continue
-
-			if module.type == 'quiz':
-				result, report = endpoint.module.quiz_evaluate(id, module_id, solution)
-			elif module.type == 'sortable':
-				result, report = endpoint.module.sortable_evaluate(id, module_id, solution)
-
-			evaluations[module.id] = (module.max_points if result else 0, report)
-
-		for module, data in evaluations.items():
-			evaluation = model.Evaluation(user=1, module=module, points=data[0], full_report=data[1])
-			session.add(evaluation)
-
-		session.commit()
-		session.close()

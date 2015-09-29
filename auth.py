@@ -27,7 +27,7 @@ def check_password(plain_text_password, hashed_password):
 class OAuth2Token(object):
 	def __init__(self, client_id):
 		self.value = _generate_token()
-		self.expire = 30
+		self.expire = 3600
 		self.kind = 'Bearer'
 		self.refresh = _generate_token()
 

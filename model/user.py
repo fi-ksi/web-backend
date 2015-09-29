@@ -15,10 +15,11 @@ class User(Base):
 	}
 
 	id = Column(Integer, primary_key=True)
-	email = Column(String(255), nullable=False, unique=True)
+	email = Column(String(50), nullable=False, unique=True)
 	phone = Column(String(15))
-	first_name = Column(String(255), nullable=False)
-	last_name = Column(String(255), nullable=False)
+	first_name = Column(String(50), nullable=False)
+	nick_name = Column(String(50))
+	last_name = Column(String(50), nullable=False)
 	sex = Column(Enum('male', 'female'), nullable=False)
 	password = Column(String(255), nullable=False)
 	profile_picture = Column(String(255))

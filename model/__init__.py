@@ -12,7 +12,7 @@ from model.module import Module
 from model.programming import Programming
 from model.quiz import QuizQuestion, QuizOption
 from model.sortable import Sortable
-from model.thread import Thread
+from model.thread import Thread, ThreadVisit
 from model.user import User
 from model.profile import Profile
 from model.evaluation import Evaluation

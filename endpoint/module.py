@@ -27,10 +27,11 @@ class Module(object):
 
 		module = session.query(model.Module).get(id)
 		module_json = _module_to_json(module)
-		status = session.query(func.max(model.Evaluation.points).label('points')).\
-			filter(model.Evaluation.user == user.id, model.Evaluation.module == id).first()
+		count = session.query(model.Evaluation.points).filter(model.Evaluation.user == user.id, model.Evaluation.module == id).count()
 
-		if status:
+		if count > 0:
+			status = session.query(func.max(model.Evaluation.points).label('points')).\
+				filter(model.Evaluation.user == user.id, model.Evaluation.module == id).first()
 			module_json['state'] = 'correct' if status.points == module.max_points else 'incorrect'
 		else:
 			module_json['state'] = 'blank'
@@ -44,7 +45,7 @@ class Module(object):
 		elif module.type == 'sortable':
 			module_json['sortable_list'] = self._build_sortable(module.id)
 		elif module.type == 'general':
-			module_json['state'] = 'correct' if status else 'blank'
+			module_json['state'] = 'correct' if count > 0 else 'blank'
 
 		req.context['result'] = { 'module': module_json }
 

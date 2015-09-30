@@ -1,11 +1,12 @@
 import json
-from sqlalchemy import func
+from sqlalchemy import func, or_, distinct
 
 from db import session
 import model
 
 from util import PrerequisitiesEvaluator, decode_form_data
 import endpoint.module
+import util.task
 
 # FAKE DATA!!!!
 fake_valuation = { 1: True, 2: False, 3: True, 4: True, 5: True, 6: True }
@@ -48,11 +49,16 @@ def _prerequisities_to_json2(prereq):
 		if(prereq.type == 'AND'):
 			return [ child.task for child in prereq.children ]
 
-def _task_to_json(task, points=None):
+def _task_to_json(task, points=None, user_id=None, currently_active=None):
 	try:
 		max_score = points[task.id] if points else _max_points_for_task(task.id)
 	except KeyError:
 		max_score = 0
+
+	if not currently_active:
+		currently_active = util.task.currently_active(user_id)
+
+	is_active = True if task.id in currently_active else PrerequisitiesEvaluator(task.prerequisite_obj, currently_active).evaluate()
 
 	return {
 		'id': task.id,
@@ -66,7 +72,7 @@ def _task_to_json(task, points=None):
 		'thread': task.thread,
 		'time_published': task.time_published.isoformat(),
 		'time_deadline': task.time_deadline.isoformat(),
-		'active': True if task.prerequisite_obj is None else PrerequisitiesEvaluator(fake_valuation, task.prerequisite_obj).evaluate(),
+		'active': is_active,
 		'modules': [ module.id for module in task.modules ],
 		'best_scores': [ 1 ],
 		'my_score': sum_points(task.id, 1),
@@ -91,4 +97,6 @@ class Tasks(object):
 		tasks = session.query(model.Task).all()
 		points_dict = max_points_dict()
 
-		req.context['result'] = { 'tasks': [ _task_to_json(task, points_dict) for task in tasks ] }
+		currently_active = util.task.currently_active(14)
+
+		req.context['result'] = { 'tasks': [ _task_to_json(task, points=points_dict, currently_active=currently_active) for task in tasks ] }

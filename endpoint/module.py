@@ -2,6 +2,7 @@ import json, falcon, os, magic, multipart
 from sqlalchemy import func
 
 from db import session
+from model import ModuleType
 import model
 
 def _module_to_json(module):

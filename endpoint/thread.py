@@ -34,7 +34,7 @@ def _thread_to_json(thread, user_id):
 class Thread(object):
 
 	def on_put(self, req, resp, id):
-		user_id = None if not req.context['user'].is_logged_in() else req.context['user'].id
+		user_id = req.context['user'].id if req.context['user'].is_logged_in() else None
 
 		if not user_id:
 			return
@@ -53,7 +53,7 @@ class Thread(object):
 		session.close()
 
 	def on_get(self, req, resp, id):
-		user_id = None if not req.context['user'].is_logged_in() else req.context['user'].id
+		user_id = req.context['user'].id if req.context['user'].is_logged_in() else None
 
 		req.context['result'] = { 'thread': _thread_to_json(session.query(model.Thread).get(id), user_id) }
 		session.close()
@@ -76,7 +76,7 @@ class Threads(object):
 		session.close()
 
 	def on_get(self, req, resp):
-		user_id = None if not req.context['user'].is_logged_in() else req.context['user'].id
+		user_id = req.context['user'].id if req.context['user'].is_logged_in() else None
 
 		req.context['result'] = { 'threads': [ _thread_to_json(thread, user_id) for thread in session.query(model.Thread).all() ] }
 		session.close()

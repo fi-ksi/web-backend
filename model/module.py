@@ -2,6 +2,12 @@ from sqlalchemy import Column, Integer, SmallInteger, String, Text, Enum, Boolea
 
 from . import Base
 
+class ModuleType:
+	GENERAL = "general"
+	PROGRAMMING = "programming"
+	QUIZ = "quiz"
+	SORTABLE = "sortable"
+
 class Module(Base):
 	__tablename__ = 'modules'
 	__table_args__ = {
@@ -11,7 +17,7 @@ class Module(Base):
 
 	id = Column(Integer, primary_key=True)
 	task = Column(Integer, ForeignKey('tasks.id'), nullable=False)
-	type = Column(Enum('general', 'programming', 'quiz', 'sortable'), nullable=False)
+	type = Column(Enum(ModuleType.GENERAL, ModuleType.PROGRAMMING, ModuleType.QUIZ, ModuleType.SORTABLE), nullable=False)
 	name = Column(String(255), nullable=False)
 	description = Column(Text)
 	max_points = Column(Integer, nullable=False)

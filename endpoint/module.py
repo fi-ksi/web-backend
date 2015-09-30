@@ -36,15 +36,15 @@ class Module(object):
 		else:
 			module_json['state'] = 'blank'
 
-		if module.type == 'programming':
+		if module.type == ModuleType.PROGRAMMING:
 			code = self._build_programming(module.id)
 			module_json['code'] = code
 			module_json['default_code'] = code
-		elif module.type == 'quiz':
+		elif module.type == ModuleType.QUIZ:
 			module_json['questions'] = self._build_quiz(module.id)
-		elif module.type == 'sortable':
+		elif module.type == ModuleType.SORTABLE:
 			module_json['sortable_list'] = self._build_sortable(module.id)
-		elif module.type == 'general':
+		elif module.type == ModuleType.GENERAL:
 			module_json['state'] = 'correct' if count > 0 else 'blank'
 
 		req.context['result'] = { 'module': module_json }
@@ -199,19 +199,19 @@ class ModuleSubmit(object):
 
 		module = session.query(model.Module).get(id)
 
-		if module.type == 'general':
+		if module.type == ModuleType.GENERAL:
 			self._upload_files(req, module, user.id, resp)
 			return
 
 		data = json.loads(req.stream.read())['content']
 
-		if module.type == 'programming':
+		if module.type == ModuleType.PROGRAMMING:
 			self._evaluate_code(req, module, user.id, resp, data)
 			return
 
-		if module.type == 'quiz':
+		if module.type == ModuleType.QUIZ:
 			result, report = quiz_evaluate(module.task, module.id, data)
-		elif module.type == 'sortable':
+		elif module.type == ModuleType.SORTABLE:
 			result, report = sortable_evaluate(module.task, module.id, data)
 
 		evaluation = model.Evaluation(user=user.id, module=module.id, points=(module.max_points if result else 0), full_report=report)

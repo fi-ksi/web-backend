@@ -1,11 +1,5 @@
 import cgi
 
-def fake_auth(req, resp):
-	pass
-		#resp.set_header('Access-Control-Allow-Credentials', 'true')
-		#resp.set_header('Access-Control-Allow-Headers', 'content-type')
-		#resp.set_header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE')
-
 def decode_form_data(req):
 	ctype, pdict = cgi.parse_header(req.content_type)
 	return cgi.parse_multipart(req.stream, pdict)

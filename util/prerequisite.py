@@ -1,19 +1,20 @@
+from model import PrerequisiteType
 
 def to_json(prereq):
-		if(prereq.type == 'ATOMIC'):
+		if(prereq.type == PrerequisiteType.ATOMIC):
 			return [ [ prereq.task ] ]
 
-		if(prereq.type == 'AND'):
+		if(prereq.type == PrerequisiteType.AND):
 			return [ [ child.task for child in prereq.children ] ]
 
-		if(prereq.type == 'OR'):
+		if(prereq.type == PrerequisiteType.OR):
 			return [ _to_json2(child) for child in prereq.children ]
 
 def _to_json2(prereq):
-		if(prereq.type == 'ATOMIC'):
+		if(prereq.type == PrerequisiteType.ATOMIC):
 			return [ prereq.task ]
 
-		if(prereq.type == 'AND'):
+		if(prereq.type == PrerequisiteType.AND):
 			return [ child.task for child in prereq.children ]
 
 class PrerequisitiesEvaluator:
@@ -30,13 +31,13 @@ class PrerequisitiesEvaluator:
 		if prereq is None:
 			return None
 
-		if(prereq.type == 'ATOMIC'):
+		if(prereq.type == PrerequisiteType.ATOMIC):
 			return prereq.task
 
-		if(prereq.type == 'AND'):
+		if(prereq.type == PrerequisiteType.AND):
 			return [ self._parse_expression(child) for child in prereq.children ]
 
-		if(prereq.type == 'OR'):
+		if(prereq.type == PrerequisiteType.OR):
 			return { self._parse_expression(child) for child in prereq.children }
 
 	def _evaluation_step(self, expr):

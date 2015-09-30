@@ -57,12 +57,17 @@ class Thread(object):
 class Threads(object):
 
 	def on_post(self, req, resp):
+		user = req.context['user']
+		if not user.is_logged_in():
+			resp.status = falcon.HTTP_400
+			return
+
 		data = json.loads(req.stream.read())
 		thread = model.Thread(title=data['thread']['title'])
 
 		session.add(thread)
 		session.commit()
-		req.context['result'] = { 'thread': _thread_to_json(thread) }
+		req.context['result'] = { 'thread': _thread_to_json(thread, user.id) }
 		session.close()
 
 	def on_get(self, req, resp):

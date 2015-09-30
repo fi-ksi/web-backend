@@ -56,9 +56,6 @@ class Thread(object):
 
 class Threads(object):
 
-	def on_options(self, req, resp):
-		util.fake_auth(req, resp)
-
 	def on_post(self, req, resp):
 		data = json.loads(req.stream.read())
 		thread = model.Thread(title=data['thread']['title'])

@@ -3,38 +3,43 @@ from sqlalchemy import and_, text
 
 from db import session
 import model
-import util
+
+def _get_visit(user_id, thread_id):
+	return session.query(model.ThreadVisit).filter(model.ThreadVisit.user == user_id, model.ThreadVisit.thread == thread_id).first()
+
+def _unread_posts_count(user_id, thread_id):
+	if not user_id:
+		return 0
+
+	visit = _get_visit(user_id, thread_id)
+
+	if not visit:
+		return None
+
+	return session.query(model.Post).filter(model.Post.thread == thread_id, model.Post.published_at > visit.last_visit).count()
 
 def _thread_to_json(thread, user_id):
 	count = session.query(model.Post).filter(model.Post.thread == thread.id).count()
-
-	if user_id:
-		visit = session.query(model.ThreadVisit).\
-			filter(model.ThreadVisit.user == user_id, model.ThreadVisit.thread == thread.id).first()
-
-		unread = count if not visit else session.query(model.Post).filter(model.Post.thread == thread.id, model.Post.published_at > visit.last_visit).count()
-	else:
-		unread = 0
-
+	unread = _unread_posts_count(user_id, thread.id)
 	root_posts = [ post.id for post in session.query(model.Post).filter(and_(model.Post.thread == thread.id, model.Post.parent == None)) ]
 
 	return {
-		"id": thread.id,
-		"title": thread.title,
-		"unread": unread,
-		"posts_count": count,
-		"root_posts": root_posts
-		}
+		'id': thread.id,
+		'title': thread.title,
+		'unread': unread if unread is not None else count,
+		'posts_count': count,
+		'root_posts': root_posts
+	}
 
 class Thread(object):
 
 	def on_put(self, req, resp, id):
-		user_id = None if not req.context['user'].is_logged_in() else req.context['user'].get_id()
+		user_id = None if not req.context['user'].is_logged_in() else req.context['user'].id
 
 		if not user_id:
 			return
 
-		visit = session.query(model.ThreadVisit).filter(model.ThreadVisit.user == user_id, model.ThreadVisit.thread == id).first()
+		visit = _get_visit(user_id, id)
 
 		if visit:
 			visit.last_last_visit = visit.last_visit
@@ -48,7 +53,7 @@ class Thread(object):
 		session.close()
 
 	def on_get(self, req, resp, id):
-		user_id = None if not req.context['user'].is_logged_in() else req.context['user'].get_id()
+		user_id = None if not req.context['user'].is_logged_in() else req.context['user'].id
 
 		req.context['result'] = { 'thread': _thread_to_json(session.query(model.Thread).get(id), user_id) }
 		session.close()
@@ -71,7 +76,7 @@ class Threads(object):
 		session.close()
 
 	def on_get(self, req, resp):
-		user_id = None if not req.context['user'].is_logged_in() else req.context['user'].get_id()
+		user_id = None if not req.context['user'].is_logged_in() else req.context['user'].id
 
 		req.context['result'] = { 'threads': [ _thread_to_json(thread, user_id) for thread in session.query(model.Thread).all() ] }
 		session.close()

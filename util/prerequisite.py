@@ -1,4 +1,21 @@
 
+def to_json(prereq):
+		if(prereq.type == 'ATOMIC'):
+			return [ [ prereq.task ] ]
+
+		if(prereq.type == 'AND'):
+			return [ [ child.task for child in prereq.children ] ]
+
+		if(prereq.type == 'OR'):
+			return [ _to_json2(child) for child in prereq.children ]
+
+def _to_json2(prereq):
+		if(prereq.type == 'ATOMIC'):
+			return [ prereq.task ]
+
+		if(prereq.type == 'AND'):
+			return [ child.task for child in prereq.children ]
+
 class PrerequisitiesEvaluator:
 
 	def __init__(self, root_prerequisite, fully_submitted):

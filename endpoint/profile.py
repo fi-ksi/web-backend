@@ -4,7 +4,7 @@ from sqlalchemy import func
 from db import session
 import model
 from achievement import achievements_ids
-from task import max_points_dict
+import util.task
 from user import get_profile_picture, get_overall_points
 import multipart
 
@@ -13,7 +13,7 @@ THUMB_SIZE = 263, 263
 
 def _profile_to_json(user, profile):
 	points = get_overall_points(user.id)
-	successful = round((float(points)/sum(max_points_dict().values())) * 100)
+	successful = round((float(points)/sum(util.task.max_points_dict().values())) * 100)
 
 	return { 'profile': [ {
 			'id': user.id,

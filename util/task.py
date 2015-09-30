@@ -24,3 +24,24 @@ def currently_active(user_id=None):
 		return adeadline
 
 	return adeadline | set(fully_submitted(user_id).keys())
+
+def max_points(task_id):
+	points = session.query(func.sum(model.Module.max_points).label('points')).\
+		filter(model.Module.task == task_id).first().points
+
+	return int(points) if points else 0
+
+def max_points_dict():
+	points_per_task = session.query(model.Module.task.label('id'), func.sum(model.Module.max_points).label('points')).\
+		group_by(model.Module.task).all()
+
+	return { task.id: int(task.points) for task in points_per_task }
+
+def points_per_module(task_id, user_id):
+	return { module.module: module.points for module in session.query(model.Evaluation.module, func.max(model.Evaluation.points).label('points')).\
+		join(model.Module, model.Evaluation.module == model.Module.id).\
+		filter(model.Module.task == task_id, model.Evaluation.user == user_id).\
+		group_by(model.Evaluation.module).all() }
+
+def points(task_id, user_id):
+	return sum(points_per_module(task_id, user_id).values())

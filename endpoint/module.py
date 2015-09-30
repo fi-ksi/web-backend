@@ -177,6 +177,18 @@ class ModuleSubmit(object):
 
 		req.context['result'] = { 'result': 'correct' }
 
+	def _evaluate_code(self, req, module, user_id, resp, data):
+		evaluation = model.Evaluation(user=user_id, module=module.id)
+		session.add(evaluation)
+		session.commit()
+
+		code = model.SubmittedCode(evaluation=evaluation.id, code=data)
+		session.add(code)
+
+		if not module.autocorrect:
+			session.commit()
+			session.close()
+			return
 
 	def on_post(self, req, resp, id):
 		user = req.context['user']
@@ -193,13 +205,14 @@ class ModuleSubmit(object):
 
 		data = json.loads(req.stream.read())['content']
 
-		if not module.autocorrect:
+		if module.type == 'programming':
+			self._evaluate_code(req, module, user.id, resp, data)
 			return
 
 		if module.type == 'quiz':
-			result, report = quiz_evaluate(module.task, id, data)
+			result, report = quiz_evaluate(module.task, module.id, data)
 		elif module.type == 'sortable':
-			result, report = sortable_evaluate(module.task, id, data)
+			result, report = sortable_evaluate(module.task, module.id, data)
 
 		evaluation = model.Evaluation(user=user.id, module=module.id, points=(module.max_points if result else 0), full_report=report)
 		req.context['result'] = { 'result': 'correct' if result else 'incorrect' }

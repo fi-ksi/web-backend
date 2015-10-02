@@ -44,7 +44,12 @@ def points_per_module(task_id, user_id):
 		group_by(model.Evaluation.module).all()
 
 def points(task_id, user_id):
-	return sum(module.points for module in points_per_module(task_id, user_id) if module.points is not None)
+	ppm = points_per_module(task_id, user_id)
+
+	if len(ppm) == 0:
+		return None
+
+	return sum(module.points for module in ppm if module.points is not None)
 
 def to_json(task, user_id=None, currently_active=None):
 	max_points = sum([ module.max_points for module in task.modules ])

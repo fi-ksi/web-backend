@@ -4,3 +4,6 @@ def to_json(achievement):
 
 def ids_set(achievements):
 	return set([ achievement.id for achievement in achievements ])
+
+def ids_list(achievements):
+	return list(ids_set(achievements))

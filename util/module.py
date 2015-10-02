@@ -20,7 +20,7 @@ def to_json(module, module_scores):
 		points = module_score.points
 		break
 
-	module_json = _info_to_json(module, module.id if has_points else None)
+	module_json = _info_to_json(module, module.id if has_points and points is not None else None)
 
 	if has_points:
 		module_json['state'] = 'correct' if points == module.max_points else 'incorrect'
@@ -31,6 +31,8 @@ def to_json(module, module_scores):
 		code = util.programming.build(module.id)
 		module_json['code'] = code
 		module_json['default_code'] = code
+		if not module.autocorrect:
+			module_json['state'] = 'correct' if has_points else 'blank'
 	elif module.type == ModuleType.QUIZ:
 		module_json['questions'] = util.quiz.build(module.id)
 	elif module.type == ModuleType.SORTABLE:

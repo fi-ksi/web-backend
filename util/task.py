@@ -38,10 +38,11 @@ def max_points_dict():
 	return { task.id: int(task.points) for task in points_per_task }
 
 def points_per_module(task_id, user_id):
-	return { module.module: module.points for module in session.query(model.Evaluation.module, func.max(model.Evaluation.points).label('points')).\
-		join(model.Module, model.Evaluation.module == model.Module.id).\
+	return session.query(model.Module, \
+		func.max(model.Evaluation.points).label('points')).\
+		join(model.Evaluation, model.Evaluation.module == model.Module.id).\
 		filter(model.Module.task == task_id, model.Evaluation.user == user_id).\
-		group_by(model.Evaluation.module).all() }
+		group_by(model.Evaluation.module).all()
 
 def points(task_id, user_id):
-	return sum(points_per_module(task_id, user_id).values())
+	return sum(module.points for module in points_per_module(task_id, user_id) if module.points is not None)

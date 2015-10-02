@@ -64,6 +64,7 @@ def to_json(task, user_id=None, currently_active=None):
 		'title': task.title,
 		'author': task.author,
 		'category': task.category,
+		'details': task.id,
 		'intro': task.intro,
 		'max_score': sum([ module.max_points for module in task.modules ]),
 		'position': [ task.position_x, task.position_y ],

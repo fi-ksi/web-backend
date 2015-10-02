@@ -9,9 +9,23 @@ def modules_for_task(task_id):
 	return session.query(model.Module).filter(model.Module.task == task_id).all()
 
 def to_json(module, module_scores):
-	module_json = _info_to_json(module)
+	has_points = False
+	points = None
 
-	score = module.id if [ score for score in module_scores if score.Module.id == module.id ] else None
+	for module_score in module_scores:
+		if module_score.Module.id != module.id:
+			continue
+
+		has_points = True
+		points = module_score.points
+		break
+
+	module_json = _info_to_json(module, module.id if has_points else None)
+
+	if has_points:
+		module_json['state'] = 'correct' if points == module.max_points else 'incorrect'
+	else:
+		module_json['state'] = 'blank'
 
 	if module.type == ModuleType.PROGRAMMING:
 		code = util.programming.build(module.id)
@@ -21,6 +35,8 @@ def to_json(module, module_scores):
 		module_json['questions'] = util.quiz.build(module.id)
 	elif module.type == ModuleType.SORTABLE:
 		module_json['sortable_list'] = util.sortable.build(module.id)
+	elif module.type == ModuleType.GENERAL:
+		module_json['state'] = 'correct' if has_points else 'blank'
 
 	return module_json
 
@@ -32,8 +48,8 @@ def score_to_json(module_score):
 	}
 
 
-def _info_to_json(module):
-	return { 'id': module.id, 'type': module.type, 'name': module.name, 'description': module.description, 'autocorrect': module.autocorrect }
+def _info_to_json(module, score):
+	return { 'id': module.id, 'type': module.type, 'name': module.name, 'description': module.description, 'autocorrect': module.autocorrect, 'max_score': module.max_points, 'score': score }
 
 def _load_questions(module_id):
 	return session.query(model.QuizQuestion).filter(model.QuizQuestion.module == module_id).order_by(model.QuizQuestion.order).all()

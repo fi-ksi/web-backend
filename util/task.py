@@ -3,6 +3,7 @@ from sqlalchemy import func, distinct, or_
 
 from db import session
 import model
+import util
 
 class TaskStatus:
 	pass
@@ -46,3 +47,49 @@ def points_per_module(task_id, user_id):
 
 def points(task_id, user_id):
 	return sum(module.points for module in points_per_module(task_id, user_id) if module.points is not None)
+
+def score_to_json(task, module_scores):
+	return {
+		'id': task.id,
+		'reviewed_by': 1,
+		'thread': 2,
+		'score': 8,
+		"achievements": [ 1, 2 ],
+		'score_table': [ util.module.score_to_json(module_score) for module_score in module_scores ]
+	}
+def to_json():
+	max_points = sum([ module.max_points for module in task.modules ])
+
+	if not currently_active:
+		currently_active = util.task.currently_active(user_id)
+
+	is_active = True if task.id in currently_active else PrerequisitiesEvaluator(task.prerequisite_obj, currently_active).evaluate()
+
+	return {
+		'id': task.id,
+		'title': task.title,
+		'author': task.author,
+		'category': task.category,
+		'intro': task.intro,
+		'max_score': max_points,
+		'position': [ task.position_x, task.position_y ],
+		'time_published': task.time_published.isoformat(),
+		'time_deadline': task.time_deadline.isoformat(),
+		'state': 'done' if is_active else 'locked',
+		'prerequisities': [] if not task.prerequisite_obj else util.prerequisite.to_json(task.prerequisite_obj),
+		'picture_base': task.picture_base,
+		'picture_suffix': '.svg'
+	}
+
+
+def details_to_json(task):
+	return {
+		'id': task.id,
+		'body': task.body,
+		'thread': task.thread,
+		'time_published': task.time_published.isoformat(),
+		'time_deadline': task.time_deadline.isoformat(),
+		'modules': [ module.id for module in task.modules ],
+		'best_scores': [ 1 ],
+		'solution': 'Prehledne vysvetlene reseni prikladu. Cely priklad spocival v blabla',
+	}

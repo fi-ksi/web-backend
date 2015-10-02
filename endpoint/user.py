@@ -3,7 +3,7 @@ from sqlalchemy import func, distinct
 
 from db import session
 import model
-from achievement import achievements_ids
+import util
 
 DEFAULT_PROFILE_PICTURE = '/img/avatar-default.svg'
 PROFILE_PICTURE_URL = 'http://localhost:3000/images/profile/%d'
@@ -26,7 +26,7 @@ def _user_to_json(user):
 	if user.role == 'participant':
 		data['score'] =  get_overall_points(user.id)
 		data['tasks_num'] = 16
-		data['achievements'] = achievements_ids(user.achievements)
+		data['achievements'] = util.achievement.ids_set(user.achievements)
 	else:
 		data['nick_name'] = user.nick_name
 		data['tasks'] = [ task.id for task in user.tasks ]

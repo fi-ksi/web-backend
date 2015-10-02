@@ -46,15 +46,6 @@ def points_per_module(task_id, user_id):
 def points(task_id, user_id):
 	return sum(module.points for module in points_per_module(task_id, user_id) if module.points is not None)
 
-def score_to_json(task, module_scores):
-	return {
-		'id': task.id,
-		'reviewed_by': 1,
-		'thread': 2,
-		'score': 8,
-		"achievements": [ 1, 2 ],
-		'score_table': [ util.module.score_to_json(module_score) for module_score in module_scores ]
-	}
 def to_json(task, user_id=None, currently_active=None):
 	max_points = sum([ module.max_points for module in task.modules ])
 
@@ -79,8 +70,7 @@ def to_json(task, user_id=None, currently_active=None):
 		'picture_suffix': '.svg'
 	}
 
-
-def details_to_json(task):
+def details_to_json(task, achievements):
 	return {
 		'id': task.id,
 		'body': task.body,
@@ -90,4 +80,5 @@ def details_to_json(task):
 		'modules': [ module.id for module in task.modules ],
 		'best_scores': [ 1 ],
 		'solution': 'Prehledne vysvetlene reseni prikladu. Cely priklad spocival v blabla',
+		'achievements': [ achievement.id for achievement in achievements ]
 	}

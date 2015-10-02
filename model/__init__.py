@@ -18,3 +18,4 @@ from model.profile import Profile
 from model.evaluation import Evaluation
 from model.token import Token
 from model.submitted import SubmittedFile, SubmittedCode
+from model.user_achievement import UserAchievement

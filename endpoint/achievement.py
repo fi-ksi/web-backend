@@ -1,18 +1,13 @@
 from db import session
 import model
-
-def achievements_ids(achievements):
-	return set([ achievement.id for achievement in achievements ])
-
-def _achievement_to_json(achievement):
-	return { 'id': achievement.id, 'title': achievement.title, 'active': True, 'picture_active': 'img/achievements/' + achievement.code + '.svg' }
+import util
 
 class Achievement(object):
 
 	def on_get(self, req, resp, id):
 		achievement = session.query(model.Achievement).get(id)
 
-		req.context['result'] = { 'achievement': _achievement_to_json(achievement) }
+		req.context['result'] = { 'achievement': util.achievement.to_json(achievement) }
 
 
 class Achievements(object):
@@ -20,4 +15,4 @@ class Achievements(object):
 	def on_get(self, req, resp):
 		achievements = session.query(model.Achievement).all()
 
-		req.context['result'] = { 'achievements': [ _achievement_to_json(achievement) for achievement in achievements ] }
+		req.context['result'] = { 'achievements': [ util.achievement.to_json(achievement) for achievement in achievements ] }

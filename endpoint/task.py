@@ -33,10 +33,12 @@ class TaskDetails(object):
 			resp.status = falcon.HTTP_400
 			return
 
+		achievements = session.query(model.Achievement).join(model.UserAchievement).filter(model.UserAchievement.task_id == id, model.UserAchievement.user_id == user.id).all()
 		scores = util.task.points_per_module(id, user.id)
 
 		req.context['result'] = {
-			'taskDetails': util.task.details_to_json(task),
+			'taskDetails': util.task.details_to_json(task, achievements),
 			'modules': [ util.module.to_json(module, scores) for module in task.modules ],
-			'moduleScores': [ util.module.score_to_json(score) for score in scores]
+			'moduleScores': [ util.module.score_to_json(score) for score in scores],
+			'achievements': [ util.achievement.to_json(achievement) for achievement in achievements ]
 		}

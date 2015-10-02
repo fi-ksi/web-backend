@@ -27,12 +27,12 @@ class TaskDetails(object):
 
 	def on_get(self, req, resp, id):
 		user = req.context['user']
+		task = session.query(model.Task).get(id)
 
-		if int(id) not in util.task.currently_active(user.id):
+		if task.prerequisite is not None and int(id) not in util.task.currently_active(user.id):
 			resp.status = falcon.HTTP_400
 			return
 
-		task = session.query(model.Task).get(id)
 		scores = util.task.points_per_module(id, user.id)
 
 		req.context['result'] = {
@@ -40,4 +40,3 @@ class TaskDetails(object):
 			'modules': [ util.module.to_json(module, scores) for module in task.modules ],
 			'moduleScores': [ util.module.score_to_json(score) for score in scores]
 		}
-

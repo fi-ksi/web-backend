@@ -33,7 +33,7 @@ def _profile_to_json(user, profile):
 			'school_country': profile.school_country,
 			'school_finish': profile.school_finish,
 			'tshirt_size': profile.tshirt_size,
-			'achievements': util.achievement.ids_set(user.achievements),
+			'achievements': list(util.achievement.ids_set(user.achievements)),
 			'percentile': 69,
 			'score': points,
 			'seasons': 1.5,

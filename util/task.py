@@ -19,12 +19,10 @@ def after_deadline():
 	return { int(task.id) for task in session.query(model.Task).filter(model.Task.time_deadline < datetime.datetime.now() ).all() }
 
 def currently_active(user_id=None):
-	adeadline = after_deadline()
-
 	if user_id is None:
-		return adeadline
+		return []
 
-	return adeadline | set(fully_submitted(user_id).keys())
+	return after_deadline() | set(fully_submitted(user_id).keys())
 
 def max_points(task_id):
 	points = session.query(func.sum(model.Module.max_points).label('points')).\
@@ -57,13 +55,13 @@ def score_to_json(task, module_scores):
 		"achievements": [ 1, 2 ],
 		'score_table': [ util.module.score_to_json(module_score) for module_score in module_scores ]
 	}
-def to_json():
+def to_json(task, user_id=None, currently_active=None):
 	max_points = sum([ module.max_points for module in task.modules ])
 
 	if not currently_active:
 		currently_active = util.task.currently_active(user_id)
 
-	is_active = True if task.id in currently_active else PrerequisitiesEvaluator(task.prerequisite_obj, currently_active).evaluate()
+	is_active = True if task.id in currently_active else util.PrerequisitiesEvaluator(task.prerequisite_obj, currently_active).evaluate()
 
 	return {
 		'id': task.id,
@@ -71,7 +69,7 @@ def to_json():
 		'author': task.author,
 		'category': task.category,
 		'intro': task.intro,
-		'max_score': max_points,
+		'max_score': sum([ module.max_points for module in task.modules ]),
 		'position': [ task.position_x, task.position_y ],
 		'time_published': task.time_published.isoformat(),
 		'time_deadline': task.time_deadline.isoformat(),

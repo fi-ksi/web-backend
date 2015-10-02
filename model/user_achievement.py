@@ -11,3 +11,4 @@ class UserAchievement(Base):
 
 	user_id = Column(Integer, ForeignKey('users.id'), primary_key=True, nullable=False)
 	achievement_id = Column(Integer, ForeignKey('achievements.id'), primary_key=True, nullable=False)
+	task_id = Column(Integer, ForeignKey('tasks.id'), primary_key=True, nullable=False)

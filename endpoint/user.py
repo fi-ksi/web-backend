@@ -14,7 +14,7 @@ def _load_points_for_user(user_id):
 		group_by(model.Evaluation.module).all()
 
 def get_overall_points(user_id):
-	return sum([ item.points for item in _load_points_for_user(user_id) ])
+	return sum([ item.points for item in _load_points_for_user(user_id) if item.points is not None ])
 
 
 def get_profile_picture(user):

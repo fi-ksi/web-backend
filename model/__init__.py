@@ -6,7 +6,7 @@ from model.article import Article
 from model.achievement import Achievement
 from model.category import Category
 from model.post import Post
-from model.task import Task
+from model.task import Task, SolutionComment
 from model.prerequisite import Prerequisite, PrerequisiteType
 from model.module import Module, ModuleType
 from model.programming import Programming

@@ -51,6 +51,11 @@ def points(task_id, user_id):
 
 	return sum(module.points for module in ppm if module.points is not None)
 
+def comment_thread(task_id, user_id):
+	query = session.query(model.SolutionComment).filter(model.SolutionComment.task == task_id, model.SolutionComment.user == user_id).first()
+
+	return query.thread if query is not None else None
+
 def to_json(task, user_id=None, currently_active=None):
 	max_points = sum([ module.max_points for module in task.modules ])
 
@@ -76,14 +81,14 @@ def to_json(task, user_id=None, currently_active=None):
 		'picture_suffix': '.svg'
 	}
 
-def details_to_json(task, achievements, best_scores):
+def details_to_json(task, achievements, best_scores, comment_thread=None):
 	return {
 		'id': task.id,
 		'body': task.body,
 		'thread': task.thread,
 		'modules': [ module.id for module in task.modules ],
 		'best_scores': [ best_score.User.id for best_score in best_scores ],
-		'comment': 1,
+		'comment': comment_thread,
 		'solution': 'Prehledne vysvetlene reseni prikladu. Cely priklad spocival v blabla',
 		'achievements': [ achievement.id for achievement in achievements ]
 	}

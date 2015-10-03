@@ -29,3 +29,14 @@ class Task(Base):
 
 	prerequisite_obj = relationship('Prerequisite', primaryjoin='Task.prerequisite==Prerequisite.id', uselist=False)
 	modules = relationship('Module', primaryjoin='Task.id==Module.task', order_by='Module.order')
+
+class SolutionComment(Base):
+	__tablename__ = 'solution_comments'
+	__table_args__ = {
+		'mysql_engine': 'InnoDB',
+		'mysql_charset': 'utf8'
+	}
+
+	thread = Column(Integer, ForeignKey('threads.id'), nullable=False, primary_key=True)
+	user = Column(Integer, ForeignKey('users.id'), nullable=False, primary_key=True)
+	task = Column(Integer, ForeignKey('tasks.id'), nullable=False, primary_key=True)

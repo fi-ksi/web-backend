@@ -1,7 +1,7 @@
 from db import session
 import model
 
-def to_json(thread, user_id):
+def to_json(thread, user_id=None):
 	count = session.query(model.Post).filter(model.Post.thread == thread.id).count()
 	unread = count_unread(user_id, thread.id)
 	root_posts = [ post.id for post in session.query(model.Post).filter(model.Post.thread == thread.id, model.Post.parent == None) ]

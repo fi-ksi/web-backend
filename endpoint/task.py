@@ -28,6 +28,7 @@ class TaskDetails(object):
 	def on_get(self, req, resp, id):
 		user = req.context['user']
 		task = session.query(model.Task).get(id)
+		threads = [ task.thread ]
 
 		if task.prerequisite is not None and int(id) not in util.task.currently_active(user.id):
 			resp.status = falcon.HTTP_400
@@ -40,5 +41,6 @@ class TaskDetails(object):
 			'taskDetails': util.task.details_to_json(task, achievements),
 			'modules': [ util.module.to_json(module, scores) for module in task.modules ],
 			'moduleScores': [ util.module.score_to_json(score) for score in scores if score.points is not None ],
-			'achievements': [ util.achievement.to_json(achievement) for achievement in achievements ]
+			'achievements': [ util.achievement.to_json(achievement) for achievement in achievements ],
+			'threads': [ util.thread.to_json(session.query(model.Thread).get(thread_id), user.id) for thread_id in threads if thread_id is not None ]
 		}

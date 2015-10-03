@@ -1,3 +1,4 @@
+import falcon
 import json
 from sqlalchemy import and_, text
 
@@ -11,6 +12,10 @@ class Thread(object):
 		user_id = req.context['user'].id if req.context['user'].is_logged_in() else None
 
 		if not user_id:
+			return
+
+		if session.query(model.Thread).get(id) is None:
+			status = falcon.HTTP_400
 			return
 
 		visit = util.thread.get_visit(user_id, id)

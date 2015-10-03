@@ -1,5 +1,5 @@
 import datetime
-from sqlalchemy import func, distinct, or_
+from sqlalchemy import func, distinct, or_, desc
 
 from db import session
 import model
@@ -76,14 +76,33 @@ def to_json(task, user_id=None, currently_active=None):
 		'picture_suffix': '.svg'
 	}
 
-def details_to_json(task, achievements):
+def details_to_json(task, achievements, best_scores):
 	return {
 		'id': task.id,
 		'body': task.body,
 		'thread': task.thread,
 		'modules': [ module.id for module in task.modules ],
-		'best_scores': [ 1 ],
+		'best_scores': [ best_score.User.id for best_score in best_scores ],
 		'comment': 1,
 		'solution': 'Prehledne vysvetlene reseni prikladu. Cely priklad spocival v blabla',
 		'achievements': [ achievement.id for achievement in achievements ]
+	}
+
+def best_scores(task_id):
+	per_modules = session.query(model.User.id.label('user_id'), \
+			func.max(model.Evaluation.points).label('points')).\
+			join(model.Evaluation, model.Evaluation.user == model.User.id).\
+			filter(model.Module.task == 1, 'points' is not None).\
+			group_by(model.Evaluation.module).subquery()
+
+	return session.query(model.User, func.sum(per_modules.c.points).label('sum')).join(per_modules, per_modules.c.user_id == model.User.id).group_by(per_modules.c.user_id).order_by(desc('sum')).slice(0, 5).all()
+
+def best_score_to_json(best_score):
+	achievements = session.query(model.UserAchievement).filter(model.UserAchievement.user_id == best_score.User.id).all()
+
+	return {
+		'id': best_score.User.id,
+		'user': best_score.User.id,
+		'achievements': [ achievement.achievement_id for achievement in achievements ],
+		'score': int(best_score.sum)
 	}

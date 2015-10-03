@@ -81,10 +81,9 @@ def details_to_json(task, achievements):
 		'id': task.id,
 		'body': task.body,
 		'thread': task.thread,
-		'time_published': task.time_published.isoformat(),
-		'time_deadline': task.time_deadline.isoformat(),
 		'modules': [ module.id for module in task.modules ],
 		'best_scores': [ 1 ],
+		'comment': 1,
 		'solution': 'Prehledne vysvetlene reseni prikladu. Cely priklad spocival v blabla',
 		'achievements': [ achievement.id for achievement in achievements ]
 	}

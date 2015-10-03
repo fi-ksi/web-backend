@@ -4,41 +4,10 @@ from sqlalchemy import func
 from db import session
 import model
 import util
-from user import get_profile_picture, get_overall_points
 import multipart
 
 ALLOWED_MIME_TYPES = { 'image/jpeg': 'jpg', 'image/pjpeg': 'jpg', 'image/png': 'png', 'image/gif': 'gif' }
 THUMB_SIZE = 263, 263
-
-def _profile_to_json(user, profile):
-	points = get_overall_points(user.id)
-	successful = round((float(points)/sum(util.task.max_points_dict().values())) * 100)
-
-	return { 'profile': [ {
-			'id': user.id,
-			'signed_in': True,
-			'first_name': user.first_name,
-			'last_name': user.last_name,
-			'profile_picture': get_profile_picture(user),
-			'short_info': user.short_info,
-			'email': user.email,
-			'addr_street': profile.addr_street,
-			'addr_city': profile.addr_city,
-			'addr_zip': profile.addr_zip,
-			'addr_country': profile.addr_country,
-			'school_name': profile.school_name,
-			'school_street': profile.school_street,
-			'school_city': profile.school_city,
-			'school_zip': profile.school_zip,
-			'school_country': profile.school_country,
-			'school_finish': profile.school_finish,
-			'tshirt_size': profile.tshirt_size,
-			'achievements': list(util.achievement.ids_set(user.achievements)),
-			'percentile': 69,
-			'score': points,
-			'seasons': 1.5,
-			'successful': int(successful),
-			'results': [ 1, 2] } ] }
 
 class Profile(object):
 
@@ -73,7 +42,7 @@ class Profile(object):
 		session.add(profile)
 		session.commit()
 
-		req.context['result'] = _profile_to_json(user, profile)
+		req.context['result'] = util.profile.to_json(user, profile)
 		session.close()
 
 
@@ -86,7 +55,7 @@ class Profile(object):
 
 		user, profile = session.query(model.User).filter(model.User.id == userinfo.get_id()).outerjoin(model.Profile, model.User.id == model.Profile.user_id).add_entity(model.Profile).first()
 
-		req.context['result'] = _profile_to_json(user, profile)
+		req.context['result'] = util.profile.to_json(user, profile)
 
 class PictureUploader(object):
 

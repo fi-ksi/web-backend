@@ -5,9 +5,6 @@ from db import session
 import model
 import util
 
-DEFAULT_PROFILE_PICTURE = '/img/avatar-default.svg'
-PROFILE_PICTURE_URL = 'http://localhost:3000/images/profile/%d'
-
 def _load_points_for_user(user_id):
 	return session.query(model.Evaluation.module, func.max(model.Evaluation.points).label('points')).\
 		filter(model.Evaluation.user == user_id).\
@@ -16,12 +13,8 @@ def _load_points_for_user(user_id):
 def get_overall_points(user_id):
 	return sum([ item.points for item in _load_points_for_user(user_id) if item.points is not None ])
 
-
-def get_profile_picture(user):
-	return PROFILE_PICTURE_URL % user.id if user.profile_picture and os.path.isfile(user.profile_picture) else DEFAULT_PROFILE_PICTURE,
-
 def _user_to_json(user):
-	data = { 'id': user.id, 'first_name': user.first_name, 'last_name': user.last_name, 'profile_picture': get_profile_picture(user) }
+	data = { 'id': user.id, 'first_name': user.first_name, 'last_name': user.last_name, 'profile_picture': util.user.get_profile_picture(user) }
 
 	if user.role == 'participant':
 		data['score'] =  get_overall_points(user.id)

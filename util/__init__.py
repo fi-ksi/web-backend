@@ -12,6 +12,7 @@ import programming
 import achievement
 import user
 import score
+import profile
 
 def decode_form_data(req):
 	ctype, pdict = cgi.parse_header(req.content_type)

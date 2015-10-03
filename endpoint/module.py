@@ -126,8 +126,9 @@ class ModuleSubmit(object):
 		elif module.type == ModuleType.SORTABLE:
 			result, report = util.sortable.evaluate(module.task, module.id, data)
 
-		evaluation = model.Evaluation(user=user.id, module=module.id, points=(module.max_points if result else 0), full_report=report)
-		req.context['result'] = { 'result': 'correct' if result else 'incorrect' }
+		points = module.max_points if result else 0
+		evaluation = model.Evaluation(user=user.id, module=module.id, points=points, full_report=report)
+		req.context['result'] = { 'result': 'correct' if result else 'incorrect', 'score': points }
 
 		session.add(evaluation)
 		session.commit()

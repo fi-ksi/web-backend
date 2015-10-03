@@ -33,8 +33,13 @@ class Thread(object):
 
 	def on_get(self, req, resp, id):
 		user_id = req.context['user'].id if req.context['user'].is_logged_in() else None
+		thread = session.query(model.Thread).get(id)
 
-		req.context['result'] = { 'thread': util.thread.to_json(session.query(model.Thread).get(id), user_id) }
+		if not thread or not thread.public:
+			resp.status = falcon.HTTP_400
+			return
+
+		req.context['result'] = { 'thread': util.thread.to_json(thread, user_id) }
 		session.close()
 
 
@@ -57,5 +62,5 @@ class Threads(object):
 	def on_get(self, req, resp):
 		user_id = req.context['user'].id if req.context['user'].is_logged_in() else None
 
-		req.context['result'] = { 'threads': [ util.thread.to_json(thread, user_id) for thread in session.query(model.Thread).all() ] }
+		req.context['result'] = { 'threads': [ util.thread.to_json(thread, user_id) for thread in session.query(model.Thread).filter(model.Thread.public == True).all() ] }
 		session.close()

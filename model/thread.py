@@ -1,5 +1,5 @@
 import datetime
-from sqlalchemy import Column, Integer, String, ForeignKey, text
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, text
 from sqlalchemy.orm import relationship
 
 from sqlalchemy.types import TIMESTAMP
@@ -15,6 +15,7 @@ class Thread(Base):
 
 	id = Column(Integer, primary_key=True)
 	title = Column(String(1000))
+	public = Column(Boolean, nullable=False, default=True, server_default=text('TRUE'))
 
 class ThreadVisit(Base):
 	__tablename__ = 'threads_visits'

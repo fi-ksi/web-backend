@@ -1,3 +1,4 @@
+import os
 from sqlalchemy import func
 
 from db import session

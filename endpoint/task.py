@@ -37,14 +37,21 @@ class TaskDetails(object):
 		achievements = session.query(model.Achievement).join(model.UserAchievement).filter(model.UserAchievement.task_id == id, model.UserAchievement.user_id == user.id).all()
 		scores = util.task.points_per_module(id, user.id)
 		best_scores = util.task.best_scores(id)
+
 		comment_thread = util.task.comment_thread(id, user.id)
-		threads = [ task.thread, comment_thread ]
+		thread_ids = { task.thread, comment_thread }
+		threads = [ session.query(model.Thread).get(thread_id) for thread_id in thread_ids if thread_id is not None ]
+		posts = []
+		for thread in threads:
+			posts += thread.posts
 
 		req.context['result'] = {
 			'taskDetails': util.task.details_to_json(task, achievements, best_scores, comment_thread),
 			'modules': [ util.module.to_json(module, scores) for module in task.modules ],
 			'moduleScores': [ util.module.score_to_json(score) for score in scores if score.points is not None ],
 			'achievements': [ util.achievement.to_json(achievement) for achievement in achievements ],
-			'threads': [ util.thread.to_json(session.query(model.Thread).get(thread_id), user.id) for thread_id in threads if thread_id is not None ],
-			'userScores': [ util.task.best_score_to_json(best_score) for best_score in best_scores ]
+			'userScores': [ util.task.best_score_to_json(best_score) for best_score in best_scores ],
+			'threads': [ util.thread.to_json(thread, user.id) for thread in threads ],
+			'threadDetails': [ util.thread.details_to_json(thread) for thread in threads ],
+			'posts': [util.post.to_json(post, user.id) for post in posts ]
 		}

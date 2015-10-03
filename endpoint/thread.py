@@ -64,3 +64,22 @@ class Threads(object):
 
 		req.context['result'] = { 'threads': [ util.thread.to_json(thread, user_id) for thread in session.query(model.Thread).filter(model.Thread.public == True).all() ] }
 		session.close()
+
+
+class ThreadDetails(object):
+
+	def on_get(self, req, resp, id):
+		user = req.context['user']
+		thread = session.query(model.Thread).get(id)
+
+		if not thread or not thread.public:
+			resp.status = falcon.HTTP_400
+			return
+
+		last_visit = util.thread.get_visit(thread.id, user.id)
+
+		req.context['result'] = {
+			'threadDetails': util.thread.details_to_json(thread),
+			'posts': [ util.post.to_json(post, user.id, last_visit) for post in thread.posts ]
+		}
+		session.close()

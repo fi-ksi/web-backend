@@ -6,17 +6,6 @@ import util
 
 from thread import Thread
 
-def _post_to_json(post, reactions, user_id):
-	if user_id:
-		visit = session.query(model.ThreadVisit).\
-			filter(model.ThreadVisit.user == user_id, model.ThreadVisit.thread == post.thread, model.ThreadVisit.last_last_visit.isnot(None)).first()
-		is_new = True if not visit else visit.last_last_visit < post.published_at
-	else:
-		is_new = False
-
-	return { 'id': post.id, 'thread': post.thread, 'author': post.author, 'body': post.body,
-		'published_at': post.published_at.isoformat(), 'reaction': reactions, 'is_new': is_new }
-
 class Post(object):
 
 	def on_put(self, req, resp, id):
@@ -26,13 +15,13 @@ class Post(object):
 		user_id = req.context['user'].get_id() if req.context['user'].is_logged_in() else None
 
 		post = session.query(model.Post).get(id)
-		reactions = [ inst.id for inst in session.query(model.Post).filter(model.Post.parent == id) ]
 
-		req.context['result'] = { 'post': _post_to_json(post, reactions, user_id) }
+		req.context['result'] = { 'post': util.post.to_json(post, user_id) }
 
 
 class Posts(object):
 
+	#TODO: Zabezpecit
 	def on_post(self, req, resp):
 		if not req.context['user'].is_logged_in():
 			resp.status = falcon.HTTP_400
@@ -45,6 +34,6 @@ class Posts(object):
 		session.add(post)
 		session.commit()
 
-		req.context['result'] = { 'post': _post_to_json(post, [], user_id) }
+		req.context['result'] = { 'post': util.post.to_json(post, user_id) }
 
 		session.close()

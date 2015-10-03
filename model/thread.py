@@ -17,6 +17,8 @@ class Thread(Base):
 	title = Column(String(1000))
 	public = Column(Boolean, nullable=False, default=True, server_default=text('TRUE'))
 
+	posts = relationship('Post', primaryjoin='Thread.id==Post.thread')
+
 class ThreadVisit(Base):
 	__tablename__ = 'threads_visits'
 	__table_args__ = {

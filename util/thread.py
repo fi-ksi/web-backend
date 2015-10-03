@@ -2,15 +2,22 @@ from db import session
 import model
 
 def to_json(thread, user_id=None):
-	count = session.query(model.Post).filter(model.Post.thread == thread.id).count()
+	count = len(thread.posts)
 	unread = count_unread(user_id, thread.id)
-	root_posts = [ post.id for post in session.query(model.Post).filter(model.Post.thread == thread.id, model.Post.parent == None) ]
 
 	return {
 		'id': thread.id,
 		'title': thread.title,
 		'unread': unread if unread is not None else count,
 		'posts_count': count,
+		'details': thread.id
+	}
+
+def details_to_json(thread):
+	root_posts = [ post.id for post in session.query(model.Post).filter(model.Post.thread == thread.id, model.Post.parent == None) ]
+
+	return {
+		'id': thread.id,
 		'root_posts': root_posts
 	}
 

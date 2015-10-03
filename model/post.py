@@ -2,6 +2,7 @@ import datetime
 
 from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey, text
 from sqlalchemy.types import TIMESTAMP
+from sqlalchemy.orm import relationship
 
 from . import Base
 from thread import Thread
@@ -19,3 +20,5 @@ class Post(Base):
 	body = Column(Text, nullable=False)
 	published_at = Column(TIMESTAMP, nullable=False, default=datetime.datetime.utcnow, server_default=text('CURRENT_TIMESTAMP'))
 	parent = Column(Integer, ForeignKey(__tablename__ + '.id'))
+
+	reactions = relationship('Post')

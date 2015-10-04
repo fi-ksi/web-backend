@@ -118,7 +118,7 @@ def best_scores(task_id):
 	per_modules = session.query(model.User.id.label('user_id'), \
 			func.max(model.Evaluation.points).label('points')).\
 			join(model.Evaluation, model.Evaluation.user == model.User.id).\
-			filter(model.Module.task == 1, 'points' is not None).\
+			filter(model.Module.task == task_id, 'points' is not None).\
 			group_by(model.Evaluation.module).subquery()
 
 	return session.query(model.User, func.sum(per_modules.c.points).label('sum')).join(per_modules, per_modules.c.user_id == model.User.id).group_by(per_modules.c.user_id).order_by(desc('sum')).slice(0, 5).all()

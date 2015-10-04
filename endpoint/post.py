@@ -21,15 +21,38 @@ class Post(object):
 
 class Posts(object):
 
-	#TODO: Zabezpecit
 	def on_post(self, req, resp):
 		if not req.context['user'].is_logged_in():
 			resp.status = falcon.HTTP_400
 			return
 
-		user_id = req.context['user'].get_id()
+		user_id = req.context['user'].id
 		data = json.loads(req.stream.read())['post']
-		post = model.Post(thread=data['thread'], author=user_id, body=data['body'], parent=data['parent'])
+
+		thread_id = data['thread']
+		thread = session.query(model.Thread).get(thread_id)
+
+		if thread is None:
+			resp.status = falcon.HTTP_400
+			return
+
+		if not thread.public:
+			task_thread = session.query(model.Task).filter(model.Task.thread == thread_id).first()
+			if task_thread and util.task.status(task_thread, user_id) == util.TaskStatus.LOCKED:
+				resp.status = falcon.HTTP_400
+				return
+
+			solution_thread = session.query(model.SolutionComment).filter(model.SolutionComment.thread == thread_id, model.SolutionComment.user == user_id).first()
+			if not solution_thread:
+				resp.status = falcon.HTTP_400
+				return
+
+		parent = data['parent']
+		if not session.query(model.Post).filter(model.Post.id == parent, model.Post.thread == thread_id).first():
+			resp.status = falcon.HTTP_400
+			return
+
+		post = model.Post(thread=thread_id, author=user_id, body=data['body'], parent=parent)
 
 		session.add(post)
 		session.commit()

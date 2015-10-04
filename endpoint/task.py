@@ -31,8 +31,9 @@ class TaskDetails(object):
 	def on_get(self, req, resp, id):
 		user = req.context['user']
 		task = session.query(model.Task).get(id)
+		status = util.task.status(task, user.id)
 
-		if task.prerequisite is not None and util.task.status(task, user.id) == util.TaskStatus.LOCKED:
+		if task.prerequisite is not None and status == util.TaskStatus.LOCKED:
 			resp.status = falcon.HTTP_400
 			return
 
@@ -48,7 +49,7 @@ class TaskDetails(object):
 			posts += thread.posts
 
 		req.context['result'] = {
-			'taskDetails': util.task.details_to_json(task, achievements, best_scores, comment_thread),
+			'taskDetails': util.task.details_to_json(task, status, achievements, best_scores, comment_thread),
 			'modules': [ util.module.to_json(module, scores) for module in task.modules ],
 			'moduleScores': [ util.module.score_to_json(score) for score in scores if score.points is not None ],
 			'achievements': [ util.achievement.to_json(achievement) for achievement in achievements ],

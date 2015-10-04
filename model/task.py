@@ -19,6 +19,7 @@ class Task(Base):
 	prerequisite = Column(Integer, ForeignKey('prerequisities.id'), nullable=True)
 	intro = Column(String(500), nullable=False)
 	body = Column(Text, nullable=False)
+	solution = Column(Text, nullable=True)
 	position_x = Column(Integer, nullable=False, default=0, server_default="0")
 	position_y = Column(Integer, nullable=False, default=0, server_default="0")
 	thread = Column(Integer, ForeignKey('threads.id'), nullable=False)

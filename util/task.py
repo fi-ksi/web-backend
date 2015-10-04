@@ -101,7 +101,7 @@ def to_json(task, user_id=None, adeadline=None, fsubmitted=None):
 		'picture_suffix': '.svg'
 	}
 
-def details_to_json(task, achievements, best_scores, comment_thread=None):
+def details_to_json(task, status, achievements, best_scores, comment_thread=None):
 	return {
 		'id': task.id,
 		'body': task.body,
@@ -109,8 +109,7 @@ def details_to_json(task, achievements, best_scores, comment_thread=None):
 		'modules': [ module.id for module in task.modules ],
 		'best_scores': [ best_score.User.id for best_score in best_scores ],
 		'comment': comment_thread,
-		#TODO: Solution do DB
-		'solution': 'Prehledne vysvetlene reseni prikladu. Cely priklad spocival v blabla',
+		'solution': task.solution if status == TaskStatus.DONE or task.time_deadline < datetime.datetime.now() else None,
 		'achievements': [ achievement.id for achievement in achievements ]
 	}
 

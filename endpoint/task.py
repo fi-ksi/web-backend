@@ -8,9 +8,10 @@ import util
 class Task(object):
 
 	def on_get(self, req, resp, id):
+		user = req.context['user']
 		task = session.query(model.Task).get(id)
 
-		req.context['result'] = { 'task': util.task.to_json(task) }
+		req.context['result'] = { 'task': util.task.to_json(task, user.id) }
 
 
 class Tasks(object):
@@ -19,9 +20,10 @@ class Tasks(object):
 		user = req.context['user']
 		tasks = session.query(model.Task).all()
 
-		currently_active = util.task.currently_active(user.id)
+		adeadline = util.task.after_deadline()
+		fsubmitted = util.task.fully_submitted(user.id)
 
-		req.context['result'] = { 'tasks': [ util.task.to_json(task, currently_active=currently_active) for task in tasks ] }
+		req.context['result'] = { 'tasks': [ util.task.to_json(task, user.id, adeadline, fsubmitted) for task in tasks ] }
 
 
 class TaskDetails(object):
@@ -30,7 +32,7 @@ class TaskDetails(object):
 		user = req.context['user']
 		task = session.query(model.Task).get(id)
 
-		if task.prerequisite is not None and int(id) not in util.task.currently_active(user.id):
+		if task.prerequisite is not None and util.task.status(task, user.id) == util.TaskStatus.LOCKED:
 			resp.status = falcon.HTTP_400
 			return
 

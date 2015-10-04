@@ -2,6 +2,7 @@ import cgi
 
 from auth import UserInfo
 from prerequisite import PrerequisitiesEvaluator
+from task import TaskStatus
 
 import module
 import task

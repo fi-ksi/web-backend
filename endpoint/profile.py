@@ -11,6 +11,7 @@ THUMB_SIZE = 263, 263
 
 class Profile(object):
 
+	#TODO: Realne ukladani dat
 	def on_put(self, req, resp):
 		userinfo = req.context['user']
 

@@ -9,6 +9,7 @@ class Registration(object):
 	def on_options(self, req, resp):
 		return
 
+	#TODO: Realne ukladani dat
 	def on_post(self, req, resp):
 		data = json.loads(req.stream.read())
 

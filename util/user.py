@@ -27,7 +27,7 @@ def to_json(user):
 
 	if user.role == 'participant':
 		data['score'] =  sum_points(user.id)
-		data['tasks_num'] = 16
+		data['tasks_num'] = len(util.task.fully_submitted(user.id))
 		data['achievements'] = list(util.achievement.ids_set(user.achievements))
 	else:
 		data['nick_name'] = user.nick_name

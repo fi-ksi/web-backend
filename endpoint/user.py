@@ -33,5 +33,9 @@ class Users(object):
 			users = users.filter(model.User.role == 'participant')
 
 		users = users.all()
+		users_json = [ util.user.to_json(user) for user in users ]
 
-		req.context['result'] = { "users": [ util.user.to_json(user) for user in users ] }
+		if filter == 'participants':
+			users_json = sorted(users_json, key=lambda user: user['score'], reverse=True)
+
+		req.context['result'] = { "users": users_json }

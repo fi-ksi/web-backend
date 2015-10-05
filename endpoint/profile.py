@@ -51,7 +51,7 @@ class Profile(object):
 		userinfo = req.context['user']
 
 		if not userinfo.is_logged_in():
-			resp.status = falcon.HTTP_400
+			req.context['result'] = util.profile.fake_profile()
 			return
 
 		user, profile = session.query(model.User).filter(model.User.id == userinfo.get_id()).outerjoin(model.Profile, model.User.id == model.Profile.user_id).add_entity(model.Profile).first()

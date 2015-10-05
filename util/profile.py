@@ -2,6 +2,9 @@ from db import session
 import model
 import util
 
+def fake_profile():
+	return { 'profile': { 'id': 0, 'signed_in': False } }
+
 def to_json(user, profile):
 	task_scores = { task: points for task, points in util.user.points_per_task(user.id).items() if points is not None }
 	tasks = { task.id: task for task in session.query(model.Task) }

@@ -62,8 +62,12 @@ def evaluate(task, module, data):
 def run(module, user_id, data):
 	programming = session.query(model.Programming).filter(model.Programming.module == module.id).first()
 	report = ''
+	log = model.CodeExecution(module=module.id, user=user_id, code=data)
 
-	dir = 'tmp/module_%d/user_%d' % (programming.id, user_id)
+	session.add(log)
+	session.commit()
+
+	dir = os.path.join('data', 'code_executions', 'execution_%d' % log.id)
 	try:
 		os.makedirs(dir)
 	except OSError:
@@ -137,11 +141,14 @@ def _exec(wd, sandbox_dir, script_name, stdin, report):
 	exception = None
 	stdout_path = os.path.join(wd, 'sandbox.stdout')
 	stderr_path = os.path.join(wd, 'sandbox.stderr')
+	log_path = os.path.join(wd, 'sandbox.log')
 
 	try:
 		stdout = open(stdout_path, 'w')
 		stderr = open(stderr_path, 'w')
 		sandproc = PyPySandboxedProc('/home/wormsik/src/pypy/pypy/goal/pypy-c', [ '/tmp/' + script_name ], tmpdir=sandbox_dir)
+		sandproc.setlogfile(log_path)
+
 		retcode = sandproc.interact(stdout=stdout, stderr=stderr)
 		stdout.close()
 		stderr.close()

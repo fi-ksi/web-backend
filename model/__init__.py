@@ -9,7 +9,7 @@ from model.post import Post
 from model.task import Task, SolutionComment
 from model.prerequisite import Prerequisite, PrerequisiteType
 from model.module import Module, ModuleType
-from model.programming import Programming
+from model.programming import Programming, CodeExecution
 from model.quiz import QuizQuestion, QuizOption
 from model.sortable import Sortable
 from model.thread import Thread, ThreadVisit

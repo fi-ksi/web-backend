@@ -19,17 +19,11 @@ class Image(object):
 
 			image = user.profile_picture
 		elif context == 'codeExecution':
-			user = req.context['user']
-
-			#if not user.is_logged_in():
-				#resp.status = falcon.HTTP_400
-				#return
-
 			execution = session.query(model.CodeExecution).get(id)
 
-			#if not execution or execution.user != user.id:
-				#resp.status = falcon.HTTP_400
-				#return
+			if not execution:
+				resp.status = falcon.HTTP_400
+				return
 
 			if not req.get_param('file'):
 				resp.status = falcon.HTTP_400
@@ -37,6 +31,10 @@ class Image(object):
 
 			image = os.path.join(util.programming.code_execution_dir(execution.id), os.path.basename(req.get_param('file')))
 		else:
+			resp.status = falcon.HTTP_400
+			return
+
+		if not os.path.isfile(image):
 			resp.status = falcon.HTTP_400
 			return
 

@@ -3,6 +3,7 @@ import traceback
 import os
 import shutil
 import json
+import ast
 from pypy_interact import PyPySandboxedProc
 
 from db import session
@@ -47,7 +48,7 @@ def evaluate(task, module, data):
 	script = os.path.join(sandbox_dir, 'code.py')
 	shutil.copyfile(raw_code, script)
 
-	(success, report, sandbox_stdout, sandbox_stderr) = _exec(dir, sandbox_dir, 'code.py', None, report)
+	(success, report, sandbox_stdout, sandbox_stderr) = _exec(dir, sandbox_dir, 'code.py', programming.args, None, report)
 	if not success:
 		print report
 		return
@@ -95,7 +96,7 @@ def run(module, user_id, data):
 	script = os.path.join(sandbox_dir, 'code.py')
 	shutil.copyfile(raw_code, script)
 
-	success, report, sandbox_stdout, sandbox_stderr = _exec(dir, sandbox_dir, 'code.py', None, report)
+	success, report, sandbox_stdout, sandbox_stderr = _exec(dir, sandbox_dir, 'code.py', programming.args, None, report)
 
 	trigger_data = None
 	if programming.post_trigger_script:
@@ -150,16 +151,17 @@ def _merge(wd, merge_script, code, code_merged, report):
 
 	return (status == 'y', report)
 
-def _exec(wd, sandbox_dir, script_name, stdin, report):
+def _exec(wd, sandbox_dir, script_name, args, stdin, report):
 	status = 'y'
 	exception = None
 	stdout_path = os.path.join(wd, 'sandbox.stdout')
 	stderr_path = os.path.join(wd, 'sandbox.stderr')
+	args = [ '/tmp/' + script_name ] + ast.literal_eval(args) if args else []
 
 	try:
 		stdout = open(stdout_path, 'w')
 		stderr = open(stderr_path, 'w')
-		sandproc = PyPySandboxedProc(os.path.join(os.path.expanduser('~'), 'pypy', 'pypy', 'goal', 'pypy-c'), [ '/tmp/' + script_name ], tmpdir=sandbox_dir, debug=False)
+		sandproc = PyPySandboxedProc(os.path.join(os.path.expanduser('~'), 'pypy', 'pypy', 'goal', 'pypy-c'), args, tmpdir=sandbox_dir, debug=False)
 
 		retcode = sandproc.interact(stdout=stdout, stderr=stderr)
 		stdout.close()

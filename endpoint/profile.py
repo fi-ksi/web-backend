@@ -1,5 +1,6 @@
-import json, falcon, magic, tempfile, shutil, Image, os
+import json, falcon, magic, tempfile, shutil, os
 from sqlalchemy import func
+from PIL import Image
 
 from db import session
 import model

@@ -11,4 +11,9 @@ class Programming(Base):
 
 	id = Column(Integer, primary_key=True)
 	module = Column(Integer, ForeignKey('modules.id'), nullable=False)
-	default_code = Column(Text, nullable=True)
+	default_code = Column(Text)
+	merge_script = Column(String(255))
+	stdin = Column(String(255))
+	args = Column(String(255))
+	timeout = Column(Integer)
+	check_script = Column(String(255))

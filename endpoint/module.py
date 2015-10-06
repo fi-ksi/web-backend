@@ -102,6 +102,8 @@ class ModuleSubmit(object):
 			session.close()
 			return
 
+		util.programming.evaluate(module.task, module.id, data)
+
 	def on_post(self, req, resp, id):
 		user = req.context['user']
 

@@ -43,6 +43,11 @@ def to_json(user):
 		data['score'] =  sum_points(user.id)
 		data['tasks_num'] = len(util.task.fully_submitted(user.id))
 		data['achievements'] = list(util.achievement.ids_set(user.achievements))
+
+		profile = session.query(model.Profile).get(user.id)
+		data['addr_country'] = profile.addr_country
+		data['school_name'] = profile.school_name
+		data['seasons'] = 1
 	else:
 		data['nick_name'] = user.nick_name
 		data['tasks'] = [ task.id for task in user.tasks ]

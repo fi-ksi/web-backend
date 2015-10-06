@@ -48,7 +48,7 @@ def evaluate(task, module, data):
 	script = os.path.join(sandbox_dir, 'code.py')
 	shutil.copyfile(raw_code, script)
 
-	(success, report, sandbox_stdout, sandbox_stderr) = _exec(dir, sandbox_dir, 'code.py', programming.args, None, report)
+	(success, report, sandbox_stdout, sandbox_stderr) = _exec(dir, sandbox_dir, 'code.py', programming.args, programming.stdin, report)
 	if not success:
 		print report
 		return
@@ -96,7 +96,7 @@ def run(module, user_id, data):
 	script = os.path.join(sandbox_dir, 'code.py')
 	shutil.copyfile(raw_code, script)
 
-	success, report, sandbox_stdout, sandbox_stderr = _exec(dir, sandbox_dir, 'code.py', programming.args, None, report)
+	success, report, sandbox_stdout, sandbox_stderr = _exec(dir, sandbox_dir, 'code.py', programming.args, programming.stdin, report)
 
 	trigger_data = None
 	if programming.post_trigger_script:
@@ -161,9 +161,10 @@ def _exec(wd, sandbox_dir, script_name, args, stdin, report):
 	try:
 		stdout = open(stdout_path, 'w')
 		stderr = open(stderr_path, 'w')
+		stdin = open(stdin) if stdin else sys.stdin
 		sandproc = PyPySandboxedProc(os.path.join(os.path.expanduser('~'), 'pypy', 'pypy', 'goal', 'pypy-c'), args, tmpdir=sandbox_dir, debug=False)
 
-		retcode = sandproc.interact(stdout=stdout, stderr=stderr)
+		retcode = sandproc.interact(stdin=stdin, stdout=stdout, stderr=stderr)
 		stdout.close()
 		stderr.close()
 

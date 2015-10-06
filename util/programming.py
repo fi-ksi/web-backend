@@ -108,7 +108,7 @@ def run(module, user_id, data):
 
 	return {
 		'output': open(sandbox_stdout if success else sandbox_stderr).read(),
-		'image_output': 'http://localhost:3000/images/codeExecution/%d?file=%s' % (log.id, trigger_data['attachments'][0]) if trigger_data else None
+		'image_output': '/images/codeExecution/%d?file=%s' % (log.id, trigger_data['attachments'][0]) if trigger_data else None
 	}
 
 def _save_raw(code, out, report):

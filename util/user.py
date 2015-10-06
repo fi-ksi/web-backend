@@ -5,8 +5,7 @@ from db import session
 import model
 import util
 
-DEFAULT_PROFILE_PICTURE = '/img/avatar-default.svg'
-PROFILE_PICTURE_URL = 'http://localhost:3000/images/profile/%d'
+PROFILE_PICTURE_URL = '/images/profile/%d'
 
 def points_per_task(user_id):
 	tasks = session.query(model.Task)
@@ -34,7 +33,7 @@ def percentile(user_id):
 	return 0
 
 def get_profile_picture(user):
-	return PROFILE_PICTURE_URL % user.id if user.profile_picture and os.path.isfile(user.profile_picture) else DEFAULT_PROFILE_PICTURE
+	return PROFILE_PICTURE_URL % user.id if user.profile_picture and os.path.isfile(user.profile_picture) else None
 
 def to_json(user):
 	data = { 'id': user.id, 'first_name': user.first_name, 'last_name': user.last_name, 'profile_picture': get_profile_picture(user) }

@@ -19,6 +19,20 @@ def sum_points(user_id):
 
 	return sum([ item.points for item in points if item.points is not None ])
 
+def percentile(user_id):
+	query = session.query(model.User).filter(model.User.role == 'participant')
+	count = query.count()
+	user_points = { user.id: sum_points(user.id) for user in query.all() }
+	points_order = sorted(user_points.values(), reverse=True)
+
+	rank = 0.0
+	for points in points_order:
+		if points == user_points[user_id]:
+			return round((1 - (rank / count)) * 100)
+		rank += 1
+
+	return 0
+
 def get_profile_picture(user):
 	return PROFILE_PICTURE_URL % user.id if user.profile_picture and os.path.isfile(user.profile_picture) else DEFAULT_PROFILE_PICTURE
 

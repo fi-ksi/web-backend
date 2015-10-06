@@ -53,8 +53,10 @@ def log_sink(req, resp):
 def cors_middleware(request, response, params):
 	origin = request.get_header('Origin')
 
-	if origin in ('http://localhost:4200',):
-		response.set_header('Access-Control-Allow-Origin', origin)
+	if origin in ('http://localhost:4200',
+				  'http://147.251.43.191',
+				  'http://ksi.fi.muni.cz'):
+						response.set_header('Access-Control-Allow-Origin', origin)
 
 	response.set_header('Access-Control-Allow-Headers', 'authorization,content-type')
 	response.set_header('Access-Control-Allow-Methods', 'OPTIONS,PUT,POST,GET')

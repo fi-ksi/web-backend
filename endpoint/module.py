@@ -100,9 +100,19 @@ class ModuleSubmit(object):
 		if not module.autocorrect:
 			session.commit()
 			session.close()
+			req.context['result'] = { 'result': 'correct' }
 			return
 
-		util.programming.evaluate(module.task, module.id, data)
+		result, report = util.programming.evaluate(module.task, module, data)
+
+		points = module.max_points if result else 0
+		evaluation = model.Evaluation(user=user_id, module=module.id, points=points, full_report=report)
+
+		session.add(evaluation)
+		session.commit()
+		session.close()
+
+		req.context['result'] = { 'result': 'correct' if result else 'incorrect', 'score': points }
 
 	def on_post(self, req, resp, id):
 		user = req.context['user']

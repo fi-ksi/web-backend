@@ -48,17 +48,17 @@ def evaluate(task, module, data):
 	script = os.path.join(sandbox_dir, 'code.py')
 	shutil.copyfile(raw_code, script)
 
-	(success, report, sandbox_stdout, sandbox_stderr) = _exec(dir, sandbox_dir, 'code.py', programming.args, programming.stdin, report)
+	(success, report, sandbox_stdout, sandbox_stderr) = _exec(dir, sandbox_dir, 'code.py', programming.args, programming.stdin, programming.timeout, report)
 	if not success:
 		print report
 		return
 
-	(succes, report, result) = _check(dir, programming.check_script, sandbox_dir, sandbox_stdout, report)
+	if programming.post_trigger_script:
+		success, report, trigger_stdout = _post_trigger(dir, programming.post_trigger_script, sandbox_dir, report)
 
-	#print json.dumps(json.loads(open(result).read()))
+	success, report, result = _check(dir, programming.check_script, sandbox_dir, sandbox_stdout, report)
 
-
-	print report
+	return (success, report)
 
 def code_execution_dir(execution_id):
 	return os.path.join('data', 'code_executions', 'execution_%d' % execution_id)
@@ -96,10 +96,10 @@ def run(module, user_id, data):
 	script = os.path.join(sandbox_dir, 'code.py')
 	shutil.copyfile(raw_code, script)
 
-	success, report, sandbox_stdout, sandbox_stderr = _exec(dir, sandbox_dir, 'code.py', programming.args, programming.stdin, report)
+	success, report, sandbox_stdout, sandbox_stderr = _exec(dir, sandbox_dir, 'code.py', programming.args, programming.stdin, programming.timeout, report)
 
 	trigger_data = None
-	if programming.post_trigger_script:
+	if success and programming.post_trigger_script:
 		success, report, trigger_stdout = _post_trigger(dir, programming.post_trigger_script, sandbox_dir, report)
 		if not success:
 			return { 'output': 'Selhalo spusteni kodu (kod chyby: 3). Prosim kontaktujte organizatora' }
@@ -151,7 +151,7 @@ def _merge(wd, merge_script, code, code_merged, report):
 
 	return (status == 'y', report)
 
-def _exec(wd, sandbox_dir, script_name, args, stdin, report):
+def _exec(wd, sandbox_dir, script_name, args, stdin, timeout, report):
 	status = 'y'
 	exception = None
 	stdout_path = os.path.join(wd, 'sandbox.stdout')
@@ -163,6 +163,7 @@ def _exec(wd, sandbox_dir, script_name, args, stdin, report):
 		stderr = open(stderr_path, 'w')
 		stdin = open(stdin) if stdin else sys.stdin
 		sandproc = PyPySandboxedProc(os.path.join(os.path.expanduser('~'), 'pypy', 'pypy', 'goal', 'pypy-c'), args, tmpdir=sandbox_dir, debug=False)
+		sandproc.settimeout(timeout, interrupt_main=True)
 
 		retcode = sandproc.interact(stdin=stdin, stdout=stdout, stderr=stderr)
 		stdout.close()

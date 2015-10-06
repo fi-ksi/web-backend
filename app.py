@@ -1,5 +1,5 @@
 import falcon, json
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import model
 import endpoint
@@ -25,6 +25,9 @@ class Authorizer(object):
 		if req.auth:
 			token_str = req.auth.split(' ')[-1]
 			token = session.query(model.Token).get(token_str)
+
+			if req.relative_uri != '/auth' and token.granted + timedelta(seconds=token.expire) < datetime.utcnow():
+				raise falcon.HTTPError(falcon.HTTP_401)
 
 			try:
 				req.context['user'] = UserInfo(session.query(model.User).get(token.user), token_str)

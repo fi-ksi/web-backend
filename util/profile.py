@@ -41,7 +41,7 @@ def _profile_to_json(user, profile, task_scores):
 		'achievements': list(util.achievement.ids_set(user.achievements)),
 		'percentile': util.user.percentile(user.id),
 		'score': points,
-		'seasons': 1.5,
+		'seasons': 1,
 		'successful': int(successful),
 		'results': [ task.id for task in task_scores.keys() ]
 	}

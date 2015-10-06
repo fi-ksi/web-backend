@@ -18,6 +18,7 @@ class Programming(Base):
 	stdin = Column(String(255))
 	args = Column(String(255))
 	timeout = Column(Integer)
+	post_trigger_script = Column(String(255))
 	check_script = Column(String(255))
 
 class CodeExecution(Base):

@@ -59,6 +59,9 @@ def evaluate(task, module, data):
 
 	print report
 
+def code_execution_dir(execution_id):
+	return os.path.join('data', 'code_executions', 'execution_%d' % execution_id)
+
 def run(module, user_id, data):
 	programming = session.query(model.Programming).filter(model.Programming.module == module.id).first()
 	report = ''
@@ -67,7 +70,7 @@ def run(module, user_id, data):
 	session.add(log)
 	session.commit()
 
-	dir = os.path.join('data', 'code_executions', 'execution_%d' % log.id)
+	dir = code_execution_dir(log.id)
 	try:
 		os.makedirs(dir)
 	except OSError:
@@ -92,9 +95,20 @@ def run(module, user_id, data):
 	script = os.path.join(sandbox_dir, 'code.py')
 	shutil.copyfile(raw_code, script)
 
-	(success, report, sandbox_stdout, sandbox_stderr) = _exec(dir, sandbox_dir, 'code.py', None, report)
+	success, report, sandbox_stdout, sandbox_stderr = _exec(dir, sandbox_dir, 'code.py', None, report)
 
-	return { 'output': open(sandbox_stdout if success else sandbox_stderr).read() }
+	trigger_data = None
+	if programming.post_trigger_script:
+		success, report, trigger_stdout = _post_trigger(dir, programming.post_trigger_script, sandbox_dir, report)
+		if not success:
+			return { 'output': 'Selhalo spusteni kodu (kod chyby: 3). Prosim kontaktujte organizatora' }
+
+		trigger_data = json.loads(open(trigger_stdout).read())
+
+	return {
+		'output': open(sandbox_stdout if success else sandbox_stderr).read(),
+		'image_output': 'http://localhost:3000/images/codeExecution/%d?file=%s' % (log.id, trigger_data['attachments'][0]) if trigger_data else None
+	}
 
 def _save_raw(code, out, report):
 	status = 'y'
@@ -141,13 +155,11 @@ def _exec(wd, sandbox_dir, script_name, stdin, report):
 	exception = None
 	stdout_path = os.path.join(wd, 'sandbox.stdout')
 	stderr_path = os.path.join(wd, 'sandbox.stderr')
-	log_path = os.path.join(wd, 'sandbox.log')
 
 	try:
 		stdout = open(stdout_path, 'w')
 		stderr = open(stderr_path, 'w')
-		sandproc = PyPySandboxedProc('/home/wormsik/src/pypy/pypy/goal/pypy-c', [ '/tmp/' + script_name ], tmpdir=sandbox_dir)
-		sandproc.setlogfile(log_path)
+		sandproc = PyPySandboxedProc(os.path.join(os.path.expanduser('~'), 'pypy', 'pypy', 'goal', 'pypy-c'), [ '/tmp/' + script_name ], tmpdir=sandbox_dir, debug=False)
 
 		retcode = sandproc.interact(stdout=stdout, stderr=stderr)
 		stdout.close()
@@ -167,6 +179,35 @@ def _exec(wd, sandbox_dir, script_name, stdin, report):
 		report += '\n __ Error report: __\n%s\n' % exception
 
 	return (status == 'y', report, stdout_path, stderr_path)
+
+def _post_trigger(wd, trigger_script, sandbox_dir, report):
+	cmd = [ '/usr/bin/python', os.path.abspath(trigger_script), sandbox_dir ]
+	status = 'y'
+	exception = None
+	stdout_path = os.path.join(wd, 'post_trigger.stdout')
+	stderr_path = os.path.join(wd, 'post_trigger.stderr')
+
+	try:
+		stdout = open(stdout_path, 'w')
+		stderr = open(stderr_path, 'w')
+		process = subprocess.Popen(cmd, cwd=wd, stdout=stdout, stderr=stderr)
+		process.wait()
+
+		if process.returncode != 0:
+			status = 'n'
+	except BaseException:
+		traceback.print_exc()
+		exception = traceback.format_exc()
+		status = 'n'
+
+	report += '  [%s] Running post trigger (cmd: %s)\n' % (status, cmd)
+	report += '   * stdout: %s\n' % stdout_path
+	report += '   * stderr: %s\n' % stderr_path
+
+	if exception:
+		report += '\n __ Error report: __\n%s\n' % exception
+
+	return (status == 'y', report, stdout_path)
 
 def _check(wd, check_script, sandbox_dir, sandbox_stdout, report):
 	cmd = [ '/usr/bin/python', check_script, sandbox_dir, sandbox_stdout ]

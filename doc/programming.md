@@ -32,7 +32,9 @@ outfile.close()
 ## 2. Spusteni v sandboxu ##
 **Vstup:** soubor s kodem, umisteni sandboxu, argumenty, stdin, timeout
 
-**Vystup:** stdout, stderr a pripadne ulozene soubory
+**Vystup:** stdout, stderr a pripadne ulozene soubor
+
+**Sloupce v DB:** `stdin`, `arguments`, `timeout`
 
 V tomto kroku neni nutne pripravit zadny skript, protoze sandbox je predpripraveny a nepotrebuje zadnou specialni obsluhu. Proto je treba pouze pripravit soubor reprezentujici `stdin` (klasicky textovy soubor) a seznam argumentu, ktere budou predany spoustenemu skriptu. Aby se usnadnilo jejich zpracovani, je nutne je do DB zadat ve formatu "python-like" seznamu (tim se poresi jejich spravne predani).
 
@@ -49,6 +51,8 @@ Velmi dulezita je take slozka sandboxu, ktera bude namapovana jako `/tmp` adresa
 **Vystup:** obrazek, JSON informujici o jeho jmenu
 
 **Argumenty:** `<slozka_sanboxu>`
+
+**Sloupce v DB:** `trigger_script`
 
 Toto je jediny nepovinny krok vyhodnoceni a jeho cilem je poskytnout moznost vygenerovat obrazek/cokoliv. Sva data muze cerpat ze slozky sandboxu (tzn. je nutna synchronizace s generujici patickou) a vystupem by krome souboru mel byt take JSON vypsany na `stdout`, ktery obsahuje o nich informace.
 
@@ -70,6 +74,8 @@ Take pozor na to, ze tento krok je volan pouze pri *spousteni kodu* a nikoliv je
 **Vystup:** -
 
 **Argumenty:** `<slozka_sandboxu> <stdout_sandboxu>`
+
+**Sloupce v DB:** `check_script`
 
 Skript zajistujici vyhodnoceni ulohy. Na zaklade jeho navratoveho kodu je rozhodnuto o spravnosti reseni (0 -> OK, jinak NOK). K dispozici ma jak celou slozku sandboxu (se vsemi soubory), tak stdout sandboxu, ktery muze obsahovat potrebne vystupy.
 

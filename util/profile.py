@@ -18,10 +18,7 @@ def to_json(user, profile):
 def _profile_to_json(user, profile, task_scores):
 	points = util.user.sum_points(user.id)
 	summary = sum(util.task.max_points_dict().values())
-	if summary == 0:
-		successful = 0
-	else:
-		successful = round((float(points)/summary) * 100)
+	successful = round((float(points)/summary) * 100) if summary != 0 else 0
 
 	return {
 		'id': user.id,

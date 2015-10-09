@@ -17,7 +17,7 @@ def build(module_id):
 def evaluate(task, module, data):
 	programming = session.query(model.Programming).filter(model.Programming.module == module.id).first()
 
-	report = '=== Evaluating programming id \'%s\' for task id \'%s\' ===\n\n' % (module, task)
+	report = '=== Evaluating programming id \'%s\' for task id \'%s\' ===\n\n' % (module.id, task)
 	report += ' Evaluation:\n'
 
 	user_id = 14

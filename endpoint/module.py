@@ -103,7 +103,7 @@ class ModuleSubmit(object):
 			req.context['result'] = { 'result': 'correct' }
 			return
 
-		result, report = util.programming.evaluate(module.task, module, data)
+		result, report = util.programming.evaluate(module.task, module, user_id, data)
 
 		points = module.max_points if result else 0
 		evaluation = model.Evaluation(user=user_id, module=module.id, points=points, full_report=report)

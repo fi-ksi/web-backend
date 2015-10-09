@@ -1,3 +1,4 @@
+import os
 import datetime
 
 from db import session
@@ -48,6 +49,9 @@ def score_to_json(module_score):
 		'is_corrected': module_score.points is not None,
 		'score': module_score.points
 	}
+
+def submission_dir(module_id, user_id):
+	return os.path.join('data', 'submissions', 'module_%d' % module_id, 'user_%d' % user_id)
 
 
 def _info_to_json(module, score):

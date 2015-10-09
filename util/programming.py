@@ -8,6 +8,7 @@ from pypy_interact import PyPySandboxedProc
 
 from db import session
 import model
+import util
 
 def build(module_id):
 	programming = session.query(model.Programming).filter(model.Programming.module == module_id).first()
@@ -21,7 +22,7 @@ def evaluate(task, module, data):
 	report += ' Evaluation:\n'
 
 	user_id = 14
-	dir = 'submissions/module_%d/user_%d' % (programming.id, user_id)
+	dir = util.module.submission_dir(module.id, user_id)
 	try:
 		os.makedirs(dir)
 	except OSError:

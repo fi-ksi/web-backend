@@ -53,7 +53,7 @@ class ModuleSubmit(object):
 		session.add(evaluation)
 		session.commit()
 
-		dir = 'submissions/module_%d/user_%d' % (module.id, user_id)
+		dir = util.module.submission_dir(module.id, user_id)
 
 		try:
 			os.makedirs(dir)
@@ -82,7 +82,7 @@ class ModuleSubmit(object):
 
 			session.add(submitted_file)
 
-		evaluation.report = report
+		evaluation.full_report = report
 		session.add(evaluation)
 		session.commit()
 		session.close()

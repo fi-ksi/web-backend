@@ -1,6 +1,7 @@
 import os
 import falcon
 import json
+import random, string
 from sqlalchemy import func, distinct
 
 from db import session
@@ -69,6 +70,28 @@ class ChangePassword(object):
 
 		session.add(user)
 		session.commit()
+		session.close()
+
+		req.context['result'] = { 'result': 'ok' }
+
+class ForgottenPassword(object):
+
+	def on_post(self, req, resp):
+		email = json.loads(req.stream.read())['email']
+		user = session.query(model.User).filter(model.User.email == email).first()
+
+		if not user:
+			resp.status = falcon.HTTP_400
+			req.context['result'] = { 'result': 'error' }
+			return
+
+		new_password = ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits + string.ascii_lowercase) for _ in range(8))
+
+		user.password = auth.get_hashed_password(new_password)
+
+		session.add(user)
+		session.commit()
+		util.mail.send(user.email, '[KSI] Nove heslo', 'Ahoj,\ntady Ti posilame nove heslo k uctu: %s\n\nOrgove' % new_password)
 		session.close()
 
 		req.context['result'] = { 'result': 'ok' }

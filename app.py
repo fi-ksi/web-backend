@@ -101,4 +101,6 @@ api.add_route('/logout', endpoint.Logout())
 api.add_route('/runCode/{id}/submit', endpoint.RunCode())
 api.add_route('/feedback', endpoint.Feedback())
 api.add_route('/settings/changePassword', endpoint.ChangePassword())
+api.add_route('/forgottenPassword', endpoint.ForgottenPassword())
+
 api.add_sink(log_sink)

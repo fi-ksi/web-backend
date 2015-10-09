@@ -17,10 +17,10 @@ Je vhodne vyuzit virtualenv - pip install virtualenv, virtualenv env, source env
 
 ## Spusteni
 
-* cd do adresare s app.py
-* gunicorn app:api
+* HTTP: `gunicorn --bind 127.0.0.1:3000 app:api`
+* HTTPS: `gunicorn --bind 127.0.0.1:3000 --certfile=server.crt --keyfile=key.pem app:api`
 
-A backend pobezi na 127.0.0.1:8000. Je mozno predat gunicornu --bind parametr (napr. gunicorn --bind 0:8000 app:api) pro bind na jinou adresu.
+Modifikaci parametru `--bind` lze zmenit cilovou IP adresu a port (format: `<ip>:<port>`). Pro spusteni na vsech dostupnych IP adresach, staci nastavit `--bind` na format `0:<port>`.
 
 ## Testovani auth
 

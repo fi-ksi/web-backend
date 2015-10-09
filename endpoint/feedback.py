@@ -10,5 +10,6 @@ class Feedback(object):
 		if len(data['body']) == 0:
 			return
 
-		addr_from = data['email'] if len(data['email']) > 0 else util.mail.KSI
-		util.mail.send(util.mail.KSI, '[KSI-WEB] Zpetna vazba', data['body'], addr_from)
+		util.mail.send_feedback(data['body'], data['email'])
+
+		req.context['result'] = { 'result': 'ok' }

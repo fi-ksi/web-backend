@@ -26,7 +26,8 @@ class Posts(object):
 			resp.status = falcon.HTTP_400
 			return
 
-		user_id = req.context['user'].id
+		user = req.context['user']
+		user_id = user.id
 		data = json.loads(req.stream.read())['post']
 
 		thread_id = data['thread']
@@ -38,7 +39,7 @@ class Posts(object):
 
 		if not thread.public:
 			task_thread = session.query(model.Task).filter(model.Task.thread == thread_id).first()
-			if task_thread and util.task.status(task_thread, user_id) == util.TaskStatus.LOCKED:
+			if task_thread and util.task.status(task_thread, user) == util.TaskStatus.LOCKED:
 				resp.status = falcon.HTTP_400
 				return
 

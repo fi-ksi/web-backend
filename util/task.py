@@ -56,15 +56,18 @@ def comment_thread(task_id, user_id):
 
 	return query.thread if query is not None else None
 
-def status(task, user_id, adeadline=None, fsubmitted=None):
-	if user_id is None:
+def status(task, user, adeadline=None, fsubmitted=None):
+	if user is None or user.id is None:
 		return TaskStatus.BASE if task.prerequisite is None else TaskStatus.LOCKED
+
+	if user.role in ('org', 'admin'):
+		return TaskStatus.BASE
 
 	if task.time_deadline < datetime.datetime.now():
 		return TaskStatus.BASE
 
 	if not fsubmitted:
-		fsubmitted = fully_submitted(user_id)
+		fsubmitted = fully_submitted(user.id)
 
 	if task.id in fsubmitted:
 		return TaskStatus.DONE
@@ -72,7 +75,7 @@ def status(task, user_id, adeadline=None, fsubmitted=None):
 	if not adeadline:
 		adeadline = after_deadline()
 
-	currently_active = adeadline | set(fully_submitted(user_id).keys())
+	currently_active = adeadline | set(fully_submitted(user.id).keys())
 
 	if task.id in currently_active:
 		return TaskStatus.BASE
@@ -80,9 +83,9 @@ def status(task, user_id, adeadline=None, fsubmitted=None):
 	return TaskStatus.BASE if util.PrerequisitiesEvaluator(task.prerequisite_obj, currently_active).evaluate() else TaskStatus.LOCKED
 
 
-def to_json(task, user_id=None, adeadline=None, fsubmitted=None):
+def to_json(task, user=None, adeadline=None, fsubmitted=None):
 	max_points = sum([ module.max_points for module in task.modules ])
-	tstatus = status(task, user_id, adeadline, fsubmitted)
+	tstatus = status(task, user, adeadline, fsubmitted)
 
 	return {
 		'id': task.id,

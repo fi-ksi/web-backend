@@ -156,6 +156,7 @@ def _exec(wd, sandbox_dir, script_name, args, stdin, timeout, report):
 	exception = None
 	stdout_path = os.path.join(wd, 'sandbox.stdout')
 	stderr_path = os.path.join(wd, 'sandbox.stderr')
+	output_path = os.path.join(sandbox_dir, 'output')
 	args = [ '/tmp/' + script_name ] + ast.literal_eval(args) if args else []
 
 	try:
@@ -171,6 +172,33 @@ def _exec(wd, sandbox_dir, script_name, args, stdin, timeout, report):
 
 		if retcode != 0:
 			status = 'n'
+		else: 
+			# Post process stdout
+			stdout = open(stdout_path, 'r')
+			lines = stdout.readlines()
+			stdout.close()
+
+			out = []
+			data = []
+
+			found = False
+			for line in lines:
+				if found:
+					data.append(line)
+				else:
+					if '#KSI_META_OUTPUT_0a859a#' in line
+						found = True
+					else
+						out.append(line)
+
+			stdout = open(stdout_path, 'w')
+			stdout.write(''.join(out))
+			stdout.close()
+
+			meta = open(output_path, 'w')
+			meta.write(''.join(data))
+			meta.close()
+
 	except BaseException:
 		exception = traceback.format_exc()
 		status = 'n'

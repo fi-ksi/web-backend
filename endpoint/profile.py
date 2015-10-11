@@ -7,6 +7,7 @@ import model
 import util
 import multipart
 
+UPLOAD_DIR = os.path.join('data', 'images', 'profile')
 ALLOWED_MIME_TYPES = { 'image/jpeg': 'jpg', 'image/pjpeg': 'jpg', 'image/png': 'png', 'image/gif': 'gif' }
 THUMB_SIZE = 263, 263
 
@@ -113,13 +114,21 @@ class PictureUploader(object):
 			resp.status = falcon.HTTP_400
 			return
 
-		new_picture = 'images/profile/user_%d.%s' % (user_id, ALLOWED_MIME_TYPES[mime])
+		if not os.path.isdir(UPLOAD_DIR):
+			try:
+				os.makedirs(UPLOAD_DIR)
+			except OSError:
+				print 'Unable to create directory for profile pictures'
+				resp.status = falcon.HTTP_500
+				return
+
+		new_picture = os.path.join(UPLOAD_DIR, 'user_%d.%s' % (user_id, ALLOWED_MIME_TYPES[mime]))
 
 		self._crop(tmpfile.name, new_picture)
-		os.remove(tmpfile.name)
-
-		if user.profile_picture:
-			os.remove(user.profile_picture)
+		try:
+			os.remove(tmpfile.name)
+		except OSError:
+			print 'Unable to remove temporary file %s' % tmpfile.name
 
 		user.profile_picture = new_picture
 

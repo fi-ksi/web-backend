@@ -21,7 +21,7 @@ class RunCode(object):
 			resp.status = falcon.HTTP_400
 			return
 
-		task_status = util.task.status(session.query(model.Task).get(module.task), user.id)
+		task_status = util.task.status(session.query(model.Task).get(module.task), user)
 
 		if task_status == util.TaskStatus.LOCKED:
 			resp.status = falcon.HTTP_400

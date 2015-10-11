@@ -1,9 +1,13 @@
 import os
+import falcon
+import json
+import random, string
 from sqlalchemy import func, distinct
 
 from db import session
 import model
 import util
+import auth
 
 def _load_points_for_user(user_id):
 	return session.query(model.Evaluation.module, func.max(model.Evaluation.points).label('points')).\
@@ -39,3 +43,55 @@ class Users(object):
 			users_json = sorted(users_json, key=lambda user: user['score'], reverse=True)
 
 		req.context['result'] = { "users": users_json }
+
+
+class ChangePassword(object):
+
+	def on_post(self, req, resp):
+		user = req.context['user']
+
+		if not user.is_logged_in():
+			resp.status = falcon.HTTP_400
+			return
+
+		user = session.query(model.User).get(user.id)
+		data = json.loads(req.stream.read())
+
+		if not auth.check_password(data['old_password'], user.password):
+			resp.status = falcon.HTTP_401
+			req.context['result'] = { 'result': 'error' }
+			return
+
+		if data['new_password'] != data['new_password2']:
+			req.context['result'] = { 'result': 'error' }
+			return
+
+		user.password = auth.get_hashed_password(data['new_password'])
+
+		session.add(user)
+		session.commit()
+		session.close()
+
+		req.context['result'] = { 'result': 'ok' }
+
+class ForgottenPassword(object):
+
+	def on_post(self, req, resp):
+		email = json.loads(req.stream.read())['email']
+		user = session.query(model.User).filter(model.User.email == email).first()
+
+		if not user:
+			resp.status = falcon.HTTP_400
+			req.context['result'] = { 'result': 'error' }
+			return
+
+		new_password = ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits + string.ascii_lowercase) for _ in range(8))
+
+		user.password = auth.get_hashed_password(new_password)
+
+		session.add(user)
+		session.commit()
+		util.mail.send(user.email, '[KSI] Nove heslo', 'Ahoj,\ntady Ti posilame nove heslo k uctu: %s\n\nOrgove' % new_password)
+		session.close()
+
+		req.context['result'] = { 'result': 'ok' }

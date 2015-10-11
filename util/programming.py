@@ -8,20 +8,20 @@ from pypy_interact import PyPySandboxedProc
 
 from db import session
 import model
+import util
 
 def build(module_id):
 	programming = session.query(model.Programming).filter(model.Programming.module == module_id).first()
 
 	return programming.default_code
 
-def evaluate(task, module, data):
+def evaluate(task, module, user_id, data):
 	programming = session.query(model.Programming).filter(model.Programming.module == module.id).first()
 
-	report = '=== Evaluating programming id \'%s\' for task id \'%s\' ===\n\n' % (module, task)
+	report = '=== Evaluating programming id \'%s\' for task id \'%s\' ===\n\n' % (module.id, task)
 	report += ' Evaluation:\n'
 
-	user_id = 14
-	dir = 'submissions/module_%d/user_%d' % (programming.id, user_id)
+	dir = util.module.submission_dir(module.id, user_id)
 	try:
 		os.makedirs(dir)
 	except OSError:
@@ -94,7 +94,7 @@ def run(module, user_id, data):
 	except OSError:
 		pass
 	script = os.path.join(sandbox_dir, 'code.py')
-	shutil.copyfile(raw_code, script)
+	shutil.copyfile(merged_code, script)
 
 	success, report, sandbox_stdout, sandbox_stderr = _exec(dir, sandbox_dir, 'code.py', programming.args, programming.stdin, programming.timeout, report)
 

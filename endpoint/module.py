@@ -53,7 +53,7 @@ class ModuleSubmit(object):
 		session.add(evaluation)
 		session.commit()
 
-		dir = 'submissions/module_%d/user_%d' % (module.id, user_id)
+		dir = util.module.submission_dir(module.id, user_id)
 
 		try:
 			os.makedirs(dir)
@@ -82,7 +82,7 @@ class ModuleSubmit(object):
 
 			session.add(submitted_file)
 
-		evaluation.report = report
+		evaluation.full_report = report
 		session.add(evaluation)
 		session.commit()
 		session.close()
@@ -103,7 +103,7 @@ class ModuleSubmit(object):
 			req.context['result'] = { 'result': 'correct' }
 			return
 
-		result, report = util.programming.evaluate(module.task, module, data)
+		result, report = util.programming.evaluate(module.task, module, user_id, data)
 
 		points = module.max_points if result else 0
 		evaluation = model.Evaluation(user=user_id, module=module.id, points=points, full_report=report)

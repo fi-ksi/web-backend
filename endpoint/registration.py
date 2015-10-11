@@ -3,6 +3,7 @@ import json, falcon
 from db import session
 import model
 import auth
+import util
 
 class Registration(object):
 
@@ -22,5 +23,7 @@ class Registration(object):
 		session.add(profile)
 
 		session.commit()
+
+		util.mail.send(user.email, 'Registrace do KSI', 'Ahoj ahoj,\nvitame Te v KSI a mame Te radi...\n\nOrgove')
 		session.close()
 

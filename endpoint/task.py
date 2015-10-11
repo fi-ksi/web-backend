@@ -11,7 +11,7 @@ class Task(object):
 		user = req.context['user']
 		task = session.query(model.Task).get(id)
 
-		req.context['result'] = { 'task': util.task.to_json(task, user.id) }
+		req.context['result'] = { 'task': util.task.to_json(task, user) }
 
 
 class Tasks(object):
@@ -23,7 +23,7 @@ class Tasks(object):
 		adeadline = util.task.after_deadline()
 		fsubmitted = util.task.fully_submitted(user.id)
 
-		req.context['result'] = { 'tasks': [ util.task.to_json(task, user.id, adeadline, fsubmitted) for task in tasks ] }
+		req.context['result'] = { 'tasks': [ util.task.to_json(task, user, adeadline, fsubmitted) for task in tasks ] }
 
 
 class TaskDetails(object):
@@ -31,7 +31,7 @@ class TaskDetails(object):
 	def on_get(self, req, resp, id):
 		user = req.context['user']
 		task = session.query(model.Task).get(id)
-		status = util.task.status(task, user.id)
+		status = util.task.status(task, user)
 
 		if task.prerequisite is not None and status == util.TaskStatus.LOCKED:
 			resp.status = falcon.HTTP_400

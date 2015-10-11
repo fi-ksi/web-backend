@@ -24,6 +24,9 @@ def percentile(user_id):
 	user_points = { user.id: sum_points(user.id) for user in query.all() }
 	points_order = sorted(user_points.values(), reverse=True)
 
+	if user_id not in user_points:
+		return 0
+
 	rank = 0.0
 	for points in points_order:
 		if points == user_points[user_id]:

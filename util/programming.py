@@ -40,7 +40,7 @@ def evaluate(task, module, user_id, data):
 		print report
 		return
 
-	sandbox_dir = os.path.join(dir, 'sandbox')
+	sandbox_dir = os.path.abspath(os.path.join(dir, 'sandbox'))
 	try:
 		os.mkdir(sandbox_dir)
 	except OSError:
@@ -88,7 +88,7 @@ def run(module, user_id, data):
 	if not success:
 		return { 'output': 'Selhalo spusteni kodu (kod chyby: 2). Prosim kontaktujte organizatora' }
 
-	sandbox_dir = os.path.join(dir, 'sandbox')
+	sandbox_dir = os.path.abspath(os.path.join(dir, 'sandbox'))
 	try:
 		os.mkdir(sandbox_dir)
 	except OSError:

@@ -186,9 +186,9 @@ def _exec(wd, sandbox_dir, script_name, args, stdin, timeout, report):
 				if found:
 					data.append(line)
 				else:
-					if '#KSI_META_OUTPUT_0a859a#' in line
+					if '#KSI_META_OUTPUT_0a859a#' in line:
 						found = True
-					else
+					else:
 						out.append(line)
 
 			stdout = open(stdout_path, 'w')

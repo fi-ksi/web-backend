@@ -46,7 +46,7 @@ def evaluate(task, module, user_id, data):
 	except OSError:
 		pass
 	script = os.path.join(sandbox_dir, 'code.py')
-	shutil.copyfile(raw_code, script)
+	shutil.copyfile(merged_code, script)
 
 	(success, report, sandbox_stdout, sandbox_stderr) = _exec(dir, sandbox_dir, 'code.py', programming.args, programming.stdin, programming.timeout, report)
 	if not success:

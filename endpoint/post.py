@@ -49,7 +49,7 @@ class Posts(object):
 				return
 
 		parent = data['parent']
-		if not session.query(model.Post).filter(model.Post.id == parent, model.Post.thread == thread_id).first():
+		if parent and not session.query(model.Post).filter(model.Post.id == parent, model.Post.thread == thread_id).first():
 			resp.status = falcon.HTTP_400
 			return
 

@@ -131,12 +131,16 @@ class ModuleSubmit(object):
 
 		if module.type == ModuleType.PROGRAMMING:
 			self._evaluate_code(req, module, user.id, resp, data)
+			# ToDo: Auto actions
 			return
 
 		if module.type == ModuleType.QUIZ:
 			result, report = util.quiz.evaluate(module.task, module.id, data)
 		elif module.type == ModuleType.SORTABLE:
 			result, report = util.sortable.evaluate(module.task, module.id, data)
+		elif module.type == ModuleType.TEXT:
+			result, report = util.text.evaluate(module.task, module.id, data)
+
 
 		points = module.max_points if result else 0
 		evaluation = model.Evaluation(user=user.id, module=module.id, points=points, full_report=report)

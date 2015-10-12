@@ -17,6 +17,7 @@ import profile
 import thread
 import post
 import mail
+import text
 
 def decode_form_data(req):
 	ctype, pdict = cgi.parse_header(req.content_type)

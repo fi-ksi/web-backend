@@ -5,6 +5,7 @@ from db import session
 from model.module import ModuleType
 import model
 import util
+import json
 
 def modules_for_task(task_id):
 	return session.query(model.Module).filter(model.Module.task == task_id).all()
@@ -65,3 +66,15 @@ def _load_sortable(module_id):
 	movable = session.query(model.Sortable).filter(model.Sortable.module == module_id, model.Sortable.type == 'movable').order_by(model.Sortable.order).all()
 
 	return (fixed, movable)
+
+def perform_action(module, user):
+	if not module.action:
+		return
+	action = json.loads(module.action)
+	if u"action" in action:
+		if action[u"action"] == u"add_achievement":
+			achievement = model.UserAchievement(user_id=user.id, achievement_id=action[u"achievement_id"],task_id=module.task)
+			session.add(achievement)
+		else:
+			print("Unknown action!")
+			# ToDo: More actions

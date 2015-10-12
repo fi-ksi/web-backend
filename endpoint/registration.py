@@ -13,6 +13,11 @@ class Registration(object):
 	def on_post(self, req, resp):
 		data = json.loads(req.stream.read())
 
+		existing_user = session.query(model.User).filter(model.User.email == data['email']).first()
+		if existing_user != None:
+			req.context['result'] = { 'error': "duplicate_user" }
+			return
+
 		user = model.User(email=data['email'], password=auth.get_hashed_password(data['password']), first_name=data['first_name'], last_name=data['last_name'], sex=data['gender'], short_info=data["short_info"])
 		session.add(user)
 		session.commit()

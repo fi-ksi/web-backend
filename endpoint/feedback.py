@@ -10,6 +10,9 @@ class Feedback(object):
 		if len(data['body']) == 0:
 			return
 
+		if not 'email' in data:
+			data['email'] = "ksi@fi.muni.cz"
+
 		util.mail.send_feedback(data['body'], data['email'])
 
 		req.context['result'] = { 'result': 'ok' }

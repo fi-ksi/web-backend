@@ -53,8 +53,8 @@ def evaluate(task, module, user_id, data):
 		print report
 		return
 
-	if programming.post_trigger_script:
-		success, report, trigger_stdout = _post_trigger(dir, programming.post_trigger_script, sandbox_dir, report)
+	#if programming.post_trigger_script:
+	#	success, report, trigger_stdout = _post_trigger(dir, programming.post_trigger_script, sandbox_dir, report)
 
 	success, report, result = _check(dir, programming.check_script, sandbox_dir, sandbox_stdout, report)
 
@@ -107,8 +107,8 @@ def run(module, user_id, data):
 		trigger_data = json.loads(open(trigger_stdout).read())
 
 	return {
-		'output': open(sandbox_stdout if success else sandbox_stderr).read(),
-		'image_output': '/images/codeExecution/%d?file=%s' % (log.id, trigger_data['attachments'][0]) if trigger_data else None
+		'output': trigger_data['stdout'] if success else open(sandbox_stderr).read(),
+		'image_output': '/images/codeExecution/%d?file=%s' % (log.id, trigger_data['attachments'][0]) if trigger_data and 'attachments' in trigger_data else None
 	}
 
 def _save_raw(code, out, report):
@@ -157,6 +157,7 @@ def _exec(wd, sandbox_dir, script_name, args, stdin, timeout, report):
 	stdout_path = os.path.join(wd, 'sandbox.stdout')
 	stderr_path = os.path.join(wd, 'sandbox.stderr')
 	output_path = os.path.join(sandbox_dir, 'output')
+	soutput_path = os.path.join(sandbox_dir, 'stdout')
 	args = [ '/tmp/' + script_name ] + ast.literal_eval(args) if args else []
 
 	try:
@@ -191,7 +192,7 @@ def _exec(wd, sandbox_dir, script_name, args, stdin, timeout, report):
 					else:
 						out.append(line)
 
-			stdout = open(stdout_path, 'w')
+			stdout = open(soutput_path, 'w')
 			stdout.write(''.join(out))
 			stdout.close()
 

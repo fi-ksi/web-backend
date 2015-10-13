@@ -146,7 +146,7 @@ class ModuleSubmit(object):
 		evaluation = model.Evaluation(user=user.id, module=module.id, points=points, full_report=report)
 		req.context['result'] = { 'result': 'correct' if result else 'incorrect', 'score': points }
 
-		if result:
+		if "action" in report:
 			util.module.perform_action(module, user)
 
 		session.add(evaluation)

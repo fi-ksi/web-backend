@@ -7,8 +7,12 @@ import subprocess
 
 def eval_text(eval_script, data, report):
 	cmd = ['/usr/bin/python', eval_script, data]
-	process = subprocess.Popen(cmd, stdout=None, stderr=subprocess.STDOUT)
+	f = open('/tmp/eval.txt', 'w')
+	process = subprocess.Popen(cmd, stdout=f, stderr=subprocess.STDOUT)
 	process.wait()
+	f.close();
+	f = open('/tmp/eval.txt', 'r')
+	report += f.read()
 
 	return (process.returncode == 0, report)
 

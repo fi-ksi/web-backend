@@ -5,7 +5,7 @@ KSI = 'ksi@fi.muni.cz'
 FEEDBACK = [ 'email@honzamrazek.cz', 'henrich.lau@gmail.com' ]
 
 def send(to, subject, text, addr_from=KSI):
-	msg = MIMEText(text)
+	msg = MIMEText(text.encode('utf-8'))
 
 	msg['Subject'] = subject
 	msg['From'] = addr_from

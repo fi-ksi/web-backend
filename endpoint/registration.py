@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import json, falcon
 
 from db import session
@@ -29,6 +30,6 @@ class Registration(object):
 
 		session.commit()
 
-		util.mail.send(user.email, 'Registrace do KSI', 'Ahoj ahoj,\nvitame Te v KSI a mame Te radi...\n\nOrgove')
+		util.mail.send(user.email, '[KSI] Potvrzení registrace do Korespondenčního semináře z informatiky', 'Ahoj!\nVítáme tě v Korespondenčním semináři z informatiky Fakulty informatiky Masarykovy univerzity. Nyní můžeš začít řešit naplno. Stačí se přihlásit na https://ksi.fi.muni.cz pomocí e-mailu a zvoleného hesla. Přejeme ti hodně úspěchů při řešení semináře!\n\nKSI')
 		session.close()
 

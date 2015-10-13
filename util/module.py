@@ -74,7 +74,9 @@ def perform_action(module, user):
 	if u"action" in action:
 		if action[u"action"] == u"add_achievement":
 			achievement = model.UserAchievement(user_id=user.id, achievement_id=action[u"achievement_id"],task_id=module.task)
-			session.add(achievement)
+			already_done = session.query(model.UserAchievement).filter(model.UserAchievement.user_id==user.id, model.UserAchievement.achievement_id==action[u"achievement_id"], model.UserAchievement.task_id==module.task).first()
+			if not already_done:
+				session.add(achievement)
 		else:
 			print("Unknown action!")
 			# ToDo: More actions

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import falcon
 import json
@@ -91,7 +92,7 @@ class ForgottenPassword(object):
 
 		session.add(user)
 		session.commit()
-		util.mail.send(user.email, '[KSI] Nove heslo', 'Ahoj,\ntady Ti posilame nove heslo k uctu: %s\n\nOrgove' % new_password)
+		util.mail.send(user.email, '[KSI] Nové heslo', 'Ahoj,\nna základě tvé žádosti Ti bylo vygenerované nové heslo ke tvému účtu: %s\n\nKSI' % new_password)
 		session.close()
 
 		req.context['result'] = { 'result': 'ok' }

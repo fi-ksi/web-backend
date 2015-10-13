@@ -1,6 +1,7 @@
 import falcon
 import json
-from sqlalchemy import and_, text
+from sqlalchemy import and_, text, not_
+from sqlalchemy.orm import load_only
 
 from db import session
 import model
@@ -62,7 +63,11 @@ class Threads(object):
 	def on_get(self, req, resp):
 		user_id = req.context['user'].id if req.context['user'].is_logged_in() else None
 
-		req.context['result'] = { 'threads': [ util.thread.to_json(thread, user_id) for thread in session.query(model.Thread).filter(model.Thread.public == True).all() ] }
+		# Hacky, nasty, whatever...
+		task_threads = session.query(model.Task).options(load_only("thread")).all()
+		task_threads = map(lambda x: x.thread, task_threads)
+		threads = session.query(model.Thread).filter(model.Thread.public == True).filter(not_(model.Thread.id.in_(task_threads))).all()
+		req.context['result'] = { 'threads': [ util.thread.to_json(thread, user_id) for thread in threads] }
 		session.close()
 
 

@@ -123,7 +123,7 @@ def best_scores(task_id):
 			filter(model.Module.task == task_id, 'points' is not None).\
 			group_by(model.Evaluation.module).subquery()
 
-	return session.query(model.User, func.sum(per_modules.c.points).label('sum')).join(per_modules, per_modules.c.user_id == model.User.id).group_by(per_modules.c.user_id).order_by(desc('sum')).slice(0, 5).all()
+	return session.query(model.User, func.sum(per_modules.c.points).label('sum')).join(per_modules, per_modules.c.user_id == model.User.id).filter(model.User.role == 'participant').group_by(per_modules.c.user_id).order_by(desc('sum')).slice(0, 5).all()
 
 def best_score_to_json(best_score):
 	achievements = session.query(model.UserAchievement).filter(model.UserAchievement.user_id == best_score.User.id).all()

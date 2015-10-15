@@ -92,7 +92,7 @@ class ForgottenPassword(object):
 
 		session.add(user)
 		session.commit()
-		util.mail.send([user.email], '[KSI] Nové heslo', 'Ahoj,\nna základě tvé žádosti Ti bylo vygenerované nové heslo ke tvému účtu: %s\n\nKSI' % new_password)
+		util.mail.send([user.email], '[KSI] Nové heslo', 'Ahoj,\nna základě tvé žádosti ti bylo vygenerováno nové heslo: %s\n\nKSI' % new_password)
 		session.close()
 
 		req.context['result'] = { 'result': 'ok' }

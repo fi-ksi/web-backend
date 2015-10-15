@@ -1,11 +1,13 @@
 import smtplib
 from email.mime.text import MIMEText
+from email import Charset
 
 KSI = 'ksi@fi.muni.cz'
 FEEDBACK = [ 'email@honzamrazek.cz', 'henrich.lau@gmail.com' ]
 
 def send(to, subject, text, addr_from=KSI):
-	msg = MIMEText(text.encode('utf-8'))
+	Charset.add_charset('utf-8', Charset.QP, Charset.QP, 'utf-8')
+	msg = MIMEText(text, 'plain', 'utf-8')
 
 	msg['Subject'] = subject
 	msg['From'] = addr_from

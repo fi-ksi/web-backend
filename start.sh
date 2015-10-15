@@ -1,3 +1,3 @@
 #!/bin/bash
 
-gunicorn --bind 0:4242 app:api
+gunicorn --bind 0:3000 app:api

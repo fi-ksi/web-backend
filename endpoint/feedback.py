@@ -13,6 +13,6 @@ class Feedback(object):
 		if not 'email' in data:
 			data['email'] = "ksi@fi.muni.cz"
 
-		util.mail.send_feedback(data['body'], data['email'])
+		util.mail.send_feedback(data['body'].encode('utf-8'), data['email'])
 
 		req.context['result'] = { 'result': 'ok' }

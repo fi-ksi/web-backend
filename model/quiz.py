@@ -14,6 +14,7 @@ class QuizQuestion(Base):
 	module = Column(Integer, ForeignKey('modules.id'), nullable=False)
 	type = Column(Enum('checkbox', 'radio'), default='checkbox', server_default='checkbox', nullable=False)
 	question = Column(Text, nullable=False)
+	text = Column(Text)
 	order = Column(SmallInteger, nullable=False, default=1, server_default='1')
 
 	options = relationship('QuizOption', primaryjoin='QuizQuestion.id==QuizOption.quiz')

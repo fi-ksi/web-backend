@@ -45,5 +45,6 @@ def _question_to_json(question):
 	return {
 		'type': question.type,
 		'question': question.question,
+		'text': question.text,
 		'options': [ option.value for option in question.options ]
 	}

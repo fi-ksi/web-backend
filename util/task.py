@@ -1,5 +1,6 @@
 import datetime
 from sqlalchemy import func, distinct, or_, desc
+from sqlalchemy.dialects import mysql
 
 from db import session
 import model
@@ -121,9 +122,17 @@ def best_scores(task_id):
 			func.max(model.Evaluation.points).label('points')).\
 			join(model.Evaluation, model.Evaluation.user == model.User.id).\
 			filter(model.Module.task == task_id, 'points' is not None).\
-			group_by(model.Evaluation.module).subquery()
+			filter(model.Evaluation.module == model.Module.id).\
+			group_by(model.Evaluation.module, model.User).subquery()
+	print per_modules
 
-	return session.query(model.User, func.sum(per_modules.c.points).label('sum')).join(per_modules, per_modules.c.user_id == model.User.id).filter(model.User.role == 'participant').group_by(per_modules.c.user_id).order_by(desc('sum')).slice(0, 5).all()
+	tmp = session.query(model.User, func.sum(per_modules.c.points).label('sum')).join(per_modules, per_modules.c.user_id == model.User.id).slice(0, 5).all();
+	print tmp
+
+	#return session.query(model.User).slice(0, 5).all();
+	ret = session.query(model.User, func.sum(per_modules.c.points).label('sum')).join(per_modules, per_modules.c.user_id == model.User.id).filter(model.User.role == 'participant').group_by(per_modules.c.user_id).order_by(desc('sum')).slice(0, 5).all()
+	print ret
+	return ret
 
 def best_score_to_json(best_score):
 	achievements = session.query(model.UserAchievement).filter(model.UserAchievement.user_id == best_score.User.id).all()

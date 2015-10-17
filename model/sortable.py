@@ -15,5 +15,6 @@ class Sortable(Base):
 	type = Column(Enum('fixed', 'movable'), nullable=False)
 	content = Column(String(255), nullable=False)
 	style = Column(String(255))
+	offset = Column(Integer)
 	correct_position = Column(SmallInteger, nullable=False)
 	order = Column(SmallInteger, nullable=False, default=1, server_default='1')

@@ -44,4 +44,4 @@ def _load_data(module_id):
 	return (fixed, movable)
 
 def _type_to_json(type):
-	return [ { 'content': row.content, 'style': row.style } for row in type ]
+	return [ { 'content': row.content, 'style': row.style, 'offset': row.offset } for row in type ]

@@ -31,14 +31,15 @@ def evaluate(task, module, data):
 		orig = json.loads(text.diff)
 		result = True
 		report += 'Diff used!\n'
-		for o, item in zip(o, data):
-			s1 = o.rstrip().lstrip()
+		for o, item in zip(orig, data):
+			s1 = o.rstrip().lstrip().encode('utf-8')
 			s2 = item.rstrip().lstrip().encode('utf-8')
 			if text.ignore_case:
 				s1 = s1.lower()
 				s2 = s2.lower()
+			print("Compare: " + s1 + ", " + s2 +", " + str(s1 == s2))
 			result = result and s1 == s2
-		if len(data) != len(text.diff):
+		if len(data) != len(orig):
 			result = False
 		return (result, report)
 	elif text.eval_script:

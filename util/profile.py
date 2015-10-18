@@ -28,6 +28,7 @@ def _profile_to_json(user, profile, task_scores):
 		'profile_picture': util.user.get_profile_picture(user),
 		'short_info': user.short_info,
 		'email': user.email,
+		'gender': user.sex,
 		'addr_street': profile.addr_street,
 		'addr_city': profile.addr_city,
 		'addr_zip': profile.addr_zip,

@@ -39,7 +39,7 @@ def get_profile_picture(user):
 	return PROFILE_PICTURE_URL % user.id if user.profile_picture and os.path.isfile(user.profile_picture) else None
 
 def to_json(user):
-	data = { 'id': user.id, 'first_name': user.first_name, 'last_name': user.last_name, 'profile_picture': get_profile_picture(user) }
+	data = { 'id': user.id, 'first_name': user.first_name, 'last_name': user.last_name, 'profile_picture': get_profile_picture(user), 'gender': user.sex }
 
 	if user.role == 'participant':
 		data['score'] =  sum_points(user.id)

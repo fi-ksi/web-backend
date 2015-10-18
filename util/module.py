@@ -41,6 +41,8 @@ def to_json(module, module_scores):
 		module_json['sortable_list'] = util.sortable.build(module.id)
 	elif module.type == ModuleType.GENERAL:
 		module_json['state'] = 'correct' if has_points else 'blank'
+	elif module.type == ModuleType.TEXT:
+		module_json['fields'] = util.text.num_fields(module.id)
 
 	return module_json
 

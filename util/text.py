@@ -5,8 +5,12 @@ from db import session
 import model
 import subprocess
 
+def num_fields(module):
+	text = session.query(model.Text).filter(model.Text.module == module).first()
+	return text.inputs
+
 def eval_text(eval_script, data, report):
-	cmd = ['/usr/bin/python', eval_script, data]
+	cmd = ['/usr/bin/python', eval_script] + data
 	f = open('/tmp/eval.txt', 'w')
 	process = subprocess.Popen(cmd, stdout=f, stderr=subprocess.STDOUT)
 	process.wait()
@@ -24,13 +28,19 @@ def evaluate(task, module, data):
 	text = session.query(model.Text).filter(model.Text.module == module).first()
 
 	if text.diff:
+		orig = json.loads(text.diff)
+		result = True
 		report += 'Diff used!\n'
-		s1 = text.diff.rstrip().lstrip()
-		s2 = data.rstrip().lstrip().encode('utf-8')
-		if text.ignore_case:
-			s1 = s1.lower()
-			s2 = s2.lower()
-		return (s1 == s2, report)
+		for o, item in zip(o, data):
+			s1 = o.rstrip().lstrip()
+			s2 = item.rstrip().lstrip().encode('utf-8')
+			if text.ignore_case:
+				s1 = s1.lower()
+				s2 = s2.lower()
+			result = result and s1 == s2
+		if len(data) != len(text.diff):
+			result = False
+		return (result, report)
 	elif text.eval_script:
 		return eval_text(text.eval_script, data, report)
 	else:

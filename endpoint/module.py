@@ -40,6 +40,8 @@ class Module(object):
 			module_json['sortable_list'] = util.sortable.build(module.id)
 		elif module.type == ModuleType.GENERAL:
 			module_json['state'] = 'correct' if count > 0 else 'blank'
+		elif module.type == ModuleType.TEXT:
+			module_json['fields'] = util.text.num_fields(module.id) 
 
 		req.context['result'] = { 'module': module_json }
 

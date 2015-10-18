@@ -13,6 +13,7 @@ class Text(Base):
 
 	id = Column(Integer, primary_key=True)
 	module = Column(Integer, ForeignKey('modules.id'), nullable=False)
+	inputs = Column(Integer)
 	diff = Column(Text)
 	ignore_case = Column(Boolean)
 	eval_script = Column(String(255))

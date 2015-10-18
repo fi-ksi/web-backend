@@ -1,3 +1,3 @@
 #!/bin/bash
 
-gunicorn --bind 0:3000 app:api
+gunicorn -c gunicorn_cfg.py app:api

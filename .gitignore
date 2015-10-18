@@ -3,3 +3,7 @@ __pycache__
 db.sqlite
 *.pyc
 data/
+gunicorn_error.log
+gunicorn_pid
+images/
+submissions/

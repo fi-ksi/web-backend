@@ -1,6 +1,7 @@
 from db import session
 import model
 import json
+from sqlalchemy import desc
 
 DEFAULT_IMAGE = 'img/box-ksi.svg'
 
@@ -18,12 +19,12 @@ class Article(object):
 class Articles(object):
 
 	def on_get(self, req, resp):
-		query = session.query(model.Article)
+		query = session.query(model.Article).order_by(desc(model.Article.time_created))
 		limit = req.get_param_as_int('_limit')
 		start = req.get_param_as_int('_start')
 		count = query.count()
 
-		data = query.all().order_by(desc(model.Article.time_created)) if limit is None or start is None else query.slice(start, start + limit)
+		data = query.all() if limit is None or start is None else query.slice(start, start + limit)
 
 		articles = [ _artice_to_json(inst) for inst in data ]
 

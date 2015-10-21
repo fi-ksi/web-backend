@@ -23,7 +23,7 @@ class Articles(object):
 		start = req.get_param_as_int('_start')
 		count = query.count()
 
-		data = query.all() if limit is None or start is None else query.slice(start, start + limit)
+		data = query.all().order_by(desc(model.Article.time_created)) if limit is None or start is None else query.slice(start, start + limit)
 
 		articles = [ _artice_to_json(inst) for inst in data ]
 

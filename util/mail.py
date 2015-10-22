@@ -3,7 +3,7 @@ from email.mime.text import MIMEText
 from email import Charset
 
 KSI = 'ksi@fi.muni.cz'
-FEEDBACK = [ 'email@honzamrazek.cz', 'henrich.lau@gmail.com' ]
+FEEDBACK = [ 'email@honzamrazek.cz', 'henrich.lau@gmail.com', 'me@apophis.cz' ]
 
 def send(to, subject, text, addr_from=KSI):
 	Charset.add_charset('utf-8', Charset.QP, Charset.QP, 'utf-8')

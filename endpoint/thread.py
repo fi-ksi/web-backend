@@ -1,6 +1,6 @@
 import falcon
 import json
-from sqlalchemy import and_, text, not_
+from sqlalchemy import and_, text, not_, desc
 from sqlalchemy.orm import load_only
 
 from db import session
@@ -62,11 +62,17 @@ class Threads(object):
 
 	def on_get(self, req, resp):
 		user_id = req.context['user'].id if req.context['user'].is_logged_in() else None
+		show_all = (not (user_id is None)) and (req.context['user'].role == 'admin' or req.context['user'].role == 'org')
 
 		# Hacky, nasty, whatever...
 		task_threads = session.query(model.Task).options(load_only("thread")).all()
 		task_threads = map(lambda x: x.thread, task_threads)
-		threads = session.query(model.Thread).filter(model.Thread.public == True).filter(not_(model.Thread.id.in_(task_threads))).all()
+
+		if show_all:
+			threads = session.query(model.Thread).filter(model.Thread.public == True).order_by(desc(model.Thread.id)).all()
+		else:
+			threads = session.query(model.Thread).filter(model.Thread.public == True).filter(not_(model.Thread.id.in_(task_threads))).order_by(desc(model.Thread.id)).all()
+
 		req.context['result'] = { 'threads': [ util.thread.to_json(thread, user_id) for thread in threads] }
 		session.close()
 

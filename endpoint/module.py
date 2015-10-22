@@ -97,7 +97,7 @@ class ModuleSubmit(object):
 		session.commit()
 
 		code = model.SubmittedCode(evaluation=evaluation.id, code=data)
-		session.add(code)
+		# session.add(code) - nasty, nasty hack! Fixme! Todo! Whatever
 
 		if not module.autocorrect:
 			session.commit()

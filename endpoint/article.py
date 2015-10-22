@@ -19,7 +19,13 @@ class Article(object):
 class Articles(object):
 
 	def on_get(self, req, resp):
-		query = session.query(model.Article).order_by(desc(model.Article.time_created))
+		user = req.context['user']
+
+		if user is None or user.role === 'participant':
+			query = session.query(model.Article).filter(model.Article.published).order_by(desc(model.Article.time_created))
+		else
+			query = session.query(model.Article).order_by(desc(model.Article.time_created))
+
 		limit = req.get_param_as_int('_limit')
 		start = req.get_param_as_int('_start')
 		count = query.count()

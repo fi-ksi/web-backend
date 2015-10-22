@@ -21,9 +21,9 @@ class Articles(object):
 	def on_get(self, req, resp):
 		user = req.context['user']
 
-		if user is None or user.role === 'participant':
+		if user is None or user.id is None or user.role == 'participant':
 			query = session.query(model.Article).filter(model.Article.published).order_by(desc(model.Article.time_created))
-		else
+		else:
 			query = session.query(model.Article).order_by(desc(model.Article.time_created))
 
 		limit = req.get_param_as_int('_limit')

@@ -1,6 +1,6 @@
 import datetime
 
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, text
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, text, Boolean
 from sqlalchemy.types import TIMESTAMP
 
 from . import Base
@@ -18,4 +18,4 @@ class Article(Base):
 	body = Column(Text)
 	picture = Column(String(255))
 	time_created = Column(TIMESTAMP, default=datetime.datetime.utcnow, server_default=text('CURRENT_TIMESTAMP'))
-	published = Column(Bool)
+	published = Column(Boolean)

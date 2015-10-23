@@ -2,7 +2,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email import Charset
 
-KSI = 'ksi@fi.muni.cz'
+KSI = 'ksi-dev@fi.muni.cz'
 FEEDBACK = [ 'email@honzamrazek.cz', 'henrich.lau@gmail.com' ]
 
 def send(to, subject, text, addr_from=KSI):

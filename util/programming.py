@@ -243,7 +243,7 @@ def _post_trigger(wd, trigger_script, sandbox_dir, report):
 	return (status == 'y', report, stdout_path)
 
 def _check(wd, check_script, sandbox_dir, sandbox_stdout, report):
-	cmd = [ 'xvfb-run', '-e', '/home/ksi/err', '-a', '/usr/bin/python', check_script, sandbox_dir, sandbox_stdout ]
+	cmd = [ 'xvfb-run', '-e', os.path.join('err'), '-a', '/usr/bin/python', check_script, sandbox_dir, sandbox_stdout ]
 	status = 'y'
 	exception = None
 	stdout_path = os.path.join(wd, 'check.stdout')

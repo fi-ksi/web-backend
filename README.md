@@ -14,6 +14,7 @@ Je vhodne vyuzit virtualenv - pip install virtualenv, virtualenv env, source env
 * SQLAlchemy (1.0.8)
 * python-magic
 * py-bcrypt
+* PyPy (build vlozit do ~/pypy/, [how-to](http://doc.pypy.org/en/latest/build.html))
 
 ## Spusteni
 
@@ -21,6 +22,8 @@ Je vhodne vyuzit virtualenv - pip install virtualenv, virtualenv env, source env
 * HTTPS: `gunicorn --bind 127.0.0.1:3000 --certfile=server.crt --keyfile=key.pem app:api`
 
 Modifikaci parametru `--bind` lze zmenit cilovou IP adresu a port (format: `<ip>:<port>`). Pro spusteni na vsech dostupnych IP adresach, staci nastavit `--bind` na format `0:<port>`.
+
+Doporucene spusteni: skriptem ./start.sh, zabiti serveru skriptem ./kill.sh.
 
 ## Testovani auth
 

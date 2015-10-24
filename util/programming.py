@@ -4,6 +4,7 @@ import os
 import shutil
 import json
 import ast
+import codecs
 from pypy_interact import PyPySandboxedProc
 
 from db import session
@@ -117,7 +118,7 @@ def _save_raw(code, out, report):
 	status = 'y'
 
 	try:
-		open(out, 'w').write(code)
+		codecs.open(out, 'w', "utf-8").write(code)
 	except IOError:
 		save_status = 'n'
 

@@ -97,7 +97,8 @@ class ModuleSubmit(object):
 		session.commit()
 
 		code = model.SubmittedCode(evaluation=evaluation.id, code=data)
-		# session.add(code) - nasty, nasty hack! Fixme! Todo! Whatever
+		session.add(code)
+		session.commit()
 
 		if not module.autocorrect:
 			session.commit()
@@ -108,9 +109,9 @@ class ModuleSubmit(object):
 		result, report = util.programming.evaluate(module.task, module, user_id, data)
 
 		points = module.max_points if result else 0
-		evaluation = model.Evaluation(user=user_id, module=module.id, points=points, full_report=report)
+		evaluation.points = points
+		evaluation.full_report = report
 
-		session.add(evaluation)
 		session.commit()
 		session.close()
 

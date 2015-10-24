@@ -4,6 +4,7 @@ import os
 import shutil
 import json
 import ast
+import codecs
 from pypy_interact import PyPySandboxedProc
 
 from db import session
@@ -33,12 +34,12 @@ def evaluate(task, module, user_id, data):
 	success, report = _save_raw(data, raw_code, report)
 	if not success:
 		print report
-		return
+		return ( 'error', 'Selhala operace _save_raw', '' )
 
 	success, report = _merge(dir, programming.merge_script, raw_code, merged_code, report)
 	if not success:
 		print report
-		return
+		return ( 'error', 'Selhala operace _merge', '' )
 
 	sandbox_dir = os.path.abspath(os.path.join(dir, 'sandbox'))
 	try:
@@ -50,15 +51,17 @@ def evaluate(task, module, user_id, data):
 
 	(success, report, sandbox_stdout, sandbox_stderr) = _exec(dir, sandbox_dir, 'code.py', programming.args, programming.stdin, programming.timeout, report)
 	if not success:
-		print report
-		return
+		return ( 'exec-error', report, open(sandbox_stderr).read())
 
 	#if programming.post_trigger_script:
 	#	success, report, trigger_stdout = _post_trigger(dir, programming.post_trigger_script, sandbox_dir, report)
 
 	success, report, result = _check(dir, programming.check_script, sandbox_dir, sandbox_stdout, report)
 
-	return (success, report)
+	if success:
+		return ('correct', report, '')
+	else:
+		return ('incorrect', report, '')
 
 def code_execution_dir(execution_id):
 	return os.path.join('data', 'code_executions', 'execution_%d' % execution_id)
@@ -115,7 +118,7 @@ def _save_raw(code, out, report):
 	status = 'y'
 
 	try:
-		open(out, 'w').write(code)
+		codecs.open(out, 'w', "utf-8").write(code)
 	except IOError:
 		save_status = 'n'
 
@@ -243,7 +246,7 @@ def _post_trigger(wd, trigger_script, sandbox_dir, report):
 	return (status == 'y', report, stdout_path)
 
 def _check(wd, check_script, sandbox_dir, sandbox_stdout, report):
-	cmd = [ 'xvfb-run', '-e', '/home/ksi/err', '-a', '/usr/bin/python', check_script, sandbox_dir, sandbox_stdout ]
+	cmd = [ 'xvfb-run', '-e', os.path.join('err'), '-a', '/usr/bin/python', check_script, sandbox_dir, sandbox_stdout ]
 	status = 'y'
 	exception = None
 	stdout_path = os.path.join(wd, 'check.stdout')

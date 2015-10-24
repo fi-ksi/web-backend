@@ -106,7 +106,7 @@ class ModuleSubmit(object):
 			req.context['result'] = { 'result': 'correct' }
 			return
 
-		result, report = util.programming.evaluate(module.task, module, user_id, data)
+		result, report, output = util.programming.evaluate(module.task, module, user_id, data)
 
 		points = module.max_points if result else 0
 		evaluation.points = points
@@ -115,7 +115,7 @@ class ModuleSubmit(object):
 		session.commit()
 		session.close()
 
-		req.context['result'] = { 'result': 'correct' if result else 'incorrect', 'score': points }
+		req.context['result'] = { 'result': result, 'score': points, 'output': output }
 
 	def on_post(self, req, resp, id):
 		user = req.context['user']

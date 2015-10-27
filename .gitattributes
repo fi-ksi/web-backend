@@ -1,0 +1,4 @@
+config.py merge=ours
+util/mail.py merge=ours
+gunicorn_cfg.py merge=ours
+

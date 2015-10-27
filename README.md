@@ -29,3 +29,18 @@ Doporucene spusteni: skriptem ./start.sh, zabiti serveru skriptem ./kill.sh.
 
 * dojit na http://server:port/debug - dojde k vytvoreni uzivatele 'user' s heslem '1234'
 * http://server:port/profile - pri spravnem basic auth (base64 user:password v Authenticate headeru HTTP requestu) is_logged vraci true
+
+## Mergovani vetve `dev` do vetve `master`
+
+Pri merge `dev` do `master` je nutne zachovat konfiguracni soubory jednotlivych vetvi, proto mergujte takto:
+
+	git checkout master`
+	git merge --no-commit dev
+	git reset HEAD <config_file>
+	git checkout -- <config_file>
+	git commit -m "Merged dev to master"`
+
+You can put lines 3 & 4 in a for loop if you have a list of files to skip.
+
+Pokud naleznete hezci reseni, budu rad...
+

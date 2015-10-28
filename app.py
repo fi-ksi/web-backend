@@ -5,6 +5,7 @@ import model
 import endpoint
 from db import engine, session
 from util import UserInfo
+from sqlalchemy import func
 
 
 class JSONTranslator(object):
@@ -37,6 +38,14 @@ class Authorizer(object):
 
 		req.context['user'] = UserInfo()
 
+class Year_fill(object):
+
+	def process_request(self, req, resp):
+		if (req.get_param('year') is not None):
+			req.context['year'] = req.get_param('year')
+		else:
+			req.context['year'] = session.query(func.max(model.Year.id)).as_scalar()
+
 def log(req, resp):
 	try:
 		ip = req.env['HTTP_X_FORWARDED_FOR'].split(',')[-1].strip()
@@ -66,7 +75,7 @@ def cors_middleware(request, response, params):
 
 
 api = falcon.API(before=[ cors_middleware ], after=[ log_middleware ],
-				 middleware=[JSONTranslator(), Authorizer()])
+				 middleware=[JSONTranslator(), Authorizer(), Year_fill()])
 
 
 model.Base.metadata.create_all(engine)

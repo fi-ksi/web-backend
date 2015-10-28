@@ -18,10 +18,10 @@ class Tasks(object):
 
 	def on_get(self, req, resp):
 		user = req.context['user']
-		tasks = session.query(model.Task).all()
+		tasks = session.query(model.Task).join(model.Wave, model.Task.wave == model.Wave.id).filter(model.Wave.year == req.context['year']).all()
 
 		adeadline = util.task.after_deadline()
-		fsubmitted = util.task.fully_submitted(user.id)
+		fsubmitted = util.task.fully_submitted(user.id, req.context['year'])
 
 		req.context['result'] = { 'tasks': [ util.task.to_json(task, user, adeadline, fsubmitted) for task in tasks ] }
 

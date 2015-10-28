@@ -19,4 +19,9 @@ class ResultScores(object):
 	def on_get(self, req, resp):
 		users = session.query(model.User)
 
-		req.context['result'] = { 'resultScores': [ util.score.user_to_json(user) for user in users ] }
+		ru = []
+		for user in users:
+			if (user.role == 'participant') and  (util.user.any_task_submitted(user.id, req.context['year'])):
+				ru.append(util.user.to_json(user, req.context['year']))
+		req.context['result'] = { 'resultScores': ru }
+

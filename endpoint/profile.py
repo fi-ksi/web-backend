@@ -45,7 +45,7 @@ class Profile(object):
 		session.add(profile)
 		session.commit()
 
-		req.context['result'] = util.profile.to_json(user, profile)
+		req.context['result'] = util.profile.to_json(user, profile, req.context['year'])
 		session.close()
 
 
@@ -58,7 +58,7 @@ class Profile(object):
 
 		user, profile = session.query(model.User).filter(model.User.id == userinfo.get_id()).outerjoin(model.Profile, model.User.id == model.Profile.user_id).add_entity(model.Profile).first()
 
-		req.context['result'] = util.profile.to_json(user, profile)
+		req.context['result'] = util.profile.to_json(user, profile, req.context['year'])
 
 class PictureUploader(object):
 

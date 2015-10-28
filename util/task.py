@@ -12,13 +12,13 @@ class TaskStatus:
 	CORRECTING = 'correcting'
 	DONE = 'done'
 
-def fully_submitted(user_id):
+def fully_submitted(user_id, year_id):
 	if user_id is None:
 		return []
 
-	max_modules_count = { task.id: task.modules for task in session.query(model.Task.id, func.count(model.Module.id).label('modules')).outerjoin(model.Module).group_by(model.Task.id).all() }
+	max_modules_count = { task.id: task.modules for task in session.query(model.Task.id, func.count(model.Module.id).label('modules')).join(model.Wave, model.Task.wave == model.Wave.id).filter(model.Wave.year == year_id).outerjoin(model.Module).group_by(model.Task.id).all() }
 
-	real_modules_count = { task.id: task.modules for task in session.query(model.Task.id, func.count(distinct(model.Module.id)).label('modules')).join(model.Module).join(model.Evaluation).filter(model.Evaluation.user == user_id, or_(model.Module.autocorrect != True, model.Module.max_points == model.Evaluation.points)).group_by(model.Task.id).all() }
+	real_modules_count = { task.id: task.modules for task in session.query(model.Task.id, func.count(distinct(model.Module.id)).label('modules')).join(model.Wave, model.Task.wave == model.Wave.id).filter(model.Wave.year == year_id).join(model.Module).join(model.Evaluation).filter(model.Evaluation.user == user_id, or_(model.Module.autocorrect != True, model.Module.max_points == model.Evaluation.points)).group_by(model.Task.id).all() }
 
 	return { int(key): int(val) for key, val in real_modules_count.items() if max_modules_count[key] == val }
 
@@ -68,7 +68,7 @@ def status(task, user, adeadline=None, fsubmitted=None):
 		return TaskStatus.BASE
 
 	if not fsubmitted:
-		fsubmitted = fully_submitted(user.id)
+		fsubmitted = fully_submitted(user.id, task.wave.year)
 
 	if task.id in fsubmitted:
 		return TaskStatus.DONE
@@ -76,7 +76,7 @@ def status(task, user, adeadline=None, fsubmitted=None):
 	if not adeadline:
 		adeadline = after_deadline()
 
-	currently_active = adeadline | set(fully_submitted(user.id).keys())
+	currently_active = adeadline | set(fully_submitted(user.id, task.wave.year).keys())
 
 	if task.id in currently_active:
 		return TaskStatus.BASE

@@ -20,3 +20,5 @@ from model.token import Token
 from model.submitted import SubmittedFile, SubmittedCode
 from model.user_achievement import UserAchievement
 from model.text import Text
+from model.year import Year
+from model.wave import Wave

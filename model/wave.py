@@ -4,7 +4,7 @@ from sqlalchemy import Column, Integer, String, Text, ForeignKey
 
 from . import Base
 
-class Article(Base):
+class Wave(Base):
 	__tablename__ = 'waves'
 	__table_args__ = {
 		'mysql_engine': 'InnoDB',

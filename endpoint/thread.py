@@ -1,6 +1,6 @@
 import falcon
 import json
-from sqlalchemy import and_, text, not_, desc
+from sqlalchemy import and_, text, not_, desc, func
 from sqlalchemy.orm import load_only
 
 from db import session
@@ -55,6 +55,11 @@ class Threads(object):
 		data = json.loads(req.stream.read())
 		thread = model.Thread(title=data['thread']['title'])
 
+		# nove obecne vlakno je prirazeno posledni vlne daneho rocniku
+		thread.wave = session.query(func.max(model.Wave.id)).\
+		filter(model.Wave.public).\
+		filter(model.Wave.year == req.context['year']).scalar()
+
 		session.add(thread)
 		session.commit()
 		req.context['result'] = { 'thread': util.thread.to_json(thread, user.id) }
@@ -68,10 +73,13 @@ class Threads(object):
 		task_threads = session.query(model.Task).options(load_only("thread")).all()
 		task_threads = map(lambda x: x.thread, task_threads)
 
-		if show_all:
-			threads = session.query(model.Thread).filter(model.Thread.public == True).order_by(desc(model.Thread.id)).all()
-		else:
-			threads = session.query(model.Thread).filter(model.Thread.public == True).filter(not_(model.Thread.id.in_(task_threads))).order_by(desc(model.Thread.id)).all()
+		threads = session.query(model.Thread).filter(model.Thread.public == True).\
+		join(model.Wave, model.Wave.id == model.Thread.wave).\
+		filter(model.Wave.public).\
+		filter(model.Wave.year == req.context['year'])
+		if not show_all:
+			threads = threads.filter(not_(model.Thread.id.in_(task_threads)))
+		threads = threads.order_by(desc(model.Thread.id)).all()
 
 		req.context['result'] = { 'threads': [ util.thread.to_json(thread, user_id) for thread in threads] }
 		session.close()

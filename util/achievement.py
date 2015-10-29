@@ -2,7 +2,7 @@ from db import session
 import model
 
 def to_json(achievement, user_id):
-	return { 'id': achievement.id, 'title': achievement.title, 'active': True, 'picture': '/img/achievements/' + achievement.code + '.svg' }
+	return { 'id': achievement.id, 'title': achievement.title, 'active': True, 'picture': '/img/achievements/' + achievement.code + '.svg', 'description': achievement.description }
 
 def ids_set(achievements):
 	return set([ achievement.id for achievement in achievements ])

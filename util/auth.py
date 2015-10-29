@@ -13,3 +13,6 @@ class UserInfo:
 
 	def is_admin(self):
 		return self.role == 'admin'
+
+	def is_org(self):
+		return self.role == 'org'

@@ -63,11 +63,18 @@ def comment_thread(task_id, user_id):
 	return query.thread if query is not None else None
 
 def status(task, user, adeadline=None, fsubmitted=None):
+	task_opened_in_wave =  session.query(model.Task).\
+	join(model.Wave, model.Wave.id == model.Task.wave).\
+	filter(model.Wave.public).all()
+
 	if user is None or user.id is None:
-		return TaskStatus.BASE if task.prerequisite is None else TaskStatus.LOCKED
+		return TaskStatus.BASE if task.prerequisite is None and task in task_opened_in_wave else TaskStatus.LOCKED
 
 	if user.role in ('org', 'admin'):
 		return TaskStatus.BASE
+
+	if not task in task_opened_in_wave:
+		return TaskStatus.LOCKED
 
 	if task.time_deadline < datetime.datetime.now():
 		return TaskStatus.BASE
@@ -129,7 +136,6 @@ def best_scores(task_id):
 			filter(model.Module.task == task_id, 'points' is not None).\
 			filter(model.Evaluation.module == model.Module.id).\
 			group_by(model.Evaluation.module, model.User).subquery()
-	print per_modules
 
 	return session.query(model.User, func.sum(per_modules.c.points).label('sum')).join(per_modules, per_modules.c.user_id == model.User.id).filter(model.User.role == 'participant').group_by(per_modules.c.user_id).order_by(desc('sum')).slice(0, 5).all()
 

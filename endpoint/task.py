@@ -18,7 +18,10 @@ class Tasks(object):
 
 	def on_get(self, req, resp):
 		user = req.context['user']
-		tasks = session.query(model.Task).join(model.Wave, model.Task.wave == model.Wave.id).filter(model.Wave.year == req.context['year']).all()
+		tasks = session.query(model.Task).\
+		join(model.Wave, model.Task.wave == model.Wave.id).\
+		filter(model.Wave.public).\
+		filter(model.Wave.year == req.context['year']).all()
 
 		adeadline = util.task.after_deadline()
 		fsubmitted = util.task.fully_submitted(user.id, req.context['year'])
@@ -31,9 +34,14 @@ class TaskDetails(object):
 	def on_get(self, req, resp, id):
 		user = req.context['user']
 		task = session.query(model.Task).get(id)
+		if task is None:
+			resp.status = falcon.HTTP_400
+			return
 		status = util.task.status(task, user)
 
-		if task.prerequisite is not None and status == util.TaskStatus.LOCKED:
+		print status
+
+		if status == util.TaskStatus.LOCKED:
 			resp.status = falcon.HTTP_400
 			return
 

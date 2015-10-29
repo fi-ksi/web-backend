@@ -18,7 +18,6 @@ import thread
 import post
 import mail
 import text
-import year
 
 def decode_form_data(req):
 	ctype, pdict = cgi.parse_header(req.content_type)

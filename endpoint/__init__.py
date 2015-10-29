@@ -6,7 +6,6 @@ from endpoint.task import Task, Tasks, TaskDetails
 from endpoint.module import Module, ModuleSubmit
 from endpoint.thread import Thread, Threads, ThreadDetails
 from endpoint.user import User, Users, ChangePassword, ForgottenPassword
-from endpoint.score import Score, ResultScores
 from endpoint.registration import Registration
 from endpoint.profile import Profile, PictureUploader
 from endpoint.image import Image

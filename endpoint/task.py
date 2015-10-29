@@ -11,6 +11,13 @@ class Task(object):
 		user = req.context['user']
 		task = session.query(model.Task).get(id)
 
+		if (not user.is_logged_in()) or (not user.is_org()):
+			if not task in session.query(model.Task).\
+					join(model.Wave, model.Task.wave == model.Wave.id).\
+					filter(model.Wave.public).all():
+				resp.status = falcon.HTTP_400
+				return
+
 		req.context['result'] = { 'task': util.task.to_json(task, user) }
 
 

@@ -1,6 +1,6 @@
 import datetime
 
-from sqlalchemy import Column, Integer, String, Text, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, Boolean
 
 from . import Base
 
@@ -15,4 +15,5 @@ class Wave(Base):
 	year = Column(Integer, ForeignKey('years.id'), nullable=False)
 	index = Column(Integer, nullable=False)
 	caption = Column(String(100), nullable=True)
+	public = Column(Boolean, nullable=False, default=0, server_default='0')
 

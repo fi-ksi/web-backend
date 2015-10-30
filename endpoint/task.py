@@ -47,8 +47,6 @@ class TaskDetails(object):
 			return
 		status = util.task.status(task, user)
 
-		print status
-
 		if status == util.TaskStatus.LOCKED:
 			resp.status = falcon.HTTP_400
 			return

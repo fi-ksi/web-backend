@@ -21,11 +21,17 @@ class Module(object):
 
 		module = session.query(model.Module).get(id)
 		module_json = _module_to_json(module)
-		count = session.query(model.Evaluation.points).filter(model.Evaluation.user == user.id, model.Evaluation.module == id).count()
+		count = session.query(model.Evaluation.points).filter(model.Evaluation.user == user.id, model.Evaluation.module == id).\
+			join(model.Module, model.Module.id == model.Evaluation.module).\
+			join(model.Task, model.Task.id == model.Module.task).\
+			filter(model.Task.evaluation_public).count()
 
 		if count > 0:
 			status = session.query(func.max(model.Evaluation.points).label('points')).\
-				filter(model.Evaluation.user == user.id, model.Evaluation.module == id).first()
+				filter(model.Evaluation.user == user.id, model.Evaluation.module == id).\
+				join(model.Module, model.Module.id == model.Evaluation.module).\
+				join(model.Task, model.Task.id == model.Module.task).\
+				filter(model.Task.evaluation_public).first()
 			module_json['state'] = 'correct' if status.points == module.max_points else 'incorrect'
 		else:
 			module_json['state'] = 'blank'

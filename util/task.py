@@ -47,6 +47,8 @@ def points_per_module(task_id, user_id):
 		func.max(model.Evaluation.points).label('points')).\
 		join(model.Evaluation, model.Evaluation.module == model.Module.id).\
 		filter(model.Module.task == task_id, model.Evaluation.user == user_id).\
+		join(model.Task, model.Task.id == model.Module.task).\
+		filter(model.Task.evaluation_public).\
 		group_by(model.Evaluation.module).all()
 
 def points(task_id, user_id):
@@ -56,6 +58,15 @@ def points(task_id, user_id):
 		return None
 
 	return sum(module.points for module in ppm if module.points is not None)
+
+def corrected(task_id, user_id):
+	return session.query(model.Evaluation).\
+		join(model.Module, model.Evaluation.module == model.Module.id).\
+		filter(model.Module.task == task_id, model.Evaluation.user == user_id).\
+		join(model.Task, model.Task.id == model.Module.task).\
+		filter(model.Task.evaluation_public).\
+		group_by(model.Evaluation.module).count() > 0
+
 
 def comment_thread(task_id, user_id):
 	query = session.query(model.SolutionComment).filter(model.SolutionComment.task == task_id, model.SolutionComment.user == user_id).first()
@@ -70,20 +81,22 @@ def status(task, user, adeadline=None, fsubmitted=None):
 	if user is None or user.id is None:
 		return TaskStatus.BASE if task.prerequisite is None and task in task_opened_in_wave else TaskStatus.LOCKED
 
-	if user.role in ('org', 'admin'):
-		return TaskStatus.BASE
-
-	if not task in task_opened_in_wave:
+	if not task in task_opened_in_wave and not user.role in ('org', 'admin'):
 		return TaskStatus.LOCKED
 
 	if task.time_deadline < datetime.datetime.now():
 		return TaskStatus.BASE
 
+	if corrected(task.id, user.id):
+		return TaskStatus.DONE
+
+	print fully_submitted(user.id)
+
 	if not fsubmitted:
 		fsubmitted = fully_submitted(user.id)
 
 	if task.id in fsubmitted:
-		return TaskStatus.DONE
+		return TaskStatus.CORRECTING
 
 	if not adeadline:
 		adeadline = after_deadline()
@@ -93,7 +106,7 @@ def status(task, user, adeadline=None, fsubmitted=None):
 	if task.id in currently_active:
 		return TaskStatus.BASE
 
-	return TaskStatus.BASE if util.PrerequisitiesEvaluator(task.prerequisite_obj, currently_active).evaluate() else TaskStatus.LOCKED
+	return TaskStatus.BASE if util.PrerequisitiesEvaluator(task.prerequisite_obj, currently_active).evaluate() or user.role in ('org', 'admin') else TaskStatus.LOCKED
 
 
 def to_json(task, user=None, adeadline=None, fsubmitted=None):
@@ -124,7 +137,7 @@ def details_to_json(task, user, status, achievements, best_scores, comment_threa
 		'thread': task.thread,
 		'modules': [ module.id for module in task.modules ],
 		'best_scores': [ best_score.User.id for best_score in best_scores ],
-		'comment': comment_thread,
+		'comment': comment_thread if task.evaluation_public else None,
 		'solution': task.solution if status == TaskStatus.DONE or task.time_deadline < datetime.datetime.now() or user.role in ('org', 'admin') else None,
 		'achievements': [ achievement.id for achievement in achievements ]
 	}

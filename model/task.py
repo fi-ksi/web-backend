@@ -31,7 +31,7 @@ class Task(Base):
 
 	prerequisite_obj = relationship('Prerequisite', primaryjoin='Task.prerequisite==Prerequisite.id', uselist=False)
 	modules = relationship('Module', primaryjoin='Task.id==Module.task', order_by='Module.order')
-	solution_public = Column(Boolean, nullable=False)
+	evaluation_public = Column(Boolean, nullable=False)
 
 class SolutionComment(Base):
 	__tablename__ = 'solution_comments'

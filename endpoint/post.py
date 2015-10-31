@@ -8,7 +8,7 @@ import util
 from thread import Thread
 
 #TODO change after testing
-KSI_MAIL = 'me@apophis.cz'
+KSI_MAIL = 'smijakova.eva@gmail.com'
 FORUM_URL = 'http://kyzikos.fi.muni.cz/forum/'
 
 class Post(object):
@@ -60,7 +60,8 @@ class Posts(object):
 		#in progress 
 		if user.role == 'participant':
 			if task_thread:
-				util.mail.send([ task_thread.author.email ], 'Predmet', 'Obsah')
+				task_author = session.query(model.User).filter(model.User.id == task_thread.author)
+				util.mail.send([ task_author.email ], 'Predmet', 'Obsah')
 			elif solution_thread:
 				pass
 				'''
@@ -73,8 +74,8 @@ class Posts(object):
 				'''
 			else:
 				util.mail.send([ KSI_MAIL ], '[KSI-WEB] Nový příspěvek v obecné diskuzi', \
-					u"Ahoj,\n\ndo obecné diskuze na https://ksi.fi.muni.cz byl přidán nový příspěvek:\n\n" +\
-					 u"<i>" + user_class.first_name + u' ' + user_class.last_name + u':</i>\n' + data['body'] + u'\n\nPřejít do diskuze:'  + FORUM_URL + str(thread.id) + u'\n\nWeb KSI') 
+					u"Ahoj,<br/><br/>do obecné diskuze na https://ksi.fi.muni.cz byl přidán nový příspěvek:<br/><br/>" +\
+					 u"<i>" + user_class.first_name + u' ' + user_class.last_name + u':</i><br/>' + data['body'] + u'<br/><br/>Přejít do diskuze:'  + FORUM_URL + str(thread.id) + u'<br/><br/>Web KSI') 
 
 		parent = data['parent']
 		if parent and not session.query(model.Post).filter(model.Post.id == parent, model.Post.thread == thread_id).first():

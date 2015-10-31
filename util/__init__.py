@@ -12,7 +12,6 @@ import sortable
 import programming
 import achievement
 import user
-import score
 import profile
 import thread
 import post

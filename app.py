@@ -44,7 +44,7 @@ class Year_fill(object):
 		if (req.get_param('year') is not None):
 			req.context['year'] = req.get_param('year')
 		else:
-			req.context['year'] = session.query(func.max(model.Year.id)).as_scalar()
+			req.context['year'] = session.query(func.max(model.Year.id)).scalar()
 
 def log(req, resp):
 	try:

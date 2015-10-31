@@ -76,7 +76,7 @@ def to_json(user, year_id):
         if user.role == 'participant':
                 data['score'] =  sum_points(user.id, year_id)
                 data['tasks_num'] = len(util.task.fully_submitted(user.id, year_id))
-                data['achievements'] = list(util.achievement.ids_set(user.achievements))
+                data['achievements'] = list(util.achievement.ids_set(filter(lambda a: a.year == year_id, user.achievements)))
 
                 profile = session.query(model.Profile).get(user.id)
                 data['addr_country'] = profile.addr_country

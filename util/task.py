@@ -90,8 +90,6 @@ def status(task, user, adeadline=None, fsubmitted=None):
 	if corrected(task.id, user.id):
 		return TaskStatus.DONE
 
-	print fully_submitted(user.id)
-
 	if not fsubmitted:
 		fsubmitted = fully_submitted(user.id)
 

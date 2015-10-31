@@ -117,7 +117,6 @@ def to_json(task, user=None, adeadline=None, fsubmitted=None):
 		'id': task.id,
 		'title': task.title,
 		'author': task.author,
-		'category': task.category,
 		'details': task.id,
 		'intro': task.intro,
 		'max_score': sum([ module.max_points for module in task.modules ]),

@@ -1,6 +1,5 @@
 from endpoint.article import Article, Articles
 from endpoint.achievement import Achievement, Achievements
-from endpoint.category import Category, Categories
 from endpoint.post import Post, Posts
 from endpoint.task import Task, Tasks, TaskDetails
 from endpoint.module import Module, ModuleSubmit

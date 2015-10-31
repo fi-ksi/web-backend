@@ -16,7 +16,6 @@ class Task(Base):
 	title = Column(String(255), nullable=False)
 	author = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
 	wave = Column(Integer, ForeignKey('waves.id'), nullable=False)
-	category = Column(Integer, ForeignKey('categories.id', ondelete='SET NULL'), nullable=True)
 	prerequisite = Column(Integer, ForeignKey('prerequisities.id'), nullable=True)
 	intro = Column(String(500), nullable=False)
 	body = Column(Text, nullable=False)

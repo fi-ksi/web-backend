@@ -108,6 +108,10 @@ def status(task, user, adeadline=None, fsubmitted=None):
 
 	return TaskStatus.BASE if util.PrerequisitiesEvaluator(task.prerequisite_obj, currently_active).evaluate() or user.role in ('org', 'admin') else TaskStatus.LOCKED
 
+def time_published(task_id):
+	return session.query(model.Wave.time_published).\
+		join(model.Task, model.Task.wave == model.Wave.id).\
+		filter(model.Task.id == task_id).scalar()
 
 def to_json(task, user=None, adeadline=None, fsubmitted=None):
 	max_points = sum([ module.max_points for module in task.modules ])
@@ -120,7 +124,7 @@ def to_json(task, user=None, adeadline=None, fsubmitted=None):
 		'details': task.id,
 		'intro': task.intro,
 		'max_score': sum([ module.max_points for module in task.modules ]),
-		'time_published': task.time_published.isoformat(),
+		'time_published': time_published(task.id).isoformat(),
 		'time_deadline': task.time_deadline.isoformat(),
 		'state': tstatus,
 		'prerequisities': [] if not task.prerequisite_obj else util.prerequisite.to_json(task.prerequisite_obj),

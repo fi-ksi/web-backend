@@ -23,7 +23,6 @@ class Task(Base):
 	thread = Column(Integer, ForeignKey('threads.id'), nullable=False)
 	picture_base = Column(String(255), nullable=False)
 	time_created = Column(DateTime, default=datetime.datetime.utcnow)
-	time_published = Column(DateTime, default=datetime.datetime.utcnow)
 	time_deadline = Column(DateTime, default=datetime.datetime.utcnow)
 
 	prerequisite_obj = relationship('Prerequisite', primaryjoin='Task.prerequisite==Prerequisite.id', uselist=False)

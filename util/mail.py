@@ -7,11 +7,13 @@ FEEDBACK = [ 'me@apophis.cz' ]
 
 def send(to, subject, text, addr_from=KSI):
 	Charset.add_charset('utf-8', Charset.QP, Charset.QP, 'utf-8')
-	msg = MIMEText(text, 'plain', 'utf-8')
+	text = u"<html>" + text + u"</html>"
+	msg = MIMEText(text, 'html', 'utf-8')
 
 	msg['Subject'] = subject
 	msg['From'] = addr_from
 	msg['To'] = ','.join(to)
+	msg['Content-Type'] = 'text/html'
 
 	s = smtplib.SMTP('relay.muni.cz')
 	s.sendmail(addr_from, to if isinstance(to, (list)) else [ to ], msg.as_string())

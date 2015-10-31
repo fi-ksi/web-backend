@@ -121,7 +121,6 @@ def to_json(task, user=None, adeadline=None, fsubmitted=None):
 		'details': task.id,
 		'intro': task.intro,
 		'max_score': sum([ module.max_points for module in task.modules ]),
-		'position': [ task.position_x, task.position_y ],
 		'time_published': task.time_published.isoformat(),
 		'time_deadline': task.time_deadline.isoformat(),
 		'state': tstatus,

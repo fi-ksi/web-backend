@@ -21,8 +21,6 @@ class Task(Base):
 	intro = Column(String(500), nullable=False)
 	body = Column(Text, nullable=False)
 	solution = Column(Text, nullable=True)
-	position_x = Column(Integer, nullable=False, default=0, server_default="0")
-	position_y = Column(Integer, nullable=False, default=0, server_default="0")
 	thread = Column(Integer, ForeignKey('threads.id'), nullable=False)
 	picture_base = Column(String(255), nullable=False)
 	time_created = Column(DateTime, default=datetime.datetime.utcnow)

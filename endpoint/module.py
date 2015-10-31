@@ -114,7 +114,7 @@ class ModuleSubmit(object):
 
 		result, report, output = util.programming.evaluate(module.task, module, user_id, data)
 
-		points = module.max_points if result else 0
+		points = module.max_points if result == 'correct' else 0
 		evaluation.points = points
 		evaluation.full_report = report
 

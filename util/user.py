@@ -42,6 +42,7 @@ def sum_points(user_id, year_id):
 		filter(model.Evaluation.user == user_id).\
 		join(model.Module, model.Evaluation.module == model.Module.id).\
 		join(model.Task, model.Task.id == model.Module.task).\
+		filter(model.Task.evaluation_public).\
 		join(model.Wave, model.Wave.id == model.Task.wave).\
 		filter(model.Wave.year == year_id).\
 		group_by(model.Evaluation.module).all()

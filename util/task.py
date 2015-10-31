@@ -12,6 +12,8 @@ class TaskStatus:
 	CORRECTING = 'correcting'
 	DONE = 'done'
 
+# Vraci dvojici { task_id : sum(body) } pro vsechny plne odevzdane moduly v uloze
+# Plne odevzdane moduly = bez autocorrect, nebo s autocorrect majici plny pocet bodu
 def fully_submitted(user_id, year_id=None):
 	if user_id is None:
 		return []
@@ -59,6 +61,9 @@ def points(task_id, user_id):
 
 	return sum(module.points for module in ppm if module.points is not None)
 
+# vraci, jestli je uloha opravena
+# tzn. u uloh, ktere jsou odevzdavany opakovane (automaticky vyhodnocovane)
+# vraci True, pokud resitel udela submit alespon jednoho (teoreticky spatneho) reseni
 def corrected(task_id, user_id):
 	return session.query(model.Evaluation).\
 		join(model.Module, model.Evaluation.module == model.Module.id).\
@@ -67,43 +72,60 @@ def corrected(task_id, user_id):
 		filter(model.Task.evaluation_public).\
 		group_by(model.Evaluation.module).count() > 0
 
-
 def comment_thread(task_id, user_id):
 	query = session.query(model.SolutionComment).filter(model.SolutionComment.task == task_id, model.SolutionComment.user == user_id).first()
 
 	return query.thread if query is not None else None
+
+# Vraci true, pokud maji vsechny automaticky opravovane moduly v uloze
+# plny pocet bodu, jinak False
+# Pokud uloha nema automaticky opravovane moduly, vraci True.
+def autocorrected_full(task_id, user_id):
+	q = session.query(model.Module).join(model.Task, model.Module.task == model.Task.id).filter(model.Task.id == task_id)
+	
+	max_modules_count = q.count()
+
+	real_modules_count = q.join(model.Evaluation, model.Evaluation.module == model.Module.id).filter(model.Evaluation.user == user_id, or_(model.Module.autocorrect != True, model.Module.max_points == model.Evaluation.points)).count()
+
+	return max_modules_count == real_modules_count
 
 def status(task, user, adeadline=None, fsubmitted=None):
 	task_opened_in_wave =  session.query(model.Task).\
 	join(model.Wave, model.Wave.id == model.Task.wave).\
 	filter(model.Wave.public).all()
 
+	# pokud neni prihlasen zadny uzivatel, otevreme jen ulohu bez prerekvizit
+	# = prvvni uloha
 	if user is None or user.id is None:
 		return TaskStatus.BASE if task.prerequisite is None and task in task_opened_in_wave else TaskStatus.LOCKED
 
+	# pokud uloha neni v otevrene vlne, je LOCKED
+	# vyjimkou jsou uzivatele s rolemi 'org' a 'admin', tem se zobrazuji vsechny ulohu
 	if not task in task_opened_in_wave and not user.role in ('org', 'admin'):
 		return TaskStatus.LOCKED
 
-	if task.time_deadline < datetime.datetime.now():
-		return TaskStatus.BASE
-
-	if corrected(task.id, user.id):
+	# Pokud je uloha opravena, je DONE.
+	# Uloha neni DONE dokud nemaji vsechny automaticky orpavovane moduly plny pocet bodu.
+	if corrected(task.id, user.id) and autocorrected_full(task.id, user.id):
 		return TaskStatus.DONE
 
 	if not fsubmitted:
 		fsubmitted = fully_submitted(user.id)
 
+	# Pokud je uloha odevzdana a jeste neopravena, je CORRECTING
 	if task.id in fsubmitted:
 		return TaskStatus.CORRECTING
 
 	if not adeadline:
 		adeadline = after_deadline()
 
+	# pokud je po deadline, zadani ulohy se otevira vsem
 	currently_active = adeadline | set(fully_submitted(user.id).keys())
-
 	if task.id in currently_active:
 		return TaskStatus.BASE
 
+	# Pokud nenastal ani jeden z vyse zminenych pripadu, otevreme ulohu, pokud
+	# jsou splneny prerekvizity
 	return TaskStatus.BASE if util.PrerequisitiesEvaluator(task.prerequisite_obj, currently_active).evaluate() or user.role in ('org', 'admin') else TaskStatus.LOCKED
 
 def time_published(task_id):
@@ -147,7 +169,9 @@ def best_scores(task_id):
 			func.max(model.Evaluation.points).label('points')).\
 			join(model.Evaluation, model.Evaluation.user == model.User.id).\
 			filter(model.Module.task == task_id, 'points' is not None).\
-			filter(model.Evaluation.module == model.Module.id).\
+			join(model.Module, model.Evaluation.module == model.Module.id).\
+			join(model.Task, model.Task.id == model.Module.task).\
+			filter(model.Task.evaluation_public).\
 			group_by(model.Evaluation.module, model.User).subquery()
 
 	return session.query(model.User, func.sum(per_modules.c.points).label('sum')).join(per_modules, per_modules.c.user_id == model.User.id).filter(model.User.role == 'participant').group_by(per_modules.c.user_id).order_by(desc('sum')).slice(0, 5).all()

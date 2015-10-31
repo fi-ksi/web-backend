@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import json, falcon
 
 from db import session
@@ -5,6 +6,10 @@ import model
 import util
 
 from thread import Thread
+
+#TODO change after testing
+KSI_MAIL = 'me@apophis.cz'
+FORUM_URL = 'http://kyzikos.fi.muni.cz/forum/'
 
 class Post(object):
 
@@ -37,16 +42,39 @@ class Posts(object):
 			resp.status = falcon.HTTP_400
 			return
 
-		if not thread.public:
-			task_thread = session.query(model.Task).filter(model.Task.thread == thread_id).first()
-			if task_thread and util.task.status(task_thread, user) == util.TaskStatus.LOCKED:
-				resp.status = falcon.HTTP_400
-				return
+		task_thread = session.query(model.Task).filter(model.Task.thread == thread_id).first()
+		solution_thread = session.query(model.SolutionComment).filter(model.SolutionComment.thread == thread_id, model.SolutionComment.user == user_id).first()
 
-			solution_thread = session.query(model.SolutionComment).filter(model.SolutionComment.thread == thread_id, model.SolutionComment.user == user_id).first()
-			if not solution_thread:
-				resp.status = falcon.HTTP_400
-				return
+		#po uzamceni 
+		if task_thread and util.task.status(task_thread, user) == util.TaskStatus.LOCKED:
+			resp.status = falcon.HTTP_400
+			return
+		#kdyz to neni public a ani solution, tak je to neco divnyho
+		if not solution_thread and not thread.public:
+			resp.status = falcon.HTTP_400
+			return
+
+		user_class = session.query(model.User).get(user.id)
+
+		#posilani mailu
+		#in progress 
+		if user.role == 'participant':
+			if task_thread:
+				util.mail.send([ task_thread.author.email ], 'Predmet', 'Obsah')
+			elif solution_thread:
+				pass
+				'''
+				correctors = session.query(model.User.email).\
+					join(model.Evaluation, model.Evaluation.evaluator == model.User.id).\
+					join(model.Module, model.Evaluation.module == model.Module.id).\
+					join(model.Task, model.Task.id == model.Module.task).\
+					filter(model.Task == solution_thread.task).all()
+				util.mail.send(correctors, 'Predmet', 'Obsah')
+				'''
+			else:
+				util.mail.send([ KSI_MAIL ], '[KSI-WEB] Nový příspěvek v obecné diskuzi', \
+					u"Ahoj,\n\ndo obecné diskuze na https://ksi.fi.muni.cz byl přidán nový příspěvek:\n\n" +\
+					 u"<i>" + user_class.first_name + u' ' + user_class.last_name + u':</i>\n' + data['body'] + u'\n\nPřejít do diskuze:'  + FORUM_URL + str(thread.id) + u'\n\nWeb KSI') 
 
 		parent = data['parent']
 		if parent and not session.query(model.Post).filter(model.Post.id == parent, model.Post.thread == thread_id).first():

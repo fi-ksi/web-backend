@@ -7,10 +7,7 @@ import model
 import util
 
 def _module_to_json(module):
-	return { 'id': module.id, 'type': module.type, 'name': module.name, 'description': module.description }
-
-def _submitted_file_to_json(inst):
-    return {'path' inst.path, 'mime': inst.mime}
+	return {'id': module.id, 'type': module.type, 'name': module.name, 'description': module.description}
 
 class Module(object):
 
@@ -47,11 +44,11 @@ class Module(object):
                 join(model.SubmittedFile.evaluation).\
                 filter(model.Evaluation.user == user.id, model.Evaluation.module == id)
             
-            module_json['submitted_files'] = [ _submitted_file_to_json(inst) for inst in submittedFiles ]
+            module_json['submitted_files'] = [{'id': inst.id, 'filename': os.path.basename(inst.path)} for inst in submittedFiles]
 		elif module.type == ModuleType.TEXT:
 			module_json['fields'] = util.text.num_fields(module.id) 
 
-		req.context['result'] = { 'module': module_json }
+		req.context['result'] = {'module': module_json}
 
 
 class ModuleSubmit(object):
@@ -72,12 +69,12 @@ class ModuleSubmit(object):
 
 		if not os.path.isdir(dir):
 			resp.status = falcon.HTTP_400
-			req.context['result'] = { 'result': 'incorrect' }
+			req.context['result'] = {'result': 'incorrect'}
 			return
 
 		files = multipart.MultiDict()
 		content_type, options = multipart.parse_options_header(req.content_type)
-		boundary = options.get('boundary','')
+		boundary = options.get('boundary', '')
 
 		if not boundary:
 			raise multipart.MultipartError("No boundary for multipart/form-data.")
@@ -97,7 +94,7 @@ class ModuleSubmit(object):
 		session.commit()
 		session.close()
 
-		req.context['result'] = { 'result': 'correct' }
+		req.context['result'] = {'result': 'correct'}
 
 	def _evaluate_code(self, req, module, user_id, resp, data):
 		evaluation = model.Evaluation(user=user_id, module=module.id)
@@ -111,7 +108,7 @@ class ModuleSubmit(object):
 		if not module.autocorrect:
 			session.commit()
 			session.close()
-			req.context['result'] = { 'result': 'correct' }
+			req.context['result'] = {'result': 'correct'}
 			return
 
 		result, report, output = util.programming.evaluate(module.task, module, user_id, data)
@@ -123,7 +120,7 @@ class ModuleSubmit(object):
 		session.commit()
 		session.close()
 
-		req.context['result'] = { 'result': result, 'score': points, 'output': output }
+		req.context['result'] = {'result': result, 'score': points, 'output': output}
 
 	def on_post(self, req, resp, id):
 		user = req.context['user']
@@ -155,7 +152,7 @@ class ModuleSubmit(object):
 
 		points = module.max_points if result else 0
 		evaluation = model.Evaluation(user=user.id, module=module.id, points=points, full_report=report)
-		req.context['result'] = { 'result': 'correct' if result else 'incorrect', 'score': points }
+		req.context['result'] = {'result': 'correct' if result else 'incorrect', 'score': points}
 
 		if "action" in report:
 			util.module.perform_action(module, user)
@@ -166,4 +163,49 @@ class ModuleSubmit(object):
 
 class ModuleSubmittedFile(object):
     
+    def on_get(self, req, resp, id):
+        user = req.context['user']
+
+		if not user.is_logged_in():
+			resp.status = falcon.HTTP_400
+			return
+        
+        submittedFile = session.query(model.SubmittedFile).get(id)
+        
+        if submittedFile.evaluation.user.id == user.id or req.context['user'].role == 'admin' or req.context['user'].role == 'org':
+            execute(submittedFile)
+        else:
+            resp.status = falcon.HTTP_400
+			return
+            
+    def execute(self, submittedFile):
+        path = submittedFile.path
+        if not os.path.isfile(filePath):
+            resp.status = falcon.HTTP_400
+            return
+
+        resp.content_type = magic.Magic(mime=True).from_file(path)
+        resp.stream_len = os.path.getsize(path)
+        resp.stream = open(path, 'rb')
+
+class ModuleSubmittedFileDelete(ModuleSubmittedFile):
     
+    def execute(self, submittedFile):
+        
+        try:
+            if submittedFile.evaluation.user.id == user.id or req.context['user'].role == 'admin' or req.context['user'].role == 'org':
+
+                os.remove(submittedFile.path)
+
+                session.delete(submittedFile)
+                session.commit()
+                req.context['result'] = { 'status': 'ok' }
+            else:
+                resp.status = falcon.HTTP_400
+                return
+        except OSError:
+            req.context['result'] = { 'status': 'error', 'error': 'Error removing file' }
+            return
+        except SQLAlchemyError:
+            req.context['result'] = { 'status': 'error', 'error': 'Error removing file entry' }
+            return

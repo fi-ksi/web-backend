@@ -12,12 +12,12 @@ class Content(object):
 		
 		print req.path
 
-		# filePath = 'data/content' + address.replace('..', '');
+		filePath = 'data/' + req.path.replace('..', '');
 
-		# if not os.path.isfile(filePath):
-		# 	resp.status = falcon.HTTP_400
-		# 	return
+        if not os.path.isfile(filePath):
+			resp.status = falcon.HTTP_400
+			return
 
-		# resp.content_type = magic.Magic(mime=True).from_file(filePath)
-		# resp.stream_len = os.path.getsize(filePath)
-		# resp.stream = open(filePath, 'rb')
+		resp.content_type = magic.Magic(mime=True).from_file(filePath)
+		resp.stream_len = os.path.getsize(filePath)
+		resp.stream = open(filePath, 'rb')

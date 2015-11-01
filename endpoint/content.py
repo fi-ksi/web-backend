@@ -10,11 +10,9 @@ class Content(object):
 
 	def on_get(self, req, resp):
 		
-		print req.path
-
 		filePath = 'data/' + req.path.replace('..', '');
 
-        if not os.path.isfile(filePath):
+		if not os.path.isfile(filePath):
 			resp.status = falcon.HTTP_400
 			return
 

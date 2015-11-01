@@ -23,5 +23,6 @@ class SubmittedCode(Base):
 			'mysql_charset': 'utf8',
 		})
 
-	evaluation = Column(Integer, ForeignKey('evaluations.id'), primary_key=True, nullable=False)
+	id = Column(Integer, primary_key=True)
+	evaluation = Column(Integer, ForeignKey('evaluations.id'), nullable=False)
 	code = Column(Text, nullable=False)

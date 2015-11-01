@@ -7,7 +7,7 @@ import random
 import model
 
 KSI = session.query(model.Config).get("mail_sender").value
-FEEDBACK = [ 'me@apophis.cz' ]
+FEEDBACK = session.query(model.FeedbackRecipient.email).all()
 
 def send(to, subject, text, easter_egg=False, addr_from=KSI):
 	Charset.add_charset('utf-8', Charset.QP, Charset.QP, 'utf-8')

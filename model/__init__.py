@@ -23,4 +23,5 @@ from model.year import Year
 from model.wave import Wave
 from model.mail_easteregg import MailEasterEgg
 from model.config import Config
+from model.feedback_recipients import FeedbackRecipient
 

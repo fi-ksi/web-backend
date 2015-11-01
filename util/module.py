@@ -10,6 +10,16 @@ import json
 def modules_for_task(task_id):
 	return session.query(model.Module).filter(model.Module.task == task_id).all()
 
+# Pokud existuje evaluation modulu \module_id uzivatele \user_id,
+# vrati seznam vsech ID takovychto evaluation
+# napr. [12, 34]
+def existing_evaluation(module_id, user_id):
+	results = session.query(model.Evaluation.id).\
+		filter(model.Evaluation.user == user_id).\
+		join(model.Module, model.Module.id == model.Evaluation.module).\
+		filter(model.Module.id == module_id).all()
+	return [ r for (r, ) in results ]
+
 def to_json(module, module_scores):
 	has_points = False
 	points = None

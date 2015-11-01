@@ -1,6 +1,7 @@
 import json, falcon, os, magic, multipart
 from sqlalchemy import func
 
+import datetime
 from db import session
 from model import ModuleType
 import model
@@ -55,11 +56,19 @@ class Module(object):
 class ModuleSubmit(object):
 
 	def _upload_files(self, req, module, user_id, resp):
-		report = '=== Uploading files for module id \'%s\' for task id \'%s\' ===\n\n' % (module.id, module.task)
+		# Pokud uz existuji odevzdane soubory, nevytvarime nove
+		# evaluation, pouze pripojujeme k jiz existujicimu
+		existing = util.module.existing_evaluation(module.id, user_id)
+		if len(existing) > 0:
+			evaluation = session.query(model.Evaluation).get(existing[0])
+			evaluation.time = datetime.datetime.now()
+			report = evaluation.full_report
+		else:
+			report = '=== Uploading files for module id \'%s\' for task id \'%s\' ===\n\n' % (module.id, module.task)
 
-		evaluation = model.Evaluation(user=user_id, module=module.id)
-		session.add(evaluation)
-		session.commit()
+			evaluation = model.Evaluation(user=user_id, module=module.id)
+			session.add(evaluation)
+			session.commit()
 
 		dir = util.module.submission_dir(module.id, user_id)
 
@@ -81,7 +90,7 @@ class ModuleSubmit(object):
 			raise multipart.MultipartError("No boundary for multipart/form-data.")
 
 		for part in multipart.MultipartParser(req.stream, boundary, req.content_length):
-			path = '%s/%d_%s' % (dir, evaluation.id, part.filename)
+			path = '%s/%s' % (dir, part.filename)
 			part.save_as(path)
 			mime = magic.Magic(mime=True).from_file(path)
 
@@ -98,9 +107,17 @@ class ModuleSubmit(object):
 		req.context['result'] = { 'result': 'correct' }
 
 	def _evaluate_code(self, req, module, user_id, resp, data):
-		evaluation = model.Evaluation(user=user_id, module=module.id)
-		session.add(evaluation)
-		session.commit()
+		# Pokud neni modul autocorrrect, pridavame submitted_files
+		# k jednomu evaluation.
+		# Pokud je autocorrect, pridavame evaluation pro kazde vyhodnoceni souboru.
+		existing = util.module.existing_evaluation(module.id, user_id)
+		if (not module.autocorrect) and (len(existing) > 0):
+			evaluation = session.query(model.Evaluation).get(existing[0])
+			evaluation.time = datetime.datetime.now()
+		else:
+			evaluation = model.Evaluation(user=user_id, module=module.id)
+			session.add(evaluation)
+			session.commit()
 
 		code = model.SubmittedCode(evaluation=evaluation.id, code=data)
 		session.add(code)
@@ -116,7 +133,7 @@ class ModuleSubmit(object):
 
 		points = module.max_points if result == 'correct' else 0
 		evaluation.points = points
-		evaluation.full_report = report
+		evaluation.full_report += report
 
 		session.commit()
 		session.close()

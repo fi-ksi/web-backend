@@ -95,9 +95,15 @@ class ModuleSubmit(object):
 			mime = magic.Magic(mime=True).from_file(path)
 
 			report += '  [y] uploaded file: \'%s\' (mime: %s) to file %s\n' % (part.filename, mime, path)
-			submitted_file = model.SubmittedFile(evaluation=evaluation.id, mime=mime, path=path)
 
-			session.add(submitted_file)
+			# Pokud je tento soubor jiz v databazi, zaznam znovu nepridavame
+			file_in_db = session.query(model.SubmittedFile).\
+				filter(model.SubmittedFile.evaluation == evaluation.id).\
+				filter(model.SubmittedFile.path == path).scalar()
+
+			if file_in_db is None:
+				submitted_file = model.SubmittedFile(evaluation=evaluation.id, mime=mime, path=path)
+				session.add(submitted_file)
 
 		evaluation.full_report = report
 		session.add(evaluation)

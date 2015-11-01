@@ -8,9 +8,8 @@ import util
 from thread import Thread
 
 KSI_MAIL = session.query(model.Config).get("ksi_conf").value
-FORUM_URL = session.query(model.Config).get("web_url").value + 'forum/'
-TASK_FORUM_URL = session.query(model.Config).get("web_url").value + 'ulohy/'
 KARLIK_IMG = session.query(model.Config).get("mail_sign").value
+KSI_WEB = session.query(model.Config).get("web_url").value
 
 class Post(object):
 
@@ -60,30 +59,34 @@ class Posts(object):
 		#posilani mailu
 		if user.role == 'participant':
 			
-			if task_thread:	
+			if task_thread:
 				task_author = session.query(model.User).filter(model.User.id == task_thread.author).first()
-				util.mail.send([ task_author.email ], '[KSI-WEB] Nový příspěvek k tvé úloze', 
-					u'<p>Ahoj,<br/>k tvé úloze '  + task_thread.title + u' na https://ksi.fi.muni.cz byl přidán nový komentář:</p><p>' +\
-					 user_class.first_name + u' ' + user_class.last_name + u':</p><p>' + data['body'] +\
-					 '</p><p><a href='  + TASK_FORUM_URL + str(thread.id) + u'/diskuse >Přejít do diskuze.</a>' +\
-					 u'<hr/>' + KARLIK_IMG, True)
+				util.mail.send([ task_author.email ], u'[KSI-WEB] Nový příspěvek k úloze ' + task_thread.title, 
+					u'<p>Ahoj,<br/>k tvé úloze <a href="' + KSI_WEB + u'ulohy/' + str(task_thread.id) + u'">' +\
+					task_thread.title + u'</a> na <a href="'+ KSI_WEB + '">' + KSI_WEB +u'</a> byl přidán nový komentář:</p><p><i>' +\
+					user_class.first_name + u' ' + user_class.last_name + u':</i></p>' + data['body'] +\
+					u'<p><a href="'  + KSI_WEB + u'ulohy/' + str(task_thread.id) + u'/diskuse">Přejít do diskuze.</a></p>' +\
+					KARLIK_IMG, True)
 			elif solution_thread:
-				#TODO
-				pass
-				'''
-				correctors = session.query(model.User.email).\
+				correctors = [ r for r, in session.query(model.User.email).\
 					join(model.Evaluation, model.Evaluation.evaluator == model.User.id).\
 					join(model.Module, model.Evaluation.module == model.Module.id).\
 					join(model.Task, model.Task.id == model.Module.task).\
-					filter(model.Task == solution_thread.task).all()
-				util.mail.send(correctors, 'Predmet', 'Obsah')
-				'''
+					filter(model.Task.id == solution_thread.task).all() ]
+
+				if correctors:
+					task = session.query(model.Task).get(solution_thread.task)
+					util.mail.send(correctors, u'[KSI-WEB] Nový komentář k tvé korektuře úlohy ' + task.title, \
+						u'<p>Ahoj,<br/>k tvé korektuře úlohy <a href="' + KSI_WEB + u'ulohy/' + str(task.id) + u'">' + task.title +\
+						u'</a> na <a href="'+ KSI_WEB + '">' + KSI_WEB +u'</a> byl přidán nový komentář:<p><p><i>' +\
+						user_class.first_name + ' ' + user_class.last_name + u':</i></p><p>' + data['body'] +\
+						KARLIK_IMG, True)
 			else:
-				util.mail.send([ KSI_MAIL ], '[KSI-WEB] Nový příspěvek v obecné diskuzi', 
-					u'<p>Ahoj,<br/>do obecné diskuze na https://ksi.fi.muni.cz byl přidán nový příspěvek:</p><p>' +\
-					 user_class.first_name + u' ' + user_class.last_name + u':</p><p>' + data['body'] +\
-					 u'</p><p><a href='  + FORUM_URL + str(thread.id) + u'>Přejít do diskuze.</a>' +\
-					 u'<hr/>' + KARLIK_IMG, True)
+				util.mail.send([ KSI_MAIL ], '[KSI-WEB] Nový příspěvek v obecné diskuzi',
+					u'<p>Ahoj,<br/>do obecné diskuze na <a href="'+ KSI_WEB + '">' + KSI_WEB +u'</a> byl přidán nový příspěvek:</p><p><i>' +\
+					user_class.first_name + u' ' + user_class.last_name + u':</i></p>' + data['body'] +\
+					u'<p><a href='  + KSI_WEB + u'forum/' + str(thread.id) + u'>Přejít do diskuze.</a></p>' +\
+					KARLIK_IMG, True)
 
 		parent = data['parent']
 		if parent and not session.query(model.Post).filter(model.Post.id == parent, model.Post.thread == thread_id).first():

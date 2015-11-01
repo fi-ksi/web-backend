@@ -10,6 +10,7 @@ from endpoint.score import Score, ResultScores
 from endpoint.registration import Registration
 from endpoint.profile import Profile, PictureUploader
 from endpoint.image import Image
+from endpoint.content import Content
 from endpoint.debug import Debug
 from endpoint.oauth2 import Authorize, Logout
 from endpoint.runcode import RunCode

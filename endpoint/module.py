@@ -39,12 +39,12 @@ class Module(object):
 			module_json['sortable_list'] = util.sortable.build(module.id)
 		elif module.type == ModuleType.GENERAL:
 			module_json['state'] = 'correct' if count > 0 else 'blank'
-            
-            submittedFiles = session.query(model.SubmittedFile).\
-                join(model.SubmittedFile.evaluation).\
-                filter(model.Evaluation.user == user.id, model.Evaluation.module == id)
-            
-            module_json['submitted_files'] = [{'id': inst.id, 'filename': os.path.basename(inst.path)} for inst in submittedFiles]
+			
+			submittedFiles = session.query(model.SubmittedFile).\
+				join(model.SubmittedFile.evaluation).\
+				filter(model.Evaluation.user == user.id, model.Evaluation.module == id)
+			
+			module_json['submitted_files'] = [{'id': inst.id, 'filename': os.path.basename(inst.path)} for inst in submittedFiles]
 		elif module.type == ModuleType.TEXT:
 			module_json['fields'] = util.text.num_fields(module.id) 
 
@@ -162,50 +162,50 @@ class ModuleSubmit(object):
 		session.close()
 
 class ModuleSubmittedFile(object):
-    
-    def on_get(self, req, resp, id):
-        user = req.context['user']
+	
+	def on_get(self, req, resp, id):
+
+		user = req.context['user']
 
 		if not user.is_logged_in():
 			resp.status = falcon.HTTP_400
 			return
-        
-        submittedFile = session.query(model.SubmittedFile).get(id)
-        
-        if submittedFile.evaluation.user.id == user.id or req.context['user'].role == 'admin' or req.context['user'].role == 'org':
-            execute(submittedFile)
-        else:
-            resp.status = falcon.HTTP_400
+		
+		submittedFile = session.query(model.SubmittedFile).get(id)
+		
+		if submittedFile.evaluation.user.id == user.id or req.context['user'].role == 'admin' or req.context['user'].role == 'org':
+			self.execute(submittedFile)
+		else:
+			resp.status = falcon.HTTP_400
 			return
-            
-    def execute(self, submittedFile):
-        path = submittedFile.path
-        if not os.path.isfile(filePath):
-            resp.status = falcon.HTTP_400
-            return
+			
+	def execute(self, submittedFile):
+		path = submittedFile.path
+		
+		print path
 
-        resp.content_type = magic.Magic(mime=True).from_file(path)
-        resp.stream_len = os.path.getsize(path)
-        resp.stream = open(path, 'rb')
+		if not os.path.isfile(filePath):
+			resp.status = falcon.HTTP_400
+			return
+
+		resp.content_type = magic.Magic(mime=True).from_file(path)
+		resp.stream_len = os.path.getsize(path)
+		resp.stream = open(path, 'rb')
 
 class ModuleSubmittedFileDelete(ModuleSubmittedFile):
-    
-    def execute(self, submittedFile):
-        
-        try:
-            if submittedFile.evaluation.user.id == user.id or req.context['user'].role == 'admin' or req.context['user'].role == 'org':
+	
+	def execute(self, submittedFile):
+		
+		try:
+			os.remove(submittedFile.path)
 
-                os.remove(submittedFile.path)
-
-                session.delete(submittedFile)
-                session.commit()
-                req.context['result'] = { 'status': 'ok' }
-            else:
-                resp.status = falcon.HTTP_400
-                return
-        except OSError:
-            req.context['result'] = { 'status': 'error', 'error': 'Error removing file' }
-            return
-        except SQLAlchemyError:
-            req.context['result'] = { 'status': 'error', 'error': 'Error removing file entry' }
-            return
+			session.delete(submittedFile)
+			session.commit()
+			req.context['result'] = { 'status': 'ok' }
+			
+		except OSError:
+			req.context['result'] = { 'status': 'error', 'error': 'Error removing file' }
+			return
+		except SQLAlchemyError:
+			req.context['result'] = { 'status': 'error', 'error': 'Error removing file entry' }
+			return

@@ -28,7 +28,7 @@ class Registration(object):
 			tshirt_size=data['tshirt_size'].upper())
 		session.add(profile)
 
-		util.mail.send([user.email.decode('utf-8')], '[KSI] Potvrzení registrace do Korespondenčního semináře z informatiky', 'Ahoj!<br/>Vítáme tě v Korespondenčním semináři z informatiky Fakulty informatiky Masarykovy univerzity. Nyní můžeš začít řešit naplno. Stačí se přihlásit na https://ksi.fi.muni.cz pomocí e-mailu a zvoleného hesla. Přejeme ti hodně úspěchů při řešení semináře!<br/><br/>KSI')
+		util.mail.send([user.email.decode('utf-8')], '[KSI] Potvrzení registrace do Korespondenčního semináře z informatiky', u'Ahoj!<br/>Vítáme tě v Korespondenčním semináři z informatiky Fakulty informatiky Masarykovy univerzity. Nyní můžeš začít řešit naplno. Stačí se přihlásit na https://ksi.fi.muni.cz pomocí e-mailu a zvoleného hesla. Přejeme ti hodně úspěchů při řešení semináře!<br/><br/>KSI')
 		session.commit()
 		session.close()
 

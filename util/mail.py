@@ -2,12 +2,22 @@ import smtplib
 from email.mime.text import MIMEText
 from email import Charset
 
-KSI = 'ksi-dev@fi.muni.cz'
+from db import session
+import random
+import model
+
+KSI = session.query(model.Config).get("mail_sender").value
 FEEDBACK = [ 'me@apophis.cz' ]
 
-def send(to, subject, text, addr_from=KSI):
+def send(to, subject, text, easter_egg=False, addr_from=KSI):
 	Charset.add_charset('utf-8', Charset.QP, Charset.QP, 'utf-8')
-	text = u"<html>" + text + u"</html>"
+	if easter_egg:
+		rand = random.randrange(0, session.query(model.MailEasterEgg).count()) 
+		egg = session.query(model.MailEasterEgg).all()[rand]
+		text = u"<html>" + text + "<hr/><p>PS: "  + egg.body + u"</p></html>"
+	else:
+		text = u"<html>" + text + u"</html>"
+
 	msg = MIMEText(text, 'html', 'utf-8')
 
 	msg['Subject'] = subject

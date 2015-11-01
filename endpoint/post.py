@@ -7,9 +7,10 @@ import util
 
 from thread import Thread
 
-#TODO change after testing
-KSI_MAIL = 'smijakova.eva@gmail.com'
-FORUM_URL = 'http://kyzikos.fi.muni.cz/forum/'
+KSI_MAIL = session.query(model.Config).get("ksi_conf").value
+FORUM_URL = session.query(model.Config).get("web_url").value + 'forum/'
+TASK_FORUM_URL = session.query(model.Config).get("web_url").value + 'ulohy/'
+KARLIK_IMG = session.query(model.Config).get("mail_sign").value
 
 class Post(object):
 
@@ -57,12 +58,17 @@ class Posts(object):
 		user_class = session.query(model.User).get(user.id)
 
 		#posilani mailu
-		#in progress 
 		if user.role == 'participant':
-			if task_thread:
-				task_author = session.query(model.User).filter(model.User.id == task_thread.author)
-				util.mail.send([ task_author.email ], 'Predmet', 'Obsah')
+			
+			if task_thread:	
+				task_author = session.query(model.User).filter(model.User.id == task_thread.author).first()
+				util.mail.send([ task_author.email ], '[KSI-WEB] Nový příspěvek k tvé úloze', 
+					u'<p>Ahoj,<br/>k tvé úloze '  + task_thread.title + u' na https://ksi.fi.muni.cz byl přidán nový komentář:</p><p>' +\
+					 user_class.first_name + u' ' + user_class.last_name + u':</p><p>' + data['body'] +\
+					 '</p><p><a href='  + TASK_FORUM_URL + str(thread.id) + u'/diskuse >Přejít do diskuze.</a>' +\
+					 u'<hr/>' + KARLIK_IMG, True)
 			elif solution_thread:
+				#TODO
 				pass
 				'''
 				correctors = session.query(model.User.email).\
@@ -73,9 +79,11 @@ class Posts(object):
 				util.mail.send(correctors, 'Predmet', 'Obsah')
 				'''
 			else:
-				util.mail.send([ KSI_MAIL ], '[KSI-WEB] Nový příspěvek v obecné diskuzi', \
-					u"Ahoj,<br/><br/>do obecné diskuze na https://ksi.fi.muni.cz byl přidán nový příspěvek:<br/><br/>" +\
-					 u"<i>" + user_class.first_name + u' ' + user_class.last_name + u':</i><br/>' + data['body'] + u'<br/><br/>Přejít do diskuze:'  + FORUM_URL + str(thread.id) + u'<br/><br/>Web KSI') 
+				util.mail.send([ KSI_MAIL ], '[KSI-WEB] Nový příspěvek v obecné diskuzi', 
+					u'<p>Ahoj,<br/>do obecné diskuze na https://ksi.fi.muni.cz byl přidán nový příspěvek:</p><p>' +\
+					 user_class.first_name + u' ' + user_class.last_name + u':</p><p>' + data['body'] +\
+					 u'</p><p><a href='  + FORUM_URL + str(thread.id) + u'>Přejít do diskuze.</a>' +\
+					 u'<hr/>' + KARLIK_IMG, True)
 
 		parent = data['parent']
 		if parent and not session.query(model.Post).filter(model.Post.id == parent, model.Post.thread == thread_id).first():

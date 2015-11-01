@@ -85,7 +85,7 @@ def autocorrected_full(task_id, user_id):
 	
 	max_modules_count = q.count()
 
-	real_modules_count = q.join(model.Evaluation, model.Evaluation.module == model.Module.id).filter(model.Evaluation.user == user_id, or_(model.Module.autocorrect != True, model.Module.max_points == model.Evaluation.points)).count()
+	real_modules_count = q.join(model.Evaluation, model.Evaluation.module == model.Module.id).filter(model.Evaluation.user == user_id, or_(model.Module.autocorrect != True, model.Module.max_points == model.Evaluation.points)).group_by(model.Module).count()
 
 	return max_modules_count == real_modules_count
 
@@ -111,6 +111,8 @@ def status(task, user, adeadline=None, fsubmitted=None):
 
 	if not fsubmitted:
 		fsubmitted = fully_submitted(user.id)
+
+	print fully_submitted(user.id)
 
 	# Pokud je uloha odevzdana a jeste neopravena, je CORRECTING
 	if task.id in fsubmitted:

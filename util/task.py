@@ -112,8 +112,6 @@ def status(task, user, adeadline=None, fsubmitted=None):
 	if not fsubmitted:
 		fsubmitted = fully_submitted(user.id)
 
-	print fully_submitted(user.id)
-
 	# Pokud je uloha odevzdana a jeste neopravena, je CORRECTING
 	if task.id in fsubmitted:
 		return TaskStatus.CORRECTING

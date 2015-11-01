@@ -20,7 +20,7 @@ def existing_evaluation(module_id, user_id):
 		filter(model.Module.id == module_id).all()
 	return [ r for (r, ) in results ]
 
-def to_json(module, module_scores):
+def to_json(module, module_scores, user_id):
 	has_points = False
 	points = None
 
@@ -51,6 +51,16 @@ def to_json(module, module_scores):
 		module_json['sortable_list'] = util.sortable.build(module.id)
 	elif module.type == ModuleType.GENERAL:
 		module_json['state'] = 'correct' if has_points else 'blank'
+
+		submittedFiles = session.query(model.SubmittedFile).\
+			join(model.Evaluation, model.SubmittedFile.evaluation == model.Evaluation.id).\
+			filter(model.Evaluation.user == user_id, model.Evaluation.module == id)
+	
+		submittedFiles = [{'id': inst.id, 'filename': os.path.basename(inst.path)} for inst in submittedFiles]
+
+		print submittedFiles
+
+		module_json['submitted_files'] = submittedFiles 
 	elif module.type == ModuleType.TEXT:
 		module_json['fields'] = util.text.num_fields(module.id)
 

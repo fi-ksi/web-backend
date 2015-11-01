@@ -46,12 +46,6 @@ class Module(object):
 			module_json['sortable_list'] = util.sortable.build(module.id)
 		elif module.type == ModuleType.GENERAL:
 			module_json['state'] = 'correct' if count > 0 else 'blank'
-			
-			submittedFiles = session.query(model.SubmittedFile).\
-				join(model.SubmittedFile.evaluation).\
-				filter(model.Evaluation.user == user.id, model.Evaluation.module == id)
-			
-			module_json['submitted_files'] = [{'id': inst.id, 'filename': os.path.basename(inst.path)} for inst in submittedFiles]
 		elif module.type == ModuleType.TEXT:
 			module_json['fields'] = util.text.num_fields(module.id) 
 

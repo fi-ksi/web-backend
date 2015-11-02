@@ -7,9 +7,6 @@ from model import ModuleType
 import model
 import util
 
-def _module_to_json(module):
-	return {'id': module.id, 'type': module.type, 'name': module.name, 'description': module.description}
-
 class Module(object):
 
 	def on_get(self, req, resp, id):

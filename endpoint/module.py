@@ -19,43 +19,7 @@ class Module(object):
 			resp.status = falcon.HTTP_400
 			return
 
-		module = session.query(model.Module).get(id)
-		module_json = _module_to_json(module)
-		count = session.query(model.Evaluation.points).filter(model.Evaluation.user == user.id, model.Evaluation.module == id).\
-			join(model.Module, model.Module.id == model.Evaluation.module).\
-			join(model.Task, model.Task.id == model.Module.task).\
-			filter(model.Task.evaluation_public).count()
-
-		if count > 0:
-			status = session.query(func.max(model.Evaluation.points).label('points')).\
-				filter(model.Evaluation.user == user.id, model.Evaluation.module == id).\
-				join(model.Module, model.Module.id == model.Evaluation.module).\
-				join(model.Task, model.Task.id == model.Module.task).\
-				filter(model.Task.evaluation_public).first()
-			module_json['state'] = 'correct' if status.points == module.max_points else 'incorrect'
-		else:
-			module_json['state'] = 'blank'
-
-		if module.type == ModuleType.PROGRAMMING:
-			code = util.programming.build(module.id)
-			module_json['code'] = code
-			module_json['default_code'] = code
-		elif module.type == ModuleType.QUIZ:
-			module_json['questions'] = util.quiz.build(module.id)
-		elif module.type == ModuleType.SORTABLE:
-			module_json['sortable_list'] = util.sortable.build(module.id)
-		elif module.type == ModuleType.GENERAL:
-			module_json['state'] = 'correct' if count > 0 else 'blank'
-			
-			submittedFiles = session.query(model.SubmittedFile).\
-				join(model.SubmittedFile.evaluation).\
-				filter(model.Evaluation.user == user.id, model.Evaluation.module == id)
-			
-			module_json['submitted_files'] = [{'id': inst.id, 'filename': os.path.basename(inst.path)} for inst in submittedFiles]
-		elif module.type == ModuleType.TEXT:
-			module_json['fields'] = util.text.num_fields(module.id) 
-
-		req.context['result'] = {'module': module_json}
+		req.context['result'] = {'module': util.module.to_json(id, user.id) }
 
 
 class ModuleSubmit(object):

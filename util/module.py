@@ -1,6 +1,7 @@
 import os
 import datetime
 
+from sqlalchemy import func
 from db import session
 from model.module import ModuleType
 import model
@@ -20,24 +21,31 @@ def existing_evaluation(module_id, user_id):
 		filter(model.Module.id == module_id).all()
 	return [ r for (r, ) in results ]
 
-def to_json(module, module_scores, user_id):
+def to_json(module, user_id):
 	has_points = False
 	points = None
 
-	for module_score in module_scores:
-		if module_score.Module.id != module.id:
-			continue
+	module_json = _info_to_json(module)
 
-		has_points = True
-		points = module_score.points
-		break
+	# Nejdriv zjistime, jestli mame nejake evaluations
+	count = session.query(model.Evaluation.points).filter(model.Evaluation.user == user_id, model.Evaluation.module == module.id).\
+			join(model.Module, model.Module.id == model.Evaluation.module).\
+			join(model.Task, model.Task.id == model.Module.task).\
+			filter(model.Task.evaluation_public).count()
 
-	module_json = _info_to_json(module, module.id if has_points and points is not None else None)
+	best_status = session.query(func.max(model.Evaluation.points).label('points')).\
+		filter(model.Evaluation.user == user_id, model.Evaluation.module == module.id).\
+		join(model.Module, model.Module.id == model.Evaluation.module).\
+		join(model.Task, model.Task.id == model.Module.task).\
+		filter(model.Task.evaluation_public).first()
 
-	if has_points:
-		module_json['state'] = 'correct' if points == module.max_points else 'incorrect'
+	if count > 0:
+		# ziskame nejlepsi evaluation a podle toho rozhodneme, jak je na tom resitel
+		module_json['state'] = 'correct' if best_status.points == module.max_points else 'incorrect'
 	else:
 		module_json['state'] = 'blank'
+
+	module_json['score'] = best_status.points if best_status is not None else 0
 
 	if module.type == ModuleType.PROGRAMMING:
 		code = util.programming.build(module.id)
@@ -50,17 +58,15 @@ def to_json(module, module_scores, user_id):
 	elif module.type == ModuleType.SORTABLE:
 		module_json['sortable_list'] = util.sortable.build(module.id)
 	elif module.type == ModuleType.GENERAL:
-		module_json['state'] = 'correct' if has_points else 'blank'
+		module_json['state'] = 'correct' if best_status else 'blank'
 
 		submittedFiles = session.query(model.SubmittedFile).\
 			join(model.Evaluation, model.SubmittedFile.evaluation == model.Evaluation.id).\
-			filter(model.Evaluation.user == user_id, model.Evaluation.module == id)
-	
-		submittedFiles = [{'id': inst.id, 'filename': os.path.basename(inst.path)} for inst in submittedFiles]
+			filter(model.Evaluation.user == user_id, model.Evaluation.module == module.id).all()
 
-		print submittedFiles
+		submittedFiles = [ {'id': inst.id, 'filename': os.path.basename(inst.path)} for inst in submittedFiles ]
 
-		module_json['submitted_files'] = submittedFiles 
+		module_json['submitted_files'] = submittedFiles
 	elif module.type == ModuleType.TEXT:
 		module_json['fields'] = util.text.num_fields(module.id)
 
@@ -77,8 +83,8 @@ def submission_dir(module_id, user_id):
 	return os.path.join('data', 'submissions', 'module_%d' % module_id, 'user_%d' % user_id)
 
 
-def _info_to_json(module, score):
-	return { 'id': module.id, 'type': module.type, 'name': module.name, 'description': module.description, 'autocorrect': module.autocorrect, 'max_score': module.max_points, 'score': score }
+def _info_to_json(module):
+	return { 'id': module.id, 'type': module.type, 'name': module.name, 'description': module.description, 'autocorrect': module.autocorrect, 'max_score': module.max_points }
 
 def _load_questions(module_id):
 	return session.query(model.QuizQuestion).filter(model.QuizQuestion.module == module_id).order_by(model.QuizQuestion.order).all()

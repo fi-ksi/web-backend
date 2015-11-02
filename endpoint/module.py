@@ -152,7 +152,7 @@ class ModuleSubmit(object):
 		session.close()
 
 class ModuleSubmittedFile(object):
-	
+
 	def on_get(self, req, resp, id):
 
 		user = req.context['user']
@@ -160,22 +160,27 @@ class ModuleSubmittedFile(object):
 		if not user.is_logged_in():
 			resp.status = falcon.HTTP_400
 			return
-		
+
 		submittedFile = session.query(model.SubmittedFile).get(id)
-		
-		if submittedFile.evaluation.user.id == user.id or req.context['user'].role == 'admin' or req.context['user'].role == 'org':
-			self.execute(submittedFile)
-		else:
-			resp.status = falcon.HTTP_400
+		if submittedFile is None:
+			resp.status = falcon.HTTP_404
 			return
-			
-	def execute(self, submittedFile):
+
+		evaluation = session.query(model.Evaluation).get(submittedFile.evaluation)
+
+		if evaluation.user == user.id or user.is_admin or user.is_org:
+			self.execute(submittedFile, req, resp)
+		else:
+			resp.status = falcon.HTTP_403
+			return
+
+	def execute(self, submittedFile, req, resp):
 		path = submittedFile.path
-		
+
 		print path
 
-		if not os.path.isfile(filePath):
-			resp.status = falcon.HTTP_400
+		if not os.path.isfile(path):
+			resp.status = falcon.HTTP_404
 			return
 
 		resp.content_type = magic.Magic(mime=True).from_file(path)
@@ -183,19 +188,19 @@ class ModuleSubmittedFile(object):
 		resp.stream = open(path, 'rb')
 
 class ModuleSubmittedFileDelete(ModuleSubmittedFile):
-	
-	def execute(self, submittedFile):
-		
+
+	def execute(self, submittedFile, req, resp):
+
 		try:
 			os.remove(submittedFile.path)
 
 			session.delete(submittedFile)
 			session.commit()
 			req.context['result'] = { 'status': 'ok' }
-			
+
 		except OSError:
 			req.context['result'] = { 'status': 'error', 'error': 'Error removing file' }
 			return
 		except SQLAlchemyError:
 			req.context['result'] = { 'status': 'error', 'error': 'Error removing file entry' }
-			return
+		return

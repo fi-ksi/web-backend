@@ -1,7 +1,7 @@
 import os
 import datetime
 
-from sqlalchemy import func
+from sqlalchemy import func, desc
 from db import session
 from model.module import ModuleType
 import model
@@ -22,9 +22,6 @@ def existing_evaluation(module_id, user_id):
 	return [ r for (r, ) in results ]
 
 def to_json(module, user_id):
-	has_points = False
-	points = None
-
 	module_json = _info_to_json(module)
 
 	# Nejdriv zjistime, jestli mame nejake evaluations
@@ -45,14 +42,14 @@ def to_json(module, user_id):
 	else:
 		module_json['state'] = 'blank'
 
-	module_json['score'] = best_status.points if best_status is not None else 0
+	module_json['score'] = module.id if best_status is not None else None
 
 	if module.type == ModuleType.PROGRAMMING:
 		code = util.programming.build(module.id)
 		module_json['code'] = code
 		module_json['default_code'] = code
 		if not module.autocorrect:
-			module_json['state'] = 'correct' if has_points else 'blank'
+			module_json['state'] = 'correct' if count > 0 else 'blank'
 	elif module.type == ModuleType.QUIZ:
 		module_json['questions'] = util.quiz.build(module.id)
 	elif module.type == ModuleType.SORTABLE:

@@ -153,18 +153,17 @@ class ModuleSubmit(object):
 
 class ModuleSubmittedFile(object):
 
-	def on_get(self, req, resp, id):
-
+	def _get_submitted_file(id, resp):
 		user = req.context['user']
 
 		if not user.is_logged_in():
 			resp.status = falcon.HTTP_400
-			return
+			return None
 
 		submittedFile = session.query(model.SubmittedFile).get(id)
 		if submittedFile is None:
 			resp.status = falcon.HTTP_404
-			return
+			return None
 
 		evaluation = session.query(model.Evaluation).get(submittedFile.evaluation)
 
@@ -172,35 +171,42 @@ class ModuleSubmittedFile(object):
 			self.execute(submittedFile, req, resp)
 		else:
 			resp.status = falcon.HTTP_403
-			return
+			return None
 
-	def execute(self, submittedFile, req, resp):
-		path = submittedFile.path
+		return submittedFile
 
-		print path
+	def on_get(self, req, resp, id):
 
-		if not os.path.isfile(path):
-			resp.status = falcon.HTTP_404
-			return
+		submittedFile = _get_submitted_file(id, resp)
+		if submittedFile:
 
-		resp.content_type = magic.Magic(mime=True).from_file(path)
-		resp.stream_len = os.path.getsize(path)
-		resp.stream = open(path, 'rb')
+			path = submittedFile.path
 
-class ModuleSubmittedFileDelete(ModuleSubmittedFile):
+			print path
 
-	def execute(self, submittedFile, req, resp):
+			if not os.path.isfile(path):
+				resp.status = falcon.HTTP_404
+				return
 
-		try:
-			os.remove(submittedFile.path)
+			resp.content_type = magic.Magic(mime=True).from_file(path)
+			resp.stream_len = os.path.getsize(path)
+			resp.stream = open(path, 'rb')
 
-			session.delete(submittedFile)
-			session.commit()
-			req.context['result'] = { 'status': 'ok' }
+	def on_delete(self, req, resp, id):
 
-		except OSError:
-			req.context['result'] = { 'status': 'error', 'error': 'Error removing file' }
-			return
-		except SQLAlchemyError:
-			req.context['result'] = { 'status': 'error', 'error': 'Error removing file entry' }
-		return
+		submittedFile = _get_submitted_file(id, resp)
+		if submittedFile:
+
+			try:
+				os.remove(submittedFile.path)
+
+				session.delete(submittedFile)
+				session.commit()
+				req.context['result'] = { 'status': 'ok' }
+
+			except OSError:
+				req.context['result'] = { 'status': 'error', 'error': 'Error removing file' }
+				return
+			except SQLAlchemyError:
+				req.context['result'] = { 'status': 'error', 'error': 'Error removing file entry' }
+				return

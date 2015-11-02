@@ -9,11 +9,12 @@ import util
 class Content(object):
 
 	def on_get(self, req, resp):
-		
-		filePath = 'data/' + req.path.replace('..', '');
+
+		filePath = 'data/content/' + req.get_param('path').replace('..', '');
+		print filePath
 
 		if not os.path.isfile(filePath):
-			resp.status = falcon.HTTP_400
+			resp.status = falcon.HTTP_404
 			return
 
 		resp.content_type = magic.Magic(mime=True).from_file(filePath)

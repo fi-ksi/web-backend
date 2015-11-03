@@ -11,7 +11,6 @@ class Content(object):
 	def on_get(self, req, resp):
 
 		filePath = 'data/content/' + req.get_param('path').replace('..', '');
-		print filePath
 
 		if not os.path.isfile(filePath):
 			resp.status = falcon.HTTP_404

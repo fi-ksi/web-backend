@@ -2,7 +2,7 @@ from endpoint.article import Article, Articles
 from endpoint.achievement import Achievement, Achievements
 from endpoint.post import Post, Posts
 from endpoint.task import Task, Tasks, TaskDetails
-from endpoint.module import Module, ModuleSubmit, ModuleSubmittedFile, ModuleSubmittedFileDelete
+from endpoint.module import Module, ModuleSubmit, ModuleSubmittedFile
 from endpoint.thread import Thread, Threads, ThreadDetails
 from endpoint.user import User, Users, ChangePassword, ForgottenPassword
 from endpoint.registration import Registration

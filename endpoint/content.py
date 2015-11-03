@@ -23,10 +23,10 @@ class Content(object):
 class TaskContent(object):
 
 	def on_get(self, req, resp, id):
-
+		user = req.context['user']
 		task = session.query(model.Task).get(id)
 
-		if task is None:
+		if task is None or not user.is_logged_in:
 			resp.status = falcon.HTTP_400
 			return
 

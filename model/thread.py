@@ -16,8 +16,10 @@ class Thread(Base):
 	id = Column(Integer, primary_key=True)
 	title = Column(String(1000))
 	public = Column(Boolean, nullable=False, default=True, server_default=text('TRUE'))
+	wave = Column(Integer, ForeignKey('waves.id'), nullable=False)
 
 	posts = relationship('Post', primaryjoin='Thread.id==Post.thread')
+
 
 class ThreadVisit(Base):
 	__tablename__ = 'threads_visits'
@@ -28,5 +30,6 @@ class ThreadVisit(Base):
 
 	thread = Column(Integer, ForeignKey('threads.id'), primary_key=True)
 	user = Column(Integer, ForeignKey('users.id'), primary_key=True)
-	last_visit = Column(TIMESTAMP, nullable=False, default=datetime.datetime.utcnow, server_default=text('CURRENT_TIMESTAMP'))
+	last_visit = Column(TIMESTAMP, nullable=False, default=datetime.datetime.now, server_default=text('CURRENT_TIMESTAMP'))
 	last_last_visit = Column(TIMESTAMP, nullable=True)
+

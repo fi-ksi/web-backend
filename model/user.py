@@ -26,7 +26,7 @@ class User(Base):
 	profile_picture = Column(String(255))
 	role = Column(Enum('admin', 'org', 'participant'), nullable=False, default='participant', server_default='participant')
 	enabled = Column(Integer, nullable=False, default=1, server_default='1')
-	registered = Column(TIMESTAMP, nullable=False, default=datetime.datetime.utcnow, server_default=text('CURRENT_TIMESTAMP'))
+	registered = Column(TIMESTAMP, nullable=False, default=datetime.datetime.now, server_default=text('CURRENT_TIMESTAMP'))
 
 	achievements = relationship("Achievement", secondary=UserAchievement.__tablename__)
 	tasks = relationship("Task", primaryjoin='User.id == Task.author')

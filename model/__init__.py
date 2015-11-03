@@ -4,7 +4,6 @@ Base = declarative_base()
 
 from model.article import Article
 from model.achievement import Achievement
-from model.category import Category
 from model.post import Post
 from model.task import Task, SolutionComment
 from model.prerequisite import Prerequisite, PrerequisiteType
@@ -20,3 +19,9 @@ from model.token import Token
 from model.submitted import SubmittedFile, SubmittedCode
 from model.user_achievement import UserAchievement
 from model.text import Text
+from model.year import Year
+from model.wave import Wave
+from model.mail_easteregg import MailEasterEgg
+from model.config import Config
+from model.feedback_recipients import FeedbackRecipient
+

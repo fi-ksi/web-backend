@@ -10,6 +10,7 @@ import model
 import util
 import auth
 
+"""
 def _load_points_for_user(user_id):
 	return session.query(model.Evaluation.module, func.max(model.Evaluation.points).label('points')).\
 		filter(model.Evaluation.user == user_id).\
@@ -17,19 +18,20 @@ def _load_points_for_user(user_id):
 
 def get_overall_points(user_id):
 	return sum([ item.points for item in _load_points_for_user(user_id) if item.points is not None ])
-
+"""
 
 class User(object):
 
 	def on_get(self, req, resp, id):
 		user = session.query(model.User).get(id)
 
-		req.context['result'] = { 'user': util.user.to_json(user) }
+		req.context['result'] = { 'user': util.user.to_json(user, req.context['year']) }
 
 
 class Users(object):
 	def on_get(self, req, resp):
 		filter = req.get_param('filter')
+		sort = req.get_param('sort')
 		users = session.query(model.User)
 
 		if filter == 'organisators':
@@ -38,9 +40,9 @@ class Users(object):
 			users = users.filter(model.User.role == 'participant')
 
 		users = users.all()
-		users_json = [ util.user.to_json(user) for user in users ]
+		users_json = [ util.user.to_json(user, req.context['year']) for user in users if filter != 'participants' or util.user.any_task_submitted(user.id, req.context['year'])]
 
-		if filter == 'participants':
+		if sort == 'score':
 			users_json = sorted(users_json, key=lambda user: user['score'], reverse=True)
 
 		req.context['result'] = { "users": users_json }
@@ -92,7 +94,7 @@ class ForgottenPassword(object):
 
 		session.add(user)
 		session.commit()
-		util.mail.send([user.email], '[KSI] Nové heslo', 'Ahoj,\nna základě tvé žádosti ti bylo vygenerováno nové heslo: %s\n\nKSI' % new_password)
+		util.mail.send([user.email], '[KSI] Nové heslo', u'Ahoj,<br/>na základě tvé žádosti ti bylo vygenerováno nové heslo: %s<br/><br/>KSI' % new_password)
 		session.close()
 
 		req.context['result'] = { 'result': 'ok' }

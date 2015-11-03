@@ -5,18 +5,18 @@ import util
 def fake_profile():
         return { 'profile': { 'id': 0, 'signed_in': False } }
 
-def to_json(user, profile):
+def to_json(user, profile, year_id):
         task_scores = { task: points for task, points in util.user.points_per_task(user.id).items() if points is not None }
         tasks = { task.id: task for task in session.query(model.Task) }
 
         return {
-                'profile': [ _profile_to_json(user, profile, task_scores) ],
+                'profile': [ _profile_to_json(user, profile, task_scores, year_id) ],
                 'tasks': [ util.task.to_json(task) for task in task_scores.keys() ],
                 'taskScores': [ task_score_to_json(task, points, user) for task, points in task_scores.items() ]
         }
 
-def _profile_to_json(user, profile, task_scores):
-        points = util.user.sum_points(user.id)
+def _profile_to_json(user, profile, task_scores, year_id):
+        points = util.user.sum_points(user.id, year_id)
         summary = sum(util.task.max_points_dict().values())
         successful = round((float(points)/summary) * 100) if summary != 0 else 0
 
@@ -40,10 +40,10 @@ def _profile_to_json(user, profile, task_scores):
                 'school_country': profile.school_country,
                 'school_finish': profile.school_finish,
                 'tshirt_size': profile.tshirt_size,
-                'achievements': list(util.achievement.ids_set(user.achievements)),
-                'percentile': util.user.percentile(user.id),
+                'achievements': list(util.achievement.ids_set(filter(lambda a: a.year == year_id, user.achievements))),
+                'percentile': util.user.percentile(user.id, year_id),
                 'score': points,
-                'seasons': 1,
+                'seasons': util.user.active_years(user.id),
                 'successful': int(successful),
                 'results': [ task.id for task in task_scores.keys() ],
                 'role': user.role

@@ -12,3 +12,6 @@ class Achievement(Base):
 	id = Column(Integer, primary_key=True)
 	title = Column(String(255), nullable=False)
 	code = Column(String(10), nullable=False, unique=True)
+	description = Column(String(200), nullable=True)
+	year = Column(Integer, nullable=False)
+

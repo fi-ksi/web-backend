@@ -5,6 +5,7 @@ import model
 import endpoint
 from db import engine, session
 from util import UserInfo
+from sqlalchemy import func
 
 
 class JSONTranslator(object):
@@ -37,6 +38,14 @@ class Authorizer(object):
 
 		req.context['user'] = UserInfo()
 
+class Year_fill(object):
+
+	def process_request(self, req, resp):
+		if (req.get_param('year') is not None):
+			req.context['year'] = req.get_param('year')
+		else:
+			req.context['year'] = session.query(func.max(model.Year.id)).scalar()
+
 def log(req, resp):
 	try:
 		ip = req.env['HTTP_X_FORWARDED_FOR'].split(',')[-1].strip()
@@ -62,11 +71,11 @@ def cors_middleware(request, response, params):
 						response.set_header('Access-Control-Allow-Origin', origin)
 
 	response.set_header('Access-Control-Allow-Headers', 'authorization,content-type')
-	response.set_header('Access-Control-Allow-Methods', 'OPTIONS,PUT,POST,GET')
+	response.set_header('Access-Control-Allow-Methods', 'OPTIONS,PUT,POST,GET,DELETE')
 
 
 api = falcon.API(before=[ cors_middleware ], after=[ log_middleware ],
-				 middleware=[JSONTranslator(), Authorizer()])
+				 middleware=[JSONTranslator(), Authorizer(), Year_fill()])
 
 
 model.Base.metadata.create_all(engine)
@@ -75,8 +84,6 @@ api.add_route('/articles', endpoint.Articles())
 api.add_route('/articles/{id}', endpoint.Article())
 api.add_route('/achievements', endpoint.Achievements())
 api.add_route('/achievements/{id}', endpoint.Achievement())
-api.add_route('/categories', endpoint.Categories())
-api.add_route('/categories/{id}', endpoint.Category())
 api.add_route('/posts', endpoint.Posts())
 api.add_route('/posts/{id}', endpoint.Post())
 api.add_route('/tasks', endpoint.Tasks())
@@ -84,16 +91,17 @@ api.add_route('/tasks/{id}', endpoint.Task())
 api.add_route('/taskDetails/{id}', endpoint.TaskDetails())
 api.add_route('/modules/{id}', endpoint.Module())
 api.add_route('/modules/{id}/submit', endpoint.ModuleSubmit())
+api.add_route('/submFiles/{id}', endpoint.ModuleSubmittedFile())
 api.add_route('/threads', endpoint.Threads())
 api.add_route('/threads/{id}', endpoint.Thread())
 api.add_route('/threadDetails/{id}', endpoint.ThreadDetails())
 api.add_route('/users', endpoint.Users())
 api.add_route('/users/{id}', endpoint.User())
-api.add_route('/scores/{id}', endpoint.Score())
-api.add_route('/resultScores', endpoint.ResultScores())
 api.add_route('/profile', endpoint.Profile())
 api.add_route('/profile/picture', endpoint.PictureUploader())
 api.add_route('/images/{context}/{id}', endpoint.Image())
+api.add_route('/content', endpoint.Content())
+api.add_route('/taskContent/{id}', endpoint.TaskContent())
 api.add_route('/registration', endpoint.Registration())
 api.add_route('/debug', endpoint.Debug())
 api.add_route('/auth', endpoint.Authorize())

@@ -202,8 +202,8 @@ class ModuleSubmittedFile(object):
 			join(model.Evaluation, model.Evaluation.id == model.SubmittedFile.evaluation).\
 			join(model.Module, model.Module.id == model.Evaluation.module).\
 			join(model.Task, model.Evaluation.module == model.Module.id).\
-			filter(model.Task.evaluation_public == Frue).\
-			filter(model.Task.time_deadline > datetime.datetime.now()).count() == 0:
+			filter(model.Task.evaluation_public, model.Task.time_deadline > datetime.datetime.now()).\
+			count() == 0:
 				req.context['result'] = { 'status': 'error', 'error': 'You cannot remove files after deadline' }
 				return
 

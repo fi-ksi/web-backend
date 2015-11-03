@@ -25,7 +25,7 @@ class TaskContent(object):
 	def on_get(self, req, resp, id):
 
 		task = session.query(model.Task).get(id)
-		
+
 		if task is None:
 			resp.status = falcon.HTTP_400
 			return
@@ -33,11 +33,10 @@ class TaskContent(object):
 		status = util.task.status(task, user)
 
 		if status == util.TaskStatus.LOCKED:
-			resp.status = falcon.HTTP_400
+			resp.status = falcon.HTTP_403
 			return
 
 		filePath = 'data/task-content/' + id + req.get_param('path').replace('..', '');
-		print filePath
 
 		if not os.path.isfile(filePath):
 			resp.status = falcon.HTTP_404

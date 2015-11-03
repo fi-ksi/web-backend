@@ -27,8 +27,7 @@ def to_json(module, user_id):
 	# Nejdriv zjistime, jestli mame nejake evaluations
 	count = session.query(model.Evaluation.points).filter(model.Evaluation.user == user_id, model.Evaluation.module == module.id).\
 			join(model.Module, model.Module.id == model.Evaluation.module).\
-			join(model.Task, model.Task.id == model.Module.task).\
-			filter(model.Task.evaluation_public).count()
+			join(model.Task, model.Task.id == model.Module.task).count()
 
 	best_status = session.query(func.max(model.Evaluation.points).label('points')).\
 		filter(model.Evaluation.user == user_id, model.Evaluation.module == module.id).\
@@ -42,7 +41,7 @@ def to_json(module, user_id):
 	else:
 		module_json['state'] = 'blank'
 
-	module_json['score'] = module.id if best_status is not None else None
+	module_json['score'] = module.id if best_status.points else None
 
 	if module.type == ModuleType.PROGRAMMING:
 		code = util.programming.build(module.id)
@@ -55,7 +54,7 @@ def to_json(module, user_id):
 	elif module.type == ModuleType.SORTABLE:
 		module_json['sortable_list'] = util.sortable.build(module.id)
 	elif module.type == ModuleType.GENERAL:
-		module_json['state'] = 'correct' if best_status else 'blank'
+		module_json['state'] = 'correct' if count > 0 else 'blank'
 
 		submittedFiles = session.query(model.SubmittedFile).\
 			join(model.Evaluation, model.SubmittedFile.evaluation == model.Evaluation.id).\

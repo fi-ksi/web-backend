@@ -88,7 +88,7 @@ class ModuleSubmit(object):
 			evaluation = session.query(model.Evaluation).get(existing[0])
 			evaluation.time = datetime.datetime.now()
 		else:
-			evaluation = model.Evaluation(user=user_id, module=module.id)
+			evaluation = model.Evaluation(user=user_id, module=module.id, full_report="")
 			session.add(evaluation)
 			session.commit()
 

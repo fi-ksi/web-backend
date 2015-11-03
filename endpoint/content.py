@@ -26,7 +26,7 @@ class TaskContent(object):
 		user = req.context['user']
 		task = session.query(model.Task).get(id)
 
-		if task is None or not user.is_logged_in:
+		if task is None or not user.is_logged_in():
 			resp.status = falcon.HTTP_400
 			return
 
@@ -36,7 +36,7 @@ class TaskContent(object):
 			resp.status = falcon.HTTP_403
 			return
 
-		filePath = 'data/task-content/' + id + req.get_param('path').replace('..', '');
+		filePath = 'data/task-content/' + id + '/' + req.get_param('path').replace('..', '');
 
 		if not os.path.isfile(filePath):
 			resp.status = falcon.HTTP_404

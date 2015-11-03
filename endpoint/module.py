@@ -177,7 +177,7 @@ class ModuleSubmittedFile(object):
 
 	def on_get(self, req, resp, id):
 
-		submittedFile = _get_submitted_file(id, resp)
+		submittedFile = self._get_submitted_file(id, resp)
 		if submittedFile:
 
 			path = submittedFile.path
@@ -194,7 +194,7 @@ class ModuleSubmittedFile(object):
 
 	def on_delete(self, req, resp, id):
 
-		submittedFile = _get_submitted_file(id, resp)
+		submittedFile = self._get_submitted_file(id, resp)
 		if submittedFile:
 
 			if session.query(model.SubmittedFile).\

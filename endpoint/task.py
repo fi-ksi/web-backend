@@ -64,7 +64,7 @@ class TaskDetails(object):
 
 		req.context['result'] = {
 			'taskDetails': util.task.details_to_json(task, user, status, achievements, best_scores, comment_thread),
-			'modules': [ util.module.to_json(module, scores) for module in task.modules ],
+			'modules': [ util.module.to_json(module, user.id) for module in task.modules ],
 			'moduleScores': [ util.module.score_to_json(score) for score in scores if score.points is not None ],
 			'achievements': [ util.achievement.to_json(achievement, user.id) for achievement in achievements ],
 			'userScores': [ util.task.best_score_to_json(best_score) for best_score in best_scores ],

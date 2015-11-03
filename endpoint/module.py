@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import json, falcon, os, magic, multipart
 from sqlalchemy import func
 
@@ -6,10 +7,6 @@ from db import session
 from model import ModuleType
 import model
 import util
-
-def _module_to_json(module):
-	return { 'id': module.id, 'type': module.type, 'name': module.name, 'description': module.description }
-
 
 class Module(object):
 
@@ -20,37 +17,7 @@ class Module(object):
 			resp.status = falcon.HTTP_400
 			return
 
-		module = session.query(model.Module).get(id)
-		module_json = _module_to_json(module)
-		count = session.query(model.Evaluation.points).filter(model.Evaluation.user == user.id, model.Evaluation.module == id).\
-			join(model.Module, model.Module.id == model.Evaluation.module).\
-			join(model.Task, model.Task.id == model.Module.task).\
-			filter(model.Task.evaluation_public).count()
-
-		if count > 0:
-			status = session.query(func.max(model.Evaluation.points).label('points')).\
-				filter(model.Evaluation.user == user.id, model.Evaluation.module == id).\
-				join(model.Module, model.Module.id == model.Evaluation.module).\
-				join(model.Task, model.Task.id == model.Module.task).\
-				filter(model.Task.evaluation_public).first()
-			module_json['state'] = 'correct' if status.points == module.max_points else 'incorrect'
-		else:
-			module_json['state'] = 'blank'
-
-		if module.type == ModuleType.PROGRAMMING:
-			code = util.programming.build(module.id)
-			module_json['code'] = code
-			module_json['default_code'] = code
-		elif module.type == ModuleType.QUIZ:
-			module_json['questions'] = util.quiz.build(module.id)
-		elif module.type == ModuleType.SORTABLE:
-			module_json['sortable_list'] = util.sortable.build(module.id)
-		elif module.type == ModuleType.GENERAL:
-			module_json['state'] = 'correct' if count > 0 else 'blank'
-		elif module.type == ModuleType.TEXT:
-			module_json['fields'] = util.text.num_fields(module.id) 
-
-		req.context['result'] = { 'module': module_json }
+		req.context['result'] = {'module': util.module.to_json(id, user.id) }
 
 
 class ModuleSubmit(object):
@@ -79,12 +46,12 @@ class ModuleSubmit(object):
 
 		if not os.path.isdir(dir):
 			resp.status = falcon.HTTP_400
-			req.context['result'] = { 'result': 'incorrect' }
+			req.context['result'] = {'result': 'incorrect'}
 			return
 
 		files = multipart.MultiDict()
 		content_type, options = multipart.parse_options_header(req.content_type)
-		boundary = options.get('boundary','')
+		boundary = options.get('boundary', '')
 
 		if not boundary:
 			raise multipart.MultipartError("No boundary for multipart/form-data.")
@@ -110,7 +77,7 @@ class ModuleSubmit(object):
 		session.commit()
 		session.close()
 
-		req.context['result'] = { 'result': 'correct' }
+		req.context['result'] = {'result': 'correct'}
 
 	def _evaluate_code(self, req, module, user_id, resp, data):
 		# Pokud neni modul autocorrrect, pridavame submitted_files
@@ -132,7 +99,7 @@ class ModuleSubmit(object):
 		if not module.autocorrect:
 			session.commit()
 			session.close()
-			req.context['result'] = { 'result': 'correct' }
+			req.context['result'] = {'result': 'correct'}
 			return
 
 		result, report, output = util.programming.evaluate(module.task, module, user_id, data)
@@ -144,7 +111,7 @@ class ModuleSubmit(object):
 		session.commit()
 		session.close()
 
-		req.context['result'] = { 'result': result, 'score': points, 'output': output }
+		req.context['result'] = {'result': result, 'score': points, 'output': output}
 
 	def on_post(self, req, resp, id):
 		user = req.context['user']
@@ -176,7 +143,7 @@ class ModuleSubmit(object):
 
 		points = module.max_points if result else 0
 		evaluation = model.Evaluation(user=user.id, module=module.id, points=points, full_report=report)
-		req.context['result'] = { 'result': 'correct' if result else 'incorrect', 'score': points }
+		req.context['result'] = {'result': 'correct' if result else 'incorrect', 'score': points}
 
 		if "action" in report:
 			util.module.perform_action(module, user)
@@ -184,3 +151,75 @@ class ModuleSubmit(object):
 		session.add(evaluation)
 		session.commit()
 		session.close()
+
+class ModuleSubmittedFile(object):
+
+	def _get_submitted_file(self, req, resp, id):
+		user = req.context['user']
+
+		if not user.is_logged_in():
+			resp.status = falcon.HTTP_403
+			return None
+
+		submittedFile = session.query(model.SubmittedFile).get(id)
+		if submittedFile is None:
+			resp.status = falcon.HTTP_404
+			return None
+
+		evaluation = session.query(model.Evaluation).get(submittedFile.evaluation)
+
+		if evaluation.user == user.id or user.is_admin or user.is_org:
+			self.execute(submittedFile, req, resp)
+		else:
+			resp.status = falcon.HTTP_403
+			return None
+
+		return submittedFile
+
+	def on_get(self, req, resp, id):
+		submittedFile = self._get_submitted_file(req, resp, id)
+		if submittedFile:
+			path = submittedFile.path
+
+			if not os.path.isfile(path):
+				resp.status = falcon.HTTP_404
+				return
+
+			resp.content_type = magic.Magic(mime=True).from_file(path)
+			resp.stream_len = os.path.getsize(path)
+			resp.stream = open(path, 'rb')
+
+	def on_delete(self, req, resp, id):
+		submittedFile = self._get_submitted_file(req, resp, id)
+		if submittedFile:
+			if session.query(model.SubmittedFile).\
+			filter(model.SubmittedFile.id == submittedFile.id).\
+			join(model.Evaluation, model.Evaluation.id == model.SubmittedFile.evaluation).\
+			join(model.Module, model.Module.id == model.Evaluation.module).\
+			join(model.Task, model.Evaluation.module == model.Module.id).\
+			filter(model.Task.evaluation_public, model.Task.time_deadline > datetime.datetime.now()).\
+			count() == 0:
+				req.context['result'] = { 'status': 'error', 'error': u'Nelze smazat soubory po termínu odevzdání úlohy' }
+				return
+
+			try:
+				os.remove(submittedFile.path)
+
+				session.delete(submittedFile)
+				session.commit()
+				req.context['result'] = { 'status': 'ok' }
+
+			except OSError:
+				req.context['result'] = { 'status': 'error', 'error': u'Soubor se nepodařilo odstranit z filesystému' }
+				return
+			except SQLAlchemyError:
+				req.context['result'] = { 'status': 'error', 'error': u'Záznam o souboru se nepodařilo odstranit z databáze' }
+				return
+		else:
+			if resp.status == falcon.HTTP_404:
+				req.context['result'] = { 'status': 'error', 'error': u'Soubor nenalezen na serveru' }
+			elif resp.status == falcon.HTTP_404:
+				req.context['result'] = { 'status': 'error', 'error': u'K tomuto souboru nemáte oprávnění' }
+			else:
+				req.context['result'] = { 'status': 'error', 'error': u'Soubor se nepodařilo získat' }
+			resp.status = falcon.HTTP_200

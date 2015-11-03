@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import json, falcon, os, magic, multipart
 from sqlalchemy import func
 
@@ -153,11 +154,11 @@ class ModuleSubmit(object):
 
 class ModuleSubmittedFile(object):
 
-	def _get_submitted_file(id, resp):
+	def _get_submitted_file(self, req, resp, id):
 		user = req.context['user']
 
 		if not user.is_logged_in():
-			resp.status = falcon.HTTP_400
+			resp.status = falcon.HTTP_403
 			return None
 
 		submittedFile = session.query(model.SubmittedFile).get(id)
@@ -176,13 +177,9 @@ class ModuleSubmittedFile(object):
 		return submittedFile
 
 	def on_get(self, req, resp, id):
-
-		submittedFile = self._get_submitted_file(id, resp)
+		submittedFile = self._get_submitted_file(req, resp, id)
 		if submittedFile:
-
 			path = submittedFile.path
-
-			print path
 
 			if not os.path.isfile(path):
 				resp.status = falcon.HTTP_404
@@ -193,10 +190,8 @@ class ModuleSubmittedFile(object):
 			resp.stream = open(path, 'rb')
 
 	def on_delete(self, req, resp, id):
-
-		submittedFile = self._get_submitted_file(id, resp)
+		submittedFile = self._get_submitted_file(req, resp, id)
 		if submittedFile:
-
 			if session.query(model.SubmittedFile).\
 			filter(model.SubmittedFile.id == submittedFile.id).\
 			join(model.Evaluation, model.Evaluation.id == model.SubmittedFile.evaluation).\
@@ -204,7 +199,7 @@ class ModuleSubmittedFile(object):
 			join(model.Task, model.Evaluation.module == model.Module.id).\
 			filter(model.Task.evaluation_public, model.Task.time_deadline > datetime.datetime.now()).\
 			count() == 0:
-				req.context['result'] = { 'status': 'error', 'error': 'You cannot remove files after deadline' }
+				req.context['result'] = { 'status': 'error', 'error': u'Nelze smazat soubory po termínu odevzdání úlohy' }
 				return
 
 			try:
@@ -215,8 +210,16 @@ class ModuleSubmittedFile(object):
 				req.context['result'] = { 'status': 'ok' }
 
 			except OSError:
-				req.context['result'] = { 'status': 'error', 'error': 'Error removing file' }
+				req.context['result'] = { 'status': 'error', 'error': u'Soubor se nepodařilo odstranit z filesystému' }
 				return
 			except SQLAlchemyError:
-				req.context['result'] = { 'status': 'error', 'error': 'Error removing file entry' }
+				req.context['result'] = { 'status': 'error', 'error': u'Záznam o souboru se nepodařilo odstranit z databáze' }
 				return
+		else:
+			if resp.status == falcon.HTTP_404:
+				req.context['result'] = { 'status': 'error', 'error': u'Soubor nenalezen na serveru' }
+			elif resp.status == falcon.HTTP_404:
+				req.context['result'] = { 'status': 'error', 'error': u'K tomuto souboru nemáte oprávnění' }
+			else:
+				req.context['result'] = { 'status': 'error', 'error': u'Soubor se nepodařilo získat' }
+			resp.status = falcon.HTTP_200

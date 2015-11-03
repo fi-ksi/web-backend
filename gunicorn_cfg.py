@@ -8,3 +8,7 @@ def pre_request(worker, req):
 	if req.path.startswith('/content/'):
 		req.query = 'path=' + req.path[9:]
 		req.path = '/content'
+	if req.path.startswith('/task-content/'):
+		parts = req.path.split("/")
+		req.query = 'path=' + '/'.join(parts[3:])
+		req.path = '/task-content/' + parts[2]

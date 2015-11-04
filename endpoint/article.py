@@ -21,7 +21,7 @@ class Articles(object):
 	def on_get(self, req, resp):
 		user = req.context['user']
 
-		if user is None or user.id is None or user.role == 'participant':
+		if user is None or user.id is None or user.role == 'participant' or user.role == 'participant_hidden':
 			query = session.query(model.Article).filter(model.Article.published).order_by(desc(model.Article.time_created))
 		else:
 			query = session.query(model.Article).order_by(desc(model.Article.time_created))

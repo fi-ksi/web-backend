@@ -27,8 +27,8 @@ class Profile(object):
 		user.first_name = data['first_name']
 		user.last_name = data['last_name']
 		user.email = data['email']
+		user.short_info = data['short_info']
 
-		profile.short_info = data['short_info']
 		profile.addr_street = data['addr_street']
 		profile.addr_city = data['addr_city']
 		profile.addr_zip = data['addr_zip']

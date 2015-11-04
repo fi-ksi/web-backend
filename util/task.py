@@ -18,7 +18,7 @@ def fully_submitted(user_id, year_id=None):
 	if user_id is None:
 		return []
 
-	q = session.query(model.Task.id, func.count(model.Module.id).label('modules'))
+	q = session.query(model.Task.id, func.count(distinct(model.Module.id)).label('modules'))
 	if year_id is not None:
 			q = q.join(model.Wave, model.Task.wave == model.Wave.id).filter(model.Wave.year == year_id)
 	q = q.outerjoin(model.Module).group_by(model.Task.id)

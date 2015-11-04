@@ -66,8 +66,8 @@ def cors_middleware(request, response, params):
 	origin = request.get_header('Origin')
 
 	if origin in (	'http://localhost:4200',
-			'http://kyzikos.fi.muni.cz',
-			'https://kyzikos.fi.muni.cz'):
+			'http://ksi.fi.muni.cz',
+			'https://ksi.fi.muni.cz'):
 						response.set_header('Access-Control-Allow-Origin', origin)
 
 	response.set_header('Access-Control-Allow-Headers', 'authorization,content-type')

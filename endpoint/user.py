@@ -35,7 +35,7 @@ class Users(object):
 		users = session.query(model.User)
 
 		if filter == 'organisators':
-			users = users.filter(model.User.role != 'participant')
+			users = users.filter(model.User.role == 'org')
 		elif filter == 'participants':
 			users = users.filter(model.User.role == 'participant')
 

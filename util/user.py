@@ -72,12 +72,16 @@ def get_profile_picture(user):
 def to_json(user, year_id):
         data = { 'id': user.id, 'first_name': user.first_name, 'last_name': user.last_name, 'profile_picture': get_profile_picture(user), 'gender': user.sex }
 
-        data['role'] = user.role
+        # skryty resitel je pro potreby frontendu normalni resitel
+        if user.role == 'participant_hidden':
+            data['role'] = 'participant'
+        else:
+            data['role'] = user.role
         data['score'] =  sum_points(user.id, year_id)
         data['tasks_num'] = len(util.task.fully_submitted(user.id, year_id))
         data['achievements'] = list(util.achievement.ids_set(filter(lambda a: a.year == year_id, user.achievements)))
 
-        if user.role == 'participant':
+        if user.role == 'participant' or user.role == 'participant_hidden':
                 profile = session.query(model.Profile).get(user.id)
                 data['addr_country'] = profile.addr_country
                 data['school_name'] = profile.school_name

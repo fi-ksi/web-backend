@@ -57,7 +57,7 @@ class Posts(object):
 		user_class = session.query(model.User).get(user.id)
 
 		#posilani mailu
-		if user.role == 'participant':
+		if user.role == 'participant' or user.role == 'participant_hidden':
 			
 			if task_thread:
 				task_author = session.query(model.User).filter(model.User.id == task_thread.author).first()

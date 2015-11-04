@@ -1,15 +1,14 @@
 import smtplib
 from email.mime.text import MIMEText
 from email import Charset
+import sys
 
 from db import session
 import random
 import model
+from util import config
 
-KSI = session.query(model.Config).get("mail_sender").value
-FEEDBACK = [ r for r, in session.query(model.FeedbackRecipient.email).all() ]
-
-def send(to, subject, text, easter_egg=False, addr_from=KSI, addr_reply=None):
+def send(to, subject, text, easter_egg=False, addr_from=config.KSI_MAIL, addr_reply=None):
 	Charset.add_charset('utf-8', Charset.QP, Charset.QP, 'utf-8')
 	if easter_egg:
 		rand = random.randrange(0, session.query(model.MailEasterEgg).count())
@@ -27,10 +26,14 @@ def send(to, subject, text, easter_egg=False, addr_from=KSI, addr_reply=None):
 	if addr_reply is not None:
 		msg['Reply-To'] = addr_reply
 
-	s = smtplib.SMTP('relay.muni.cz')
-	s.sendmail(addr_from, to if isinstance(to, (list)) else [ to ], msg.as_string())
-	s.quit()
+	try:
+		s = smtplib.SMTP('relay.muni.cz')
+		s.sendmail(addr_from, to if isinstance(to, (list)) else [ to ], msg.as_string())
+		s.quit()
+	except:
+		e = sys.exc_info()[0]
+		print str(e)
 
 def send_feedback(text, addr_from):
 	addr_reply = addr_from if len(addr_from) > 0 else None
-	send(FEEDBACK, '[KSI-WEB] Zpetna vazba', '<p>'+text.decode('utf-8')+'</p>', True, KSI, addr_reply)
+	send(config.FEEDBACK, '[KSI-WEB] Zpetna vazba', '<p>'+text.decode('utf-8')+'</p>', True, KSI, addr_reply)

@@ -16,6 +16,7 @@ import profile
 import thread
 import post
 import mail
+import config
 import text
 
 def decode_form_data(req):

@@ -11,7 +11,7 @@ def to_json(user, profile, year_id):
 
         return {
                 'profile': [ _profile_to_json(user, profile, task_scores, year_id) ],
-                'tasks': [ util.task.to_json(task) for task in task_scores.keys() ],
+                'tasks': [ util.task.to_json(task, user) for task in task_scores.keys() ],
                 'taskScores': [ task_score_to_json(task, points, user) for task, points in task_scores.items() ]
         }
 

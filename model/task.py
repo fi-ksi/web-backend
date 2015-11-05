@@ -28,6 +28,7 @@ class Task(Base):
 	prerequisite_obj = relationship('Prerequisite', primaryjoin='Task.prerequisite==Prerequisite.id', uselist=False)
 	modules = relationship('Module', primaryjoin='Task.id==Module.task', order_by='Module.order')
 	evaluation_public = Column(Boolean, nullable=False)
+	git_path = Column(String(255), nullable=True)
 
 class SolutionComment(Base):
 	__tablename__ = 'solution_comments'

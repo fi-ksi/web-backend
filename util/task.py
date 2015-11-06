@@ -128,6 +128,9 @@ def status(task, user, adeadline=None, fsubmitted=None):
 	# jsou splneny prerekvizity
 	return TaskStatus.BASE if util.PrerequisitiesEvaluator(task.prerequisite_obj, currently_active).evaluate() or user.role in ('org', 'admin') else TaskStatus.LOCKED
 
+def solution_public(status, task, user):
+	if status == TaskStatus.DONE or task.time_deadline < datetime.datetime.now() or user.role in ('org', 'admin')
+
 def time_published(task_id):
 	return session.query(model.Wave.time_published).\
 		join(model.Task, model.Task.wave == model.Wave.id).\

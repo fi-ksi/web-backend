@@ -17,7 +17,15 @@ class Module(object):
 			resp.status = falcon.HTTP_400
 			return
 
-		req.context['result'] = {'module': util.module.to_json(id, user.id) }
+		module = session.query(model.Module).get(id)
+		if module is None:
+			resp.status = falcon.HTTP_404
+		else:
+			task = session.query(model.Task).get(module.task)
+			if status(task, user) != TaskStatus.LOCKED:
+				req.context['result'] = {'module': util.module.to_json(module, user.id) }
+			else:
+				resp.status = falcon.HTTP_403
 
 
 class ModuleSubmit(object):

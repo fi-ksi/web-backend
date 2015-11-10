@@ -36,4 +36,4 @@ def send(to, subject, text, easter_egg=False, addr_from=config.KSI_MAIL, addr_re
 
 def send_feedback(text, addr_from):
 	addr_reply = addr_from if len(addr_from) > 0 else None
-	send(config.FEEDBACK, '[KSI-WEB] Zpetna vazba', '<p>'+text.decode('utf-8')+'</p>', True, KSI, addr_reply)
+	send(config.FEEDBACK, '[KSI-WEB] Zpetna vazba', '<p>'+text.decode('utf-8')+'</p>', True, config.KSI_MAIL, addr_reply)

@@ -27,7 +27,7 @@ class TaskContent(object):
 
 		task = session.query(model.Task).get(id)
 
-		if task is None or not user.is_logged_in():
+		if task is None or (not user.is_logged_in() and view != 'icon'):
 			resp.status = falcon.HTTP_400
 			return
 
@@ -35,17 +35,17 @@ class TaskContent(object):
 
 		if view == 'zadani':
 			if status == util.TaskStatus.LOCKED:
-				resp.status = falcon.HTTP_400
+				resp.status = falcon.HTTP_403
 				return
-		else if view == 'reseni':
-			if not solution_public(status, task, user):
-				resp.status = falcon.HTTP_400
+		elif view == 'reseni':
+			if not util.task.solution_public(status, task, user):
+				resp.status = falcon.HTTP_403
 				return
-		else:
+		elif view != 'icon':
 			resp.status = falcon.HTTP_400
 			return
-		
-		filePath = 'data/task-content/' + id + '/zadani/' + req.get_param('path').replace('..', '')
+
+		filePath = 'data/task-content/' + id + '/' + view + '/' + req.get_param('path').replace('..', '')
 
 		if not os.path.isfile(filePath):
 			resp.status = falcon.HTTP_404

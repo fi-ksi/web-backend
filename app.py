@@ -103,6 +103,10 @@ api.add_route('/profile/picture', endpoint.PictureUploader())
 api.add_route('/images/{context}/{id}', endpoint.Image())
 api.add_route('/content', endpoint.Content())
 api.add_route('/taskContent/{id}', endpoint.TaskContent())
+	# This endpoint contains: (defined in endpoint/content.py, see also ./gunicorn_cfg.py)
+		# /taskContent/{id}/zadani/{file_path}
+		# /taskContent/{id}/reseni/{file_path}
+		# /taskContent/[id]/icon/{file_name}
 api.add_route('/task-content/{id}/{view}', endpoint.TaskContent())
 api.add_route('/registration', endpoint.Registration())
 api.add_route('/debug', endpoint.Debug())

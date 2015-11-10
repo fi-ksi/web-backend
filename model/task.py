@@ -21,7 +21,7 @@ class Task(Base):
 	body = Column(Text, nullable=False)
 	solution = Column(Text, nullable=True)
 	thread = Column(Integer, ForeignKey('threads.id'), nullable=False)
-	picture_base = Column(String(255), nullable=False)
+	picture_base = Column(String(255), nullable=True)
 	time_created = Column(DateTime, default=datetime.datetime.now)
 	time_deadline = Column(DateTime, default=datetime.datetime.now)
 

@@ -22,7 +22,6 @@ def send(to, subject, text, easter_egg=False, addr_from=config.KSI_MAIL, addr_re
 	msg['Subject'] = subject
 	msg['From'] = addr_from
 	msg['To'] = ','.join(to)
-	msg['Content-Type'] = 'text/html'
 	if addr_reply is not None:
 		msg['Reply-To'] = addr_reply
 

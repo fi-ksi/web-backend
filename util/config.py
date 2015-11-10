@@ -4,9 +4,18 @@ from sqlalchemy import func
 from db import session
 import model
 
-KSI_MAIL = session.query(model.Config).get("ksi_conf").value
-KARLIK_IMG = session.query(model.Config).get("mail_sign").value
-KSI_WEB = session.query(model.Config).get("web_url").value
-KSI_MAIL = session.query(model.Config).get("mail_sender").value
-FEEDBACK = [ r for r, in session.query(model.FeedbackRecipient.email).all() ]
+def ksi_mail():
+	return session.query(model.Config).get("ksi_conf").value
+
+def karlik_img():
+	return session.query(model.Config).get("mail_sign").value
+
+def ksi_web():
+	return session.query(model.Config).get("web_url").value
+
+def ksi_mail():
+	return session.query(model.Config).get("mail_sender").value
+
+def feedback():
+	return [ r for r, in session.query(model.FeedbackRecipient.email).all() ]
 

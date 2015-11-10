@@ -8,7 +8,7 @@ import random
 import model
 from util import config
 
-def send(to, subject, text, easter_egg=False, addr_from=config.KSI_MAIL, addr_reply=None):
+def send(to, subject, text, easter_egg=False, addr_from=config.ksi_mail(), addr_reply=None):
 	Charset.add_charset('utf-8', Charset.QP, Charset.QP, 'utf-8')
 	if easter_egg:
 		rand = random.randrange(0, session.query(model.MailEasterEgg).count())
@@ -35,4 +35,4 @@ def send(to, subject, text, easter_egg=False, addr_from=config.KSI_MAIL, addr_re
 
 def send_feedback(text, addr_from):
 	addr_reply = addr_from if len(addr_from) > 0 else None
-	send(config.FEEDBACK, '[KSI-WEB] Zpetna vazba', '<p>'+text.decode('utf-8')+'</p>', True, config.KSI_MAIL, addr_reply)
+	send(config.feedback(), '[KSI-WEB] Zpetna vazba', '<p>'+text.decode('utf-8')+'</p>', True, config.ksi_mail(), addr_reply)

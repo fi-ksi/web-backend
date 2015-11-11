@@ -122,6 +122,7 @@ class ModuleSubmit(object):
 		req.context['result'] = {'result': result, 'score': points, 'output': output}
 
 	def on_post(self, req, resp, id):
+		print "Want evaluate"
 		user = req.context['user']
 
 		if not user.is_logged_in():

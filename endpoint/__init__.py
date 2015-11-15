@@ -13,3 +13,5 @@ from endpoint.debug import Debug
 from endpoint.oauth2 import Authorize, Logout
 from endpoint.runcode import RunCode
 from endpoint.feedback import Feedback
+
+from endpoint.admincorrections import AdminCorrections

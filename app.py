@@ -117,4 +117,6 @@ api.add_route('/feedback', endpoint.Feedback())
 api.add_route('/settings/changePassword', endpoint.ChangePassword())
 api.add_route('/forgottenPassword', endpoint.ForgottenPassword())
 
+api.add_route('/admin/corrections', endpoint.AdminCorrections)
+
 api.add_sink(log_sink)

@@ -26,7 +26,6 @@ def existing_evaluation(module_id, user_id):
 	return [ r for (r, ) in results ]
 
 def to_json(module, user_id):
-	db_dict = json.loads(module.data)
 	module_json = _info_to_json(module)
 
 	# Nejdriv zjistime, jestli mame nejake evaluations
@@ -49,15 +48,15 @@ def to_json(module, user_id):
 	module_json['score'] = module.id if best_status.points else None
 
 	if module.type == ModuleType.PROGRAMMING:
-		prog = util.programming.to_json(db_dict, user_id)
+		prog = util.programming.to_json(json.loads(module.data), user_id)
 		module_json['code'] = prog['default_code']
 		module_json['default_code'] = prog['default_code']
 		if not module.autocorrect:
 			module_json['state'] = 'correct' if count > 0 else 'blank'
 	elif module.type == ModuleType.QUIZ:
-		module_json['questions'] = util.quiz.to_json(db_dict, user_id)
+		module_json['questions'] = util.quiz.to_json(json.loads(module.data), user_id)
 	elif module.type == ModuleType.SORTABLE:
-		module_json['sortable_list'] = util.sortable.to_json(db_dict, user_id)
+		module_json['sortable_list'] = util.sortable.to_json(json.loads(module.data), user_id)
 	elif module.type == ModuleType.GENERAL:
 		module_json['state'] = 'correct' if count > 0 else 'blank'
 
@@ -69,7 +68,7 @@ def to_json(module, user_id):
 
 		module_json['submitted_files'] = submittedFiles
 	elif module.type == ModuleType.TEXT:
-		txt = util.text.to_json(db_dict, user_id)
+		txt = util.text.to_json(json.loads(module.data), user_id)
 		module_json['fields'] = txt['inputs']
 
 	return module_json

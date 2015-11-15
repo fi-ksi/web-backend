@@ -34,3 +34,4 @@ def count_unread(user_id, thread_id):
 		return None
 
 	return session.query(model.Post).filter(model.Post.thread == thread_id, model.Post.published_at > visit.last_visit).count()
+

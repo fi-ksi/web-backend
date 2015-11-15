@@ -8,10 +8,6 @@ import model
 import util
 import json
 
-"""
-	
-"""
-
 def modules_for_task(task_id):
 	return session.query(model.Module).filter(model.Module.task == task_id).all()
 

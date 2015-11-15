@@ -48,8 +48,3 @@ class Corrections(object):
 			'modules': [ util.correction.module_to_json(q.Module) for q in corrs_modules.all() ]
 		}
 
-
-class AdminCorrectingTask(object):
-	def on_get(self, req, resp, id):
-		pass
-

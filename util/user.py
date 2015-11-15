@@ -20,6 +20,14 @@ def active_years(user_id):
 		group_by(model.Year).all()
 	return a
 
+# predpoklada query, ve kterem se vyskytuje model User
+# pozadavek profiltruje na ty uzivatele, kteri jsou aktivni v roce \year_id
+def active_in_year(query, year_id):
+	return query.join(model.Evaluation, model.Evaluation.user == model.User.id).\
+		join(model.Module, model.Module.id == model.Evaluation.module).\
+		join(model.Task, model.Task.id == model.Module.task).\
+		join(model.Wave, model.Wave.id == model.Task.wave).\
+		filter(model.Wave.year == year_id)
 
 def any_task_submitted(user_id, year_id):
 	if user_id is None:

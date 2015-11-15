@@ -53,7 +53,8 @@ class Threads(object):
 			return
 
 		data = json.loads(req.stream.read())
-		thread = model.Thread(title=data['thread']['title'])
+		pblic = data['thread']['public'] if data['thread']['public'] is not None else True
+		thread = model.Thread(title=data['thread']['title'], public=pblic)
 
 		# nove obecne vlakno je prirazeno posledni vlne daneho rocniku
 		thread.wave = session.query(func.max(model.Wave.id)).\

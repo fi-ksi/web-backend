@@ -51,7 +51,7 @@ class TaskDetails(object):
 			resp.status = falcon.HTTP_400
 			return
 
-		achievements = session.query(model.Achievement).join(model.UserAchievement).filter(model.UserAchievement.task_id == id, model.UserAchievement.user_id == user.id).all()
+		achievements = util.achievement.per_task(user.id, id)
 		scores = util.task.points_per_module(id, user.id)
 		best_scores = util.task.best_scores(id)
 

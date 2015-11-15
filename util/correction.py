@@ -7,7 +7,7 @@ import model
 import util
 import os
 
-def _corrected(evals):
+def evals_corrected(evals):
 	return evals.filter(and_(model.Evaluation.evaluator == None, not_(model.Module.autocorrect))).count() == 0
 
 def _corr_general_to_json(module, evaluation):
@@ -40,7 +40,7 @@ def to_json(corr, evals):
 	return {
 		'id': corr.Task.id*100000 + user,
 		'task_id': corr.Task.id,
-		'state': 'corrected' if _corrected(evals) else 'notcorrected',
+		'state': 'corrected' if evals_corrected(evals) else 'notcorrected',
 		'user': corr.Evaluation.user,
 		'comment': util.task.comment_thread(corr.Task.id, user),
 		'achievements': util.achievement.ids_list(util.achievement.per_task(user, corr.Task.id)),

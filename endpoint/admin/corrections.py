@@ -4,6 +4,99 @@ from sqlalchemy import func
 from db import session
 import model
 import util
+import datetime
+
+class Correction(object):
+	# GET pozadavek na konkretni correction se spousti prevazne jako ospoved na POST
+	# id je umele id, konstrukce viz util/correction.py
+	def on_get(self, req, resp, id):
+		user = req.context['user']
+		year = req.context['year']
+		task = int(id) / 100000
+		participant = int(id) % 100000
+
+		#if (not user.is_logged_in()) or (not user.is_org()):
+		#	resp.status = falcon.HTTP_400
+		#	return
+
+		# Ziskame prislusna 'evaluation's
+		corrs = session.query(model.Evaluation, model.Task, model.Module).\
+			filter(model.Evaluation.user == participant).\
+			join(model.Module, model.Module.id == model.Evaluation.module).\
+			join(model.Task, model.Task.id == model.Module.task).\
+			join(model.Wave, model.Task.wave == model.Wave.id).\
+			join(model.Year, model.Year.id == model.Wave.year).\
+			filter(model.Year.id == year).\
+			filter(model.Task.id == task)
+
+		corr_task = corrs.group_by(model.Task).first()
+		corr_modules = corrs.group_by(model.Module)
+
+		req.context['result'] = {
+			'correction': util.correction.to_json(corr_task, corr_modules)
+		}
+
+	# POST: propojeni diskuzniho vlakna komentare
+	def _process_thread(corr):
+		curr_thread = util.task.comment_thread(data['task_id'], data['user'])
+
+		if (corr['comment'] is not None) and (curr_thread is None):
+			# pridavame diskuzni vlakno
+			comment = SolutionComment(thread=corr['comment'], user=corr['user'], task=corr['task_id'])
+			session.add(comment)
+			session.commit()
+
+		if (corr['comment'] is None) and (curr_thread is not None):
+			# mazeme diskuzni vlakno
+			comment = session.query(model.SolutionComment).get((curr_thread.id, corr['user'], corr['task_id']))
+			session.delete()
+			session.commit()
+
+	# POST: pridavani a mazani achievementu
+	def _process_achievements(corr):
+		a_old = util.achievement.ids_list(util.achievement.per_task(corr['user'], corr['task_id']))
+		a_new = corr['achievements']
+		if a_old != a_new:
+			# achievementy se nerovnaji -> proste smazeme vsechny dosavadni a pridame do db ty, ktere nam prisly
+			for a_id in a_old:
+				session.delete(session.query(model.UserAchievement).get(a_id))
+				session.commit()
+
+			for a_id in a_new:
+				ua = UserAchievement(user_id=corr['user'], achievement_id=a_id, task_id=corr['task_id'])
+				session.add(ua)
+				session.commit()
+
+	# POST: zpracovani hodnoceni modulu
+	def _process_module(module, user_id):
+		evaluation = session.query(model.Evaluation).get(module['eval_id'])
+		if evaluation is None: return
+		evaluation.points = module['points']
+		evaluation.time = datetime.datetime.now()
+		evaluation.evaluator = user_id
+		evaluation.full_report += datetime.datetime.now() + " Evaluating by org " + str(user_id) + " : " + str(modile['points']) + " points" + '\n'
+		session.commit()
+
+	# POST ma stejne argumenty, jako GET
+	def on_post(self, req, resp, id):
+		user = req.context['user']
+
+		if (not user.is_logged_in()) or (not user.is_org()):
+			resp.status = falcon.HTTP_400
+			return
+
+		corr = json.loads(req.stream.read())['content']['correction']
+
+		self._process_thread(corr)
+		self._process_achievements(corr)
+
+		for module in corr['modules']:
+			self._process_module(module, user.id)
+
+		# odpovedi jsou updatnute udaje
+		self.on_get(req, req, resp, id)
+
+###############################################################################
 
 class Corrections(object):
 

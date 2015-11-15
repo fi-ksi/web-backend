@@ -118,6 +118,10 @@ api.add_route('/settings/changePassword', endpoint.ChangePassword())
 api.add_route('/forgottenPassword', endpoint.ForgottenPassword())
 
 api.add_route('/admin/corrections', endpoint.admin.Corrections())
+api.add_route('/admin/correction/{id}', endpoint.admin.Correction())
 api.add_route('/admin/correctionsInfo', endpoint.admin.CorrectionsInfo())
+api.add_route('/admin/corrections/{task_id}/publish', endpoint.admin.CorrectionsPublish())
+api.add_route('/admin/subm/eval/{eval_id}/', endpoint.admin.SubmFilesEval())
+api.add_route('/admin/subm/task/{task_id}/', endpoint.admin.SubmFilesTask())
 
 api.add_sink(log_sink)

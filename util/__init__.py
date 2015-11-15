@@ -21,6 +21,7 @@ import text
 import correction
 import correctionInfo
 import wave
+import submissions
 
 def decode_form_data(req):
 	ctype, pdict = cgi.parse_header(req.content_type)

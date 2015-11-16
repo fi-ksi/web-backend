@@ -31,7 +31,7 @@ class CorrectionsInfo(object):
 		users = util.user.active_in_year(users, year).all()
 
 		req.context['result'] = {
-			'tasks': [ util.correctionInfo.task_to_json(task) for task in tasks ],
+			'correctionsInfos': [ util.correctionInfo.task_to_json(task) for task in tasks ],
 			'waves': [ util.wave.to_json(wave) for wave in waves ],
 			'users': [ util.correctionInfo.user_to_json(user) for user in users ]
 		}

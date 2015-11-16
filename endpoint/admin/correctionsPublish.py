@@ -14,7 +14,7 @@ class CorrectionsPublish(object):
 	"""
 	def on_get(self, req, resp, task_id):
 		user = req.context['user']
-		public = req.get_param('public')
+		public = req.get_param_as_bool('public')
 
 		if (not user.is_logged_in()) or (not user.is_org()):
 			resp.status = falcon.HTTP_400

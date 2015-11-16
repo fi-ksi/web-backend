@@ -112,8 +112,8 @@ class Corrections(object):
 	def on_get(self, req, resp):
 		user = req.context['user']
 		year = req.context['year']
-		task = req.get_param('task')
-		participant = req.get_param('participant')
+		task = req.get_param_as_int('task')
+		participant = req.get_param_as_int('participant')
 
 		if task is None and participant is None:
 			resp.status = falcon.HTTP_400

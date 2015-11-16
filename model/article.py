@@ -19,3 +19,4 @@ class Article(Base):
 	picture = Column(String(255))
 	time_created = Column(TIMESTAMP, default=datetime.datetime.now, server_default=text('CURRENT_TIMESTAMP'))
 	published = Column(Boolean)
+	year = Column(Integer, ForeignKey('years.id'), nullable=False)

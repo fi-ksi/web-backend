@@ -46,6 +46,7 @@ class Correction(object):
 			comment = model.SolutionComment(thread=corr['comment'], user=corr['user'], task=corr['task_id'])
 			session.add(comment)
 			session.commit()
+			session.close()
 
 		if (corr['comment'] is None) and (curr_thread is not None):
 			# mazeme diskuzni vlakno
@@ -67,6 +68,7 @@ class Correction(object):
 				ua = UserAchievement(user_id=corr['user'], achievement_id=a_id, task_id=corr['task_id'])
 				session.add(ua)
 				session.commit()
+				session.close()
 
 	# POST: zpracovani hodnoceni modulu
 	def _process_module(self, module, user_id):

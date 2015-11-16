@@ -7,6 +7,25 @@ import util
 
 PROFILE_PICTURE_URL = '/images/profile/%d'
 
+# Vrati achievementy uzivatele.
+# Achievementy spojene s ulohami se vraci jen v rocniku, globalni achievementy se vraci ve vsech rocnicich.
+def achievements(user_id, year_id):
+	q = session.query(model.Achievement).\
+		join(model.UserAchievement, model.UserAchievement.achievement_id == model.Achievement.id).\
+		filter(model.UserAchievement.user_id == user_id)
+
+	# Globalni achievementy nejsou propojeny s zadnou ulohou.
+	general = q.filter(model.UserAchievement.task_id == 0).all()
+
+	# Achievementy propojene s ulohou filtrujeme.
+	task = q.join(model.Task, model.Task.id == model.UserAchievement.task_id).\
+		filter(model.Task.evaluation_public).\
+		join(model.Wave, model.Wave.id == model.Task.wave).\
+		filter(model.Wave.year == year_id).all()
+
+	return general + task
+
+
 def active_years(user_id):
 	if user_id is None:
 		return []
@@ -87,7 +106,7 @@ def to_json(user, year_id):
             data['role'] = user.role
         data['score'] =  sum_points(user.id, year_id)
         data['tasks_num'] = len(util.task.fully_submitted(user.id, year_id))
-        data['achievements'] = list(util.achievement.ids_set(filter(lambda a: a.year == year_id, user.achievements)))
+        data['achievements'] = list(util.achievement.ids_set(achievements(user.id, year_id)))
 
         if user.role == 'participant' or user.role == 'participant_hidden':
                 profile = session.query(model.Profile).get(user.id)

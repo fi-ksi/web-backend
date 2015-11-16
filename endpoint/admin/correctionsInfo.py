@@ -28,7 +28,9 @@ class CorrectionsInfo(object):
 			join(model.Task, model.Task.wave == model.Wave.id).all()
 
 		users = session.query(model.User)
-		users = util.user.active_in_year(users, year).all()
+		users = set(util.user.active_in_year(users, year).all())
+		users |= set(session.query(model.User).\
+			join(model.Task, model.Task.author == model.User.id).all())
 
 		req.context['result'] = {
 			'correctionsInfos': [ util.correctionInfo.task_to_json(task) for task in tasks ],

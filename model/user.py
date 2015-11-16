@@ -28,7 +28,6 @@ class User(Base):
 	enabled = Column(Integer, nullable=False, default=1, server_default='1')
 	registered = Column(TIMESTAMP, nullable=False, default=datetime.datetime.now, server_default=text('CURRENT_TIMESTAMP'))
 
-	achievements = relationship("Achievement", secondary=UserAchievement.__tablename__)
 	tasks = relationship("Task", primaryjoin='User.id == Task.author')
 
 	#child = relationship('Token', uselist=False, backref='owner')

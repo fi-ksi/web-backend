@@ -15,6 +15,7 @@ Je vhodne vyuzit virtualenv - pip install virtualenv, virtualenv env, source env
 * python-magic
 * py-bcrypt
 * PyPy (build vlozit do ~/pypy/, [how-to](http://doc.pypy.org/en/latest/build.html))
+* python-dateutil
 
 ## Spusteni
 

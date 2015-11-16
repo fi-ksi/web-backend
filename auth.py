@@ -2,6 +2,7 @@ import string, random, urllib, falcon, bcrypt
 
 from db import session
 import model
+import datetime
 
 TOKEN_LENGTH = 40
 
@@ -27,7 +28,7 @@ def check_password(plain_text_password, hashed_password):
 class OAuth2Token(object):
 	def __init__(self, client_id):
 		self.value = _generate_token()
-		self.expire = 3600
+		self.expire = datetime.timedelta(hours=1)
 		self.kind = 'Bearer'
 		self.refresh = _generate_token()
 
@@ -45,6 +46,6 @@ class OAuth2Token(object):
 		return {
 			'access_token': self.value,
 			'token_type': self.kind,
-			'expires_in': self.expire,
+			'expires_in': self.expire.total_seconds(),
 			'refresh_token': self.refresh
 		}

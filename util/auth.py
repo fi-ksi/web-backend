@@ -1,3 +1,7 @@
+from db import session
+import model
+import datetime
+
 class UserInfo:
 
 	def __init__(self, user=None, token=None):
@@ -16,3 +20,11 @@ class UserInfo:
 
 	def is_org(self):
 		return self.role == 'org'
+
+
+def update_tokens():
+	tokens = session.query(model.Token).all()
+	tokens = filter(lambda token: datetime.datetime.utcnow() > token.granted+(token.expire*2), tokens)
+	for token in tokens:
+		session.delete(token)
+	session.commit()

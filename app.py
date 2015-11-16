@@ -28,7 +28,7 @@ class Authorizer(object):
 			token = session.query(model.Token).get(token_str)
 
 			if token is not None:
-				if req.relative_uri != '/auth' and token.granted + timedelta(seconds=token.expire) < datetime.utcnow():
+				if req.relative_uri != '/auth' and token.granted + token.expire < datetime.utcnow():
 					raise falcon.HTTPError(falcon.HTTP_401)
 
 				try:

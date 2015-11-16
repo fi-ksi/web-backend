@@ -42,8 +42,8 @@ class Authorizer(object):
 class Year_fill(object):
 
 	def process_request(self, req, resp):
-		if (req.get_param('year') is not None):
-			req.context['year'] = req.get_param('year')
+		if ('YEAR' in req.headers):
+			req.context['year'] = req.headers['YEAR']
 		else:
 			req.context['year'] = session.query(func.max(model.Year.id)).scalar()
 

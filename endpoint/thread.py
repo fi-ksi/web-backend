@@ -53,14 +53,9 @@ class Threads(object):
 			return
 
 		data = json.loads(req.stream.read())
-		pblic = data['thread']['public'] if data['thread']['public'] is not None else True
-		thread = model.Thread(title=data['thread']['title'], public=pblic)
+		pblic = data['thread']['public'] if data['thread'].has_key('public') else True
 
-		# nove obecne vlakno je prirazeno posledni vlne daneho rocniku
-		thread.wave = session.query(func.max(model.Wave.id)).\
-		filter(model.Wave.public).\
-		filter(model.Wave.year == req.context['year']).scalar()
-
+		thread = model.Thread(title=data['thread']['title'], public=pblic, year = req.context['year'])
 		session.add(thread)
 		session.commit()
 		req.context['result'] = { 'thread': util.thread.to_json(thread, user.id) }
@@ -75,9 +70,7 @@ class Threads(object):
 		task_threads = map(lambda x: x.thread, task_threads)
 
 		threads = session.query(model.Thread).filter(model.Thread.public == True).\
-		join(model.Wave, model.Wave.id == model.Thread.wave).\
-		filter(model.Wave.public).\
-		filter(model.Wave.year == req.context['year'])
+			filter(model.Thread.year == req.context['year'])
 		if not show_all:
 			threads = threads.filter(not_(model.Thread.id.in_(task_threads)))
 		threads = threads.order_by(desc(model.Thread.id)).all()

@@ -16,7 +16,7 @@ class Thread(Base):
 	id = Column(Integer, primary_key=True)
 	title = Column(String(1000))
 	public = Column(Boolean, nullable=False, default=True, server_default=text('TRUE'))
-	wave = Column(Integer, ForeignKey('waves.id'), nullable=False)
+	year = Column(Integer, ForeignKey('years.id'), nullable=False)
 
 	posts = relationship('Post', primaryjoin='Thread.id==Post.thread')
 

@@ -5,6 +5,7 @@ from db import session
 import model
 import util
 import datetime
+import json
 
 class Correction(object):
 	# GET pozadavek na konkretni correction se spousti prevazne jako ospoved na POST
@@ -37,23 +38,23 @@ class Correction(object):
 		}
 
 	# POST: propojeni diskuzniho vlakna komentare
-	def _process_thread(corr):
-		curr_thread = util.task.comment_thread(data['task_id'], data['user'])
+	def _process_thread(self, corr):
+		curr_thread = util.task.comment_thread(corr['task_id'], corr['user'])
 
 		if (corr['comment'] is not None) and (curr_thread is None):
 			# pridavame diskuzni vlakno
-			comment = SolutionComment(thread=corr['comment'], user=corr['user'], task=corr['task_id'])
+			comment = model.SolutionComment(thread=corr['comment'], user=corr['user'], task=corr['task_id'])
 			session.add(comment)
 			session.commit()
 
 		if (corr['comment'] is None) and (curr_thread is not None):
 			# mazeme diskuzni vlakno
-			comment = session.query(model.SolutionComment).get((curr_thread.id, corr['user'], corr['task_id']))
-			session.delete()
+			comment = session.query(model.SolutionComment).get((curr_thread, corr['user'], corr['task_id']))
+			session.delete(comment)
 			session.commit()
 
 	# POST: pridavani a mazani achievementu
-	def _process_achievements(corr):
+	def _process_achievements(self, corr):
 		a_old = util.achievement.ids_list(util.achievement.per_task(corr['user'], corr['task_id']))
 		a_new = corr['achievements']
 		if a_old != a_new:
@@ -68,13 +69,13 @@ class Correction(object):
 				session.commit()
 
 	# POST: zpracovani hodnoceni modulu
-	def _process_module(module, user_id):
+	def _process_module(self, module, user_id):
 		evaluation = session.query(model.Evaluation).get(module['eval_id'])
 		if evaluation is None: return
 		evaluation.points = module['points']
 		evaluation.time = datetime.datetime.now()
 		evaluation.evaluator = user_id
-		evaluation.full_report += datetime.datetime.now() + " Evaluating by org " + str(user_id) + " : " + str(modile['points']) + " points" + '\n'
+		evaluation.full_report += str(datetime.datetime.now()) + " Evaluating by org " + str(user_id) + " : " + str(module['points']) + " points" + '\n'
 		session.commit()
 
 	# POST ma stejne argumenty, jako GET
@@ -85,7 +86,7 @@ class Correction(object):
 			resp.status = falcon.HTTP_400
 			return
 
-		corr = json.loads(req.stream.read())['content']['correction']
+		corr = json.loads(req.stream.read())['correction']
 
 		self._process_thread(corr)
 		self._process_achievements(corr)
@@ -94,7 +95,7 @@ class Correction(object):
 			self._process_module(module, user.id)
 
 		# odpovedi jsou updatnute udaje
-		self.on_get(req, req, resp, id)
+		self.on_get(req, resp, id)
 
 ###############################################################################
 

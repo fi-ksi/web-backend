@@ -22,7 +22,7 @@ def to_json(db_dict, user_id):
 	return [ _question_to_json(question) for question in db_dict['quiz'] ]
 
 def evaluate(task, module, data):
-	report = '=== Evaluating quiz id \'%s\' for task id \'%s\' ===\n\n' % (module, task)
+	report = '=== Evaluating quiz id \'%s\' for task id \'%s\' ===\n\n' % (module.id, task)
 	report += ' Raw data: ' + json.dumps(data) + '\n'
 	report += ' Evaluation:\n'
 
@@ -34,7 +34,7 @@ def evaluate(task, module, data):
 		answers_user = [ int(item) for item in data[i] ]
 		is_correct = (answers_user == question['correct'])
 
-		report += '  [%s] Question %d (id: %d) -- user answers: %s, correct answers: %s\n' % ('y' if is_correct else 'n', i, question.id, answers_user, question['correct'])
+		report += '  [%s] Question %d -- user answers: %s, correct answers: %s\n' % ('y' if is_correct else 'n', i, answers_user, question['correct'])
 		overall_results &= is_correct
 		i += 1
 

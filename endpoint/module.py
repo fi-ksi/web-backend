@@ -122,7 +122,6 @@ class ModuleSubmit(object):
 		req.context['result'] = {'result': result, 'score': points, 'output': output}
 
 	def on_post(self, req, resp, id):
-		print "Want evaluate"
 		user = req.context['user']
 
 		if not user.is_logged_in():
@@ -143,11 +142,11 @@ class ModuleSubmit(object):
 			return
 
 		if module.type == ModuleType.QUIZ:
-			result, report = util.quiz.evaluate(module.task, module.id, data)
+			result, report = util.quiz.evaluate(module.task, module, data)
 		elif module.type == ModuleType.SORTABLE:
-			result, report = util.sortable.evaluate(module.task, module.id, data)
+			result, report = util.sortable.evaluate(module.task, module, data)
 		elif module.type == ModuleType.TEXT:
-			result, report = util.text.evaluate(module.task, module.id, data)
+			result, report = util.text.evaluate(module.task, module, data)
 
 
 		points = module.max_points if result else 0

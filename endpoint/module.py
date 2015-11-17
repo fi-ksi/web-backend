@@ -177,7 +177,7 @@ class ModuleSubmittedFile(object):
 
 		evaluation = session.query(model.Evaluation).get(submittedFile.evaluation)
 
-		if evaluation.user == user.id or user.is_admin or user.is_org:
+		if evaluation.user == user.id or user.is_org:
 			return submittedFile
 		else:
 			resp.status = falcon.HTTP_403

@@ -19,7 +19,7 @@ class UserInfo:
 		return self.role == 'admin'
 
 	def is_org(self):
-		return self.role == 'org'
+		return self.role == 'org' or self.role == 'admin'
 
 
 def update_tokens():

@@ -27,10 +27,14 @@ class TaskContent(object):
 
 		task = session.query(model.Task).get(id)
 
-		if task is None or (not user.is_logged_in() and view != 'icon'):
+		if task is None:
 			resp.status = falcon.HTTP_400
 			return
 
+		if not view in ['zadani', 'reseni', 'icon']:
+			resp.status = falcon.HTTP_400
+			return
+		"""
 		status = util.task.status(task, user)
 
 		if view == 'zadani':
@@ -44,6 +48,7 @@ class TaskContent(object):
 		elif view != 'icon':
 			resp.status = falcon.HTTP_400
 			return
+		"""
 
 		filePath = 'data/task-content/' + id + '/' + view + '/' + req.get_param('path').replace('..', '')
 

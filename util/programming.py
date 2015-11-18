@@ -17,8 +17,8 @@ Specifikace \data v databazi modulu pro "programming":
 			"default_code": Text,
 			"merge_script": Text (path/to/merge/script.py),
 			"stdin": Text,
-			"args": ["arg1", "arg2"],
-			"timeout": Integer,
+			"args": "[]", <- tento argument je nepovinny
+			"timeout": Integer, <- tento argument je nepovinny
 			"post_trigger_script": Text, (path/to/post-triggger-script.py),
 			"check_script": Text (path/to/check/script)
 		}
@@ -60,6 +60,9 @@ def evaluate(task, module, user_id, data):
 		pass
 	script = os.path.join(sandbox_dir, 'code.py')
 	shutil.copyfile(merged_code, script)
+
+	if not 'args' in programming: programming['args'] = "[]"
+	if not 'timeout' in programming: programming['timeout'] = 5
 
 	(success, report, sandbox_stdout, sandbox_stderr) = _exec(dir, sandbox_dir, 'code.py', programming['args'], programming['stdin'], programming['timeout'], report)
 	if not success:
@@ -110,6 +113,9 @@ def run(module, user_id, data):
 		pass
 	script = os.path.join(sandbox_dir, 'code.py')
 	shutil.copyfile(merged_code, script)
+
+	if not 'args' in programming: programming['args'] = "[]"
+	if not 'timeout' in programming: programming['timeout'] = 5
 
 	success, report, sandbox_stdout, sandbox_stderr = _exec(dir, sandbox_dir, 'code.py', programming['args'], programming['stdin'], programming['timeout'], report)
 

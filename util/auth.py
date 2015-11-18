@@ -24,7 +24,7 @@ class UserInfo:
 
 def update_tokens():
 	tokens = session.query(model.Token).all()
-	tokens = filter(lambda token: datetime.datetime.utcnow() > token.granted+(token.expire*2), tokens)
+	tokens = filter(lambda token: datetime.datetime.utcnow() > token.granted+(token.expire), tokens)
 	for token in tokens:
 		session.delete(token)
 	session.commit()

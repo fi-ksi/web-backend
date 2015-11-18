@@ -75,9 +75,9 @@ class Correction(object):
 		evaluation = session.query(model.Evaluation).get(module['eval_id'])
 		if evaluation is None: return
 		evaluation.points = module['points']
-		evaluation.time = datetime.datetime.now()
+		evaluation.time = datetime.datetime.utcnow()
 		evaluation.evaluator = user_id
-		evaluation.full_report += str(datetime.datetime.now()) + " Evaluating by org " + str(user_id) + " : " + str(module['points']) + " points" + '\n'
+		evaluation.full_report += str(datetime.datetime.utcnow()) + " Evaluating by org " + str(user_id) + " : " + str(module['points']) + " points" + '\n'
 		session.commit()
 
 	# POST ma stejne argumenty, jako GET

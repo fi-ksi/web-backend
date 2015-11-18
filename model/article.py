@@ -17,6 +17,6 @@ class Article(Base):
 	title = Column(String(255), nullable=False)
 	body = Column(Text)
 	picture = Column(String(255))
-	time_created = Column(TIMESTAMP, default=datetime.datetime.now, server_default=text('CURRENT_TIMESTAMP'))
+	time_created = Column(TIMESTAMP, default=datetime.datetime.utcnow(), server_default=text('CURRENT_TIMESTAMP'))
 	published = Column(Boolean)
 	year = Column(Integer, ForeignKey('years.id'), nullable=False)

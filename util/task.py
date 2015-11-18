@@ -30,7 +30,7 @@ def fully_submitted(user_id, year_id=None):
 	return { int(key): int(val) for key, val in real_modules_count.items() if max_modules_count[key] == val }
 
 def after_deadline():
-	return { int(task.id) for task in session.query(model.Task).filter(model.Task.time_deadline < datetime.datetime.now() ).all() }
+	return { int(task.id) for task in session.query(model.Task).filter(model.Task.time_deadline < datetime.datetime.utcnow() ).all() }
 
 def max_points(task_id):
 	points = session.query(func.sum(model.Module.max_points).label('points')).\
@@ -129,7 +129,7 @@ def status(task, user, adeadline=None, fsubmitted=None):
 	return TaskStatus.BASE if util.PrerequisitiesEvaluator(task.prerequisite_obj, currently_active).evaluate() or user.role in ('org', 'admin') else TaskStatus.LOCKED
 
 def solution_public(status, task, user):
-	return status == TaskStatus.DONE or task.time_deadline < datetime.datetime.now() or user.role in ('org', 'admin')
+	return status == TaskStatus.DONE or task.time_deadline < datetime.datetime.utcnow() or user.role in ('org', 'admin')
 
 def time_published(task_id):
 	return session.query(model.Wave.time_published).\

@@ -15,4 +15,4 @@ class CodeExecution(Base):
 	module = Column(Integer, ForeignKey('modules.id'), nullable=False)
 	user = Column(Integer, ForeignKey('users.id'), nullable=False)
 	code = Column(Text)
-	time = Column(TIMESTAMP, default=datetime.datetime.now(), server_default=text('CURRENT_TIMESTAMP'))
+	time = Column(TIMESTAMP, default=datetime.datetime.utcnow(), server_default=text('CURRENT_TIMESTAMP'))

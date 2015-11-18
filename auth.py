@@ -46,6 +46,6 @@ class OAuth2Token(object):
 		return {
 			'access_token': self.value,
 			'token_type': self.kind,
-			'expires_in': self.expire.total_seconds(),
+			'expires_in': int(self.expire.total_seconds()),
 			'refresh_token': self.refresh
 		}

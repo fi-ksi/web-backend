@@ -36,7 +36,7 @@ class ModuleSubmit(object):
 		existing = util.module.existing_evaluation(module.id, user_id)
 		if len(existing) > 0:
 			evaluation = session.query(model.Evaluation).get(existing[0])
-			evaluation.time = datetime.datetime.now()
+			evaluation.time = datetime.datetime.utcnow()
 			report = evaluation.full_report
 		else:
 			report = '=== Uploading files for module id \'%s\' for task id \'%s\' ===\n\n' % (module.id, module.task)
@@ -94,7 +94,7 @@ class ModuleSubmit(object):
 		existing = util.module.existing_evaluation(module.id, user_id)
 		if (not module.autocorrect) and (len(existing) > 0):
 			evaluation = session.query(model.Evaluation).get(existing[0])
-			evaluation.time = datetime.datetime.now()
+			evaluation.time = datetime.datetime.utcnow()
 		else:
 			evaluation = model.Evaluation(user=user_id, module=module.id, full_report="")
 			session.add(evaluation)
@@ -203,7 +203,7 @@ class ModuleSubmittedFile(object):
 			join(model.Evaluation, model.Evaluation.id == model.SubmittedFile.evaluation).\
 			join(model.Module, model.Module.id == model.Evaluation.module).\
 			join(model.Task, model.Evaluation.module == model.Module.id).\
-			filter(model.Task.evaluation_public, model.Task.time_deadline > datetime.datetime.now()).\
+			filter(model.Task.evaluation_public, model.Task.time_deadline > datetime.datetime.utcnow()).\
 			count() == 0:
 				req.context['result'] = { 'status': 'error', 'error': u'Nelze smazat soubory po termínu odevzdání úlohy' }
 				return

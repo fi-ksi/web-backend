@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, SmallInteger, String, Text, Enum, Boolean, ForeignKey, text
+from sqlalchemy import Column, Integer, SmallInteger, String, Text, Enum, Boolean, ForeignKey, text, DECIMAL
 
 from . import Base
 import json
@@ -22,7 +22,7 @@ class Module(Base):
 	type = Column(Enum(ModuleType.GENERAL, ModuleType.PROGRAMMING, ModuleType.QUIZ, ModuleType.SORTABLE, ModuleType.TEXT), nullable=False)
 	name = Column(String(255), nullable=False)
 	description = Column(Text)
-	max_points = Column(Integer, nullable=False)
+	max_points = Column(DECIMAL(precision=1, scale=10, asdecimal=False), nullable=False)
 	autocorrect = Column(Boolean, nullable=False, default=False, server_default=text('FALSE'))
 	order = Column(SmallInteger, nullable=False, default=1, server_default='1')
 	action = Column(Text)

@@ -9,10 +9,10 @@ from endpoint.registration import Registration
 from endpoint.profile import Profile, PictureUploader
 from endpoint.image import Image
 from endpoint.content import Content, TaskContent
-from endpoint.debug import Debug
 from endpoint.oauth2 import Authorize, Logout
 from endpoint.runcode import RunCode
 from endpoint.feedback import Feedback
+from endpoint.wave import Wave, Waves
 
 import admin
 

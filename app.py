@@ -117,8 +117,8 @@ api.add_route('/settings/changePassword', endpoint.ChangePassword())
 api.add_route('/forgottenPassword', endpoint.ForgottenPassword())
 api.add_route('/waves', endpoint.Waves())
 api.add_route('/waves/{id}', endpoint.Wave())
-api.add_route('/years', endpoint.Waves())
-api.add_route('/years/{id}', endpoint.Wave())
+api.add_route('/years', endpoint.Years())
+api.add_route('/years/{id}', endpoint.Year())
 
 
 api.add_route('/admin/corrections', endpoint.admin.Corrections())

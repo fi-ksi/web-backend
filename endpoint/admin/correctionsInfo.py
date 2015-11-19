@@ -15,9 +15,9 @@ class CorrectionsInfo(object):
 		user = req.context['user']
 		year = req.context['year']
 
-		#if (not user.is_logged_in()) or (not user.is_org()):
-		#	resp.status = falcon.HTTP_400
-		#	return
+		if (not user.is_logged_in()) or (not user.is_org()):
+			resp.status = falcon.HTTP_400
+			return
 
 		tasks = session.query(model.Task).\
 			join(model.Wave, model.Wave.id == model.Task.wave).\

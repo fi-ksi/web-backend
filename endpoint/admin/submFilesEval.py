@@ -14,9 +14,9 @@ class SubmFilesEval(object):
 	def on_get(self, req, resp, eval_id):
 		user = req.context['user']
 
-		#if (not user.is_logged_in()) or (not user.is_org()):
-		#	resp.status = falcon.HTTP_400
-		#	return
+		if (not user.is_logged_in()) or (not user.is_org()):
+			resp.status = falcon.HTTP_400
+			return
 
 		inMemoryOutputFile = StringIO()
 		zipFile = ZipFile(inMemoryOutputFile, 'w')

@@ -16,9 +16,9 @@ class Correction(object):
 		task = int(id) / 100000
 		participant = int(id) % 100000
 
-		#if (not user.is_logged_in()) or (not user.is_org()):
-		#	resp.status = falcon.HTTP_400
-		#	return
+		if (not user.is_logged_in()) or (not user.is_org()):
+			resp.status = falcon.HTTP_400
+			return
 
 		# Ziskame prislusna 'evaluation's
 		corrs = session.query(model.Evaluation, model.Task, model.Module).\
@@ -119,9 +119,9 @@ class Corrections(object):
 			resp.status = falcon.HTTP_400
 			return
 
-		#if (not user.is_logged_in()) or (not user.is_org()):
-		#	resp.status = falcon.HTTP_400
-		#	return
+		if (not user.is_logged_in()) or (not user.is_org()):
+			resp.status = falcon.HTTP_400
+			return
 
 		# Ziskame prislusna 'evaluation's
 		corrs = session.query(model.Evaluation, model.Task, model.Module)

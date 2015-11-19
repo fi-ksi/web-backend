@@ -109,7 +109,6 @@ api.add_route('/taskContent/{id}', endpoint.TaskContent())
 		# /taskContent/[id]/icon/{file_name}
 api.add_route('/task-content/{id}/{view}', endpoint.TaskContent())
 api.add_route('/registration', endpoint.Registration())
-api.add_route('/debug', endpoint.Debug())
 api.add_route('/auth', endpoint.Authorize())
 api.add_route('/logout', endpoint.Logout())
 api.add_route('/runCode/{id}/submit', endpoint.RunCode())

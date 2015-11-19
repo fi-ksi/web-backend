@@ -13,6 +13,7 @@ from endpoint.oauth2 import Authorize, Logout
 from endpoint.runcode import RunCode
 from endpoint.feedback import Feedback
 from endpoint.wave import Wave, Waves
+from endpoint.year import Year, Years
 
 import admin
 

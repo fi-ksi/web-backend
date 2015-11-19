@@ -138,9 +138,13 @@ class Corrections(object):
 		corrs_tasks = corrs.group_by(model.Task, model.Evaluation.user).all()
 		corrs_modules = corrs.group_by(model.Module)
 
+		achievements = session.query(model.Achievement).\
+			filter(model.Achievement.year == req.context['year']).all()
+
 		req.context['result'] = {
 			'corrections': [ util.correction.to_json(corr, corrs_modules.filter(model.Task.id == corr.Task.id)) for corr in corrs_tasks ],
 			'tasks': [ util.correction.task_to_json(q.Task) for q in corrs.group_by(model.Task).all() ],
-			'modules': [ util.correction.module_to_json(q.Module) for q in corrs_modules.all() ]
+			'modules': [ util.correction.module_to_json(q.Module) for q in corrs_modules.all() ],
+			'achievements': [ util.achievement.to_json(achievement, user.id) for achievement in achievements ]
 		}
 

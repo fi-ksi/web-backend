@@ -30,6 +30,6 @@ class ThreadVisit(Base):
 
 	thread = Column(Integer, ForeignKey('threads.id'), primary_key=True)
 	user = Column(Integer, ForeignKey('users.id'), primary_key=True)
-	last_visit = Column(TIMESTAMP, nullable=False, default=datetime.datetime.utcnow(), server_default=text('CURRENT_TIMESTAMP'))
+	last_visit = Column(TIMESTAMP, nullable=False, default=datetime.datetime.utcnow, server_default=text('CURRENT_TIMESTAMP'))
 	last_last_visit = Column(TIMESTAMP, nullable=True)
 

@@ -18,7 +18,7 @@ class Post(Base):
 	thread = Column(Integer, ForeignKey(Thread.id), nullable=False)
 	author = Column(Integer, ForeignKey('users.id'), nullable=False)
 	body = Column(Text, nullable=False)
-	published_at = Column(TIMESTAMP, nullable=False, default=datetime.datetime.utcnow(), server_default=text('CURRENT_TIMESTAMP'))
+	published_at = Column(TIMESTAMP, nullable=False, default=datetime.datetime.utcnow, server_default=text('CURRENT_TIMESTAMP'))
 	parent = Column(Integer, ForeignKey(__tablename__ + '.id'))
 
 	reactions = relationship('Post')

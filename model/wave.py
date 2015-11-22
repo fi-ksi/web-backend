@@ -17,7 +17,7 @@ class Wave(Base):
 	index = Column(Integer, nullable=False)
 	caption = Column(String(100), nullable=True)
 	garant = Column(Integer, ForeignKey('users.id'), nullable=False)
-	time_published = Column(DateTime, default=datetime.datetime.utcnow())
+	time_published = Column(DateTime, default=datetime.datetime.utcnow)
 	
 	@hybrid_property
 	def public(self):

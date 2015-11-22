@@ -19,16 +19,25 @@ class Registration(object):
 			req.context['result'] = { 'error': "duplicate_user" }
 			return
 
-		user = model.User(email=data['email'], password=auth.get_hashed_password(data['password']), first_name=data['first_name'], last_name=data['last_name'], sex=data['gender'], short_info=data["short_info"])
+		try:
+			user = model.User(email=data['email'], password=auth.get_hashed_password(data['password']), first_name=data['first_name'], last_name=data['last_name'], sex=data['gender'], short_info=data["short_info"])
+		except:
+			req.context['result'] = { 'error': "Nelze vytvořit uživatele, kontaktuj prosím orga." }
+			raise
+
+		try:
+			profile = model.Profile(user_id=user.id, addr_street=data['addr_street'], addr_city=data['addr_city'], addr_zip=data['addr_zip'], addr_country=data['addr_country'],\
+				school_name=data['school_name'], school_street=data['school_street'], school_city=data['school_city'], school_zip=data['school_zip'], school_country=data['school_country'], school_finish=int(data['school_finish']),\
+				tshirt_size=data['tshirt_size'].upper())
+		except:
+			req.context['result'] = { 'error': "Nelze vytvořit profil, kontaktuj prosím orga." }
+			raise
+
+		# Uzivatele i profil schvalne pridavame az na konci -- aby nedoslo k pridani pouze uzivatele pri chybejicim klici v profilu
 		session.add(user)
-		session.commit()
-
-		profile = model.Profile(user_id=user.id, addr_street=data['addr_street'], addr_city=data['addr_city'], addr_zip=data['addr_zip'], addr_country=data['addr_country'],\
-			school_name=data['school_name'], school_street=data['school_street'], school_city=data['school_city'], school_zip=data['school_zip'], school_country=data['school_country'], school_finish=int(data['school_finish']),\
-			tshirt_size=data['tshirt_size'].upper())
 		session.add(profile)
-
-		util.mail.send([user.email.decode('utf-8')], u'[KSI] Potvrzení registrace do Korespondenčního semináře z informatiky', u'Ahoj!<br/>Vítáme tě v Korespondenčním semináři z informatiky Fakulty informatiky Masarykovy univerzity. Nyní můžeš začít řešit naplno. Stačí se přihlásit na https://ksi.fi.muni.cz pomocí e-mailu a zvoleného hesla. Přejeme ti hodně úspěchů při řešení semináře!<br/><br/>KSI')
 		session.commit()
 		session.close()
+
+		util.mail.send([user.email.decode('utf-8')], u'[KSI] Potvrzení registrace do Korespondenčního semináře z informatiky', u'Ahoj!<br/>Vítáme tě v Korespondenčním semináři z informatiky Fakulty informatiky Masarykovy univerzity. Nyní můžeš začít řešit naplno. Stačí se přihlásit na https://ksi.fi.muni.cz pomocí e-mailu a zvoleného hesla. Přejeme ti hodně úspěchů při řešení semináře!<br/><br/>KSI')
 

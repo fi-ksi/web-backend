@@ -47,7 +47,6 @@ def evaluate(task, module, data):
 			if ('ignore_case' in text) and (text['ignore_case']):
 				s1 = s1.lower()
 				s2 = s2.lower()
-			print("Compare: " + s1 + ", " + s2 +", " + str(s1 == s2))
 			result = result and s1 == s2
 		if len(data) != len(orig):
 			result = False

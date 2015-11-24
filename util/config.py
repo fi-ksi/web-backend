@@ -4,6 +4,9 @@ from sqlalchemy import func
 from db import session
 import model
 
+MAX_UPLOAD_FILE_SIZE = 20 * 10**6
+MAX_UPLOAD_FILE_COUNT = 20
+
 def get(key):
 	return session.query(model.Config).get(key).value
 

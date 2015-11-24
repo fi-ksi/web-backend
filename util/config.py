@@ -4,9 +4,25 @@ from sqlalchemy import func
 from db import session
 import model
 
-KSI_MAIL = session.query(model.Config).get("ksi_conf").value
-KARLIK_IMG = session.query(model.Config).get("mail_sign").value
-KSI_WEB = session.query(model.Config).get("web_url").value
-KSI_MAIL = session.query(model.Config).get("mail_sender").value
-FEEDBACK = [ r for r, in session.query(model.FeedbackRecipient.email).all() ]
+MAX_UPLOAD_FILE_SIZE = 20 * 10**6
+MAX_UPLOAD_FILE_COUNT = 20
+
+def get(key):
+	return session.query(model.Config).get(key).value
+
+def ksi_mail():
+	return et("ksi_conf")
+
+def karlik_img():
+	return get("mail_sign")
+
+def ksi_web():
+	return get("web_url")
+
+def ksi_mail():
+	return get("mail_sender")
+
+def feedback():
+	return [ r for r, in session.query(model.FeedbackRecipient.email).all() ]
+
 

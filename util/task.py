@@ -30,7 +30,7 @@ def fully_submitted(user_id, year_id=None):
 	return { int(key): int(val) for key, val in real_modules_count.items() if max_modules_count[key] == val }
 
 def after_deadline():
-	return { int(task.id) for task in session.query(model.Task).filter(model.Task.time_deadline < datetime.datetime.now() ).all() }
+	return { int(task.id) for task in session.query(model.Task).filter(model.Task.time_deadline < datetime.datetime.utcnow() ).all() }
 
 def max_points(task_id):
 	points = session.query(func.sum(model.Module.max_points).label('points')).\
@@ -128,6 +128,9 @@ def status(task, user, adeadline=None, fsubmitted=None):
 	# jsou splneny prerekvizity
 	return TaskStatus.BASE if util.PrerequisitiesEvaluator(task.prerequisite_obj, currently_active).evaluate() or user.role in ('org', 'admin') else TaskStatus.LOCKED
 
+def solution_public(status, task, user):
+	return status == TaskStatus.DONE or task.time_deadline < datetime.datetime.utcnow() or user.role in ('org', 'admin')
+
 def time_published(task_id):
 	return session.query(model.Wave.time_published).\
 		join(model.Task, model.Task.wave == model.Wave.id).\
@@ -136,6 +139,7 @@ def time_published(task_id):
 def to_json(task, user=None, adeadline=None, fsubmitted=None):
 	max_points = sum([ module.max_points for module in task.modules ])
 	tstatus = status(task, user, adeadline, fsubmitted)
+	pict_base = task.picture_base if task.picture_base is not None else "/taskContent/" + str(task.id) + "/icon/"
 
 	return {
 		'id': task.id,
@@ -148,7 +152,7 @@ def to_json(task, user=None, adeadline=None, fsubmitted=None):
 		'time_deadline': task.time_deadline.isoformat(),
 		'state': tstatus,
 		'prerequisities': [] if not task.prerequisite_obj else util.prerequisite.to_json(task.prerequisite_obj),
-		'picture_base': task.picture_base,
+		'picture_base': pict_base,
 		'picture_suffix': '.svg'
 	}
 
@@ -160,7 +164,7 @@ def details_to_json(task, user, status, achievements, best_scores, comment_threa
 		'modules': [ module.id for module in task.modules ],
 		'best_scores': [ best_score.User.id for best_score in best_scores ],
 		'comment': comment_thread if task.evaluation_public else None,
-		'solution': task.solution if status == TaskStatus.DONE or task.time_deadline < datetime.datetime.now() or user.role in ('org', 'admin') else None,
+		'solution': task.solution if solution_public(status, task, user) else None,
 		'achievements': [ achievement.id for achievement in achievements ]
 	}
 

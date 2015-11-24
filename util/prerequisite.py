@@ -38,7 +38,7 @@ class PrerequisitiesEvaluator:
 			return [ self._parse_expression(child) for child in prereq.children ]
 
 		if(prereq.type == PrerequisiteType.OR):
-			return { self._parse_expression(child) for child in prereq.children }
+			return [ self._parse_expression(child) for child in prereq.children ]
 
 	def _evaluation_step(self, expr):
 		if expr is None:

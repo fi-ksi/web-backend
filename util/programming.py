@@ -11,13 +11,25 @@ from db import session
 import model
 import util
 
-def build(module_id):
-	programming = session.query(model.Programming).filter(model.Programming.module == module_id).first()
+"""
+Specifikace \data v databazi modulu pro "programming":
+		"programming": {
+			"default_code": Text,
+			"merge_script": Text (path/to/merge/script.py),
+			"stdin": Text,
+			"args": "[]", <- tento argument je nepovinny
+			"timeout": Integer, <- tento argument je nepovinny
+			"post_trigger_script": Text, (path/to/post-triggger-script.py),
+			"check_script": Text (path/to/check/script)
+		}
+"""
 
-	return programming.default_code
+
+def to_json(db_dict, user_id):
+	return { 'default_code': db_dict['programming']['default_code'] }
 
 def evaluate(task, module, user_id, data):
-	programming = session.query(model.Programming).filter(model.Programming.module == module.id).first()
+	programming = json.loads(module.data)['programming']
 
 	report = '=== Evaluating programming id \'%s\' for task id \'%s\' ===\n\n' % (module.id, task)
 	report += ' Evaluation:\n'
@@ -36,7 +48,7 @@ def evaluate(task, module, user_id, data):
 		print report
 		return ( 'error', 'Selhala operace _save_raw', '' )
 
-	success, report = _merge(dir, programming.merge_script, raw_code, merged_code, report)
+	success, report = _merge(dir, programming['merge_script'], raw_code, merged_code, report)
 	if not success:
 		print report
 		return ( 'error', 'Selhala operace _merge', '' )
@@ -49,14 +61,17 @@ def evaluate(task, module, user_id, data):
 	script = os.path.join(sandbox_dir, 'code.py')
 	shutil.copyfile(merged_code, script)
 
-	(success, report, sandbox_stdout, sandbox_stderr) = _exec(dir, sandbox_dir, 'code.py', programming.args, programming.stdin, programming.timeout, report)
+	if not 'args' in programming: programming['args'] = "[]"
+	if not 'timeout' in programming: programming['timeout'] = 5
+
+	(success, report, sandbox_stdout, sandbox_stderr) = _exec(dir, sandbox_dir, 'code.py', programming['args'], programming['stdin'], programming['timeout'], report)
 	if not success:
 		return ( 'exec-error', report, open(sandbox_stderr).read())
 
 	#if programming.post_trigger_script:
 	#	success, report, trigger_stdout = _post_trigger(dir, programming.post_trigger_script, sandbox_dir, report)
 
-	success, report, result = _check(dir, programming.check_script, sandbox_dir, sandbox_stdout, report)
+	success, report, result = _check(dir, programming['check_script'], sandbox_dir, sandbox_stdout, report)
 
 	if success:
 		return ('correct', report, '')
@@ -67,7 +82,7 @@ def code_execution_dir(execution_id):
 	return os.path.join('data', 'code_executions', 'execution_%d' % execution_id)
 
 def run(module, user_id, data):
-	programming = session.query(model.Programming).filter(model.Programming.module == module.id).first()
+	programming = json.loads(module.data)['programming']
 	report = ''
 	log = model.CodeExecution(module=module.id, user=user_id, code=data)
 
@@ -87,7 +102,7 @@ def run(module, user_id, data):
 	if not success:
 		return { 'output': 'Selhalo spusteni kodu (kod chyby: 1). Prosim kontaktujte organizatora' }
 
-	success, report = _merge(dir, programming.merge_script, raw_code, merged_code, report)
+	success, report = _merge(dir, programming['merge_script'], raw_code, merged_code, report)
 	if not success:
 		return { 'output': 'Selhalo spusteni kodu (kod chyby: 2). Prosim kontaktujte organizatora' }
 
@@ -99,11 +114,14 @@ def run(module, user_id, data):
 	script = os.path.join(sandbox_dir, 'code.py')
 	shutil.copyfile(merged_code, script)
 
-	success, report, sandbox_stdout, sandbox_stderr = _exec(dir, sandbox_dir, 'code.py', programming.args, programming.stdin, programming.timeout, report)
+	if not 'args' in programming: programming['args'] = "[]"
+	if not 'timeout' in programming: programming['timeout'] = 5
+
+	success, report, sandbox_stdout, sandbox_stderr = _exec(dir, sandbox_dir, 'code.py', programming['args'], programming['stdin'], programming['timeout'], report)
 
 	trigger_data = None
-	if success and programming.post_trigger_script:
-		success, report, trigger_stdout = _post_trigger(dir, programming.post_trigger_script, sandbox_dir, report)
+	if success and programming['post_trigger_script']:
+		success, report, trigger_stdout = _post_trigger(dir, programming['post_trigger_script'], sandbox_dir, report)
 		if not success:
 			return { 'output': 'Selhalo spusteni kodu (kod chyby: 3). Prosim kontaktujte organizatora' }
 

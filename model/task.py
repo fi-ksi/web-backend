@@ -21,13 +21,14 @@ class Task(Base):
 	body = Column(Text, nullable=False)
 	solution = Column(Text, nullable=True)
 	thread = Column(Integer, ForeignKey('threads.id'), nullable=False)
-	picture_base = Column(String(255), nullable=False)
-	time_created = Column(DateTime, default=datetime.datetime.now)
-	time_deadline = Column(DateTime, default=datetime.datetime.now)
+	picture_base = Column(String(255), nullable=True)
+	time_created = Column(DateTime, default=datetime.datetime.utcnow)
+	time_deadline = Column(DateTime, default=datetime.datetime.utcnow)
 
 	prerequisite_obj = relationship('Prerequisite', primaryjoin='Task.prerequisite==Prerequisite.id', uselist=False)
 	modules = relationship('Module', primaryjoin='Task.id==Module.task', order_by='Module.order')
 	evaluation_public = Column(Boolean, nullable=False)
+	git_path = Column(String(255), nullable=True)
 
 class SolutionComment(Base):
 	__tablename__ = 'solution_comments'

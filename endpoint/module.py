@@ -8,6 +8,7 @@ from model import ModuleType
 import model
 import util
 
+
 class Module(object):
 
 	def on_get(self, req, resp, id):
@@ -17,18 +18,38 @@ class Module(object):
 			resp.status = falcon.HTTP_400
 			return
 
-		req.context['result'] = {'module': util.module.to_json(id, user.id) }
+		module = session.query(model.Module).get(id)
+		if module is None:
+			resp.status = falcon.HTTP_404
+		else:
+			task = session.query(model.Task).get(module.task)
+			if util.task.status(task, user) != util.TaskStatus.LOCKED:
+				req.context['result'] = { 'module': util.module.to_json(module, user.id) }
+			else:
+				resp.status = falcon.HTTP_403
 
 
 class ModuleSubmit(object):
 
 	def _upload_files(self, req, module, user_id, resp):
+		# Soubory bez specifikace delky neberem.
+		if not req.content_length:
+			resp.status = falcon.HTTP_411
+			req.context['result'] = { 'result': 'error', 'error': 'Nelze nahrát neukončený stream.' }
+			return
+
+		# Prilis velke soubory neberem.
+		if req.content_length > util.config.MAX_UPLOAD_FILE_SIZE:
+			resp.status = falcon.HTTP_413
+			req.context['result'] = { 'result': 'error', 'error': 'Maximální velikost dávky je 20 MB.' }
+			return
+
 		# Pokud uz existuji odevzdane soubory, nevytvarime nove
 		# evaluation, pouze pripojujeme k jiz existujicimu
 		existing = util.module.existing_evaluation(module.id, user_id)
 		if len(existing) > 0:
 			evaluation = session.query(model.Evaluation).get(existing[0])
-			evaluation.time = datetime.datetime.now()
+			evaluation.time = datetime.datetime.utcnow()
 			report = evaluation.full_report
 		else:
 			report = '=== Uploading files for module id \'%s\' for task id \'%s\' ===\n\n' % (module.id, module.task)
@@ -36,6 +57,14 @@ class ModuleSubmit(object):
 			evaluation = model.Evaluation(user=user_id, module=module.id)
 			session.add(evaluation)
 			session.commit()
+
+			# Lze uploadovat jen omezeny pocet souboru.
+			file_cnt = session.query(model.SubmittedFile).\
+				filter(model.SubmittedFile.evaluation == evaluation.id).count()
+			if file_cnt > util.config.MAX_UPLOAD_FILE_COUNT:
+				resp.status = falcon.HTTP_400
+				req.context['result'] = { 'result': 'error', 'error': 'K řešení lze nahrát nejvýše 20 souborů.' }
+				return
 
 		dir = util.module.submission_dir(module.id, user_id)
 
@@ -46,7 +75,7 @@ class ModuleSubmit(object):
 
 		if not os.path.isdir(dir):
 			resp.status = falcon.HTTP_400
-			req.context['result'] = {'result': 'incorrect'}
+			req.context['result'] = { 'result': 'error', 'error': 'Chyba 42, kontaktuj orga.' }
 			return
 
 		files = multipart.MultiDict()
@@ -77,7 +106,7 @@ class ModuleSubmit(object):
 		session.commit()
 		session.close()
 
-		req.context['result'] = {'result': 'correct'}
+		req.context['result'] = { 'result': 'correct' }
 
 	def _evaluate_code(self, req, module, user_id, resp, data):
 		# Pokud neni modul autocorrrect, pridavame submitted_files
@@ -86,7 +115,7 @@ class ModuleSubmit(object):
 		existing = util.module.existing_evaluation(module.id, user_id)
 		if (not module.autocorrect) and (len(existing) > 0):
 			evaluation = session.query(model.Evaluation).get(existing[0])
-			evaluation.time = datetime.datetime.now()
+			evaluation.time = datetime.datetime.utcnow()
 		else:
 			evaluation = model.Evaluation(user=user_id, module=module.id, full_report="")
 			session.add(evaluation)
@@ -122,6 +151,11 @@ class ModuleSubmit(object):
 
 		module = session.query(model.Module).get(id)
 
+		# Po deadlinu nelze POSTovat reseni
+		if session.query(model.Task).get(module.task).time_deadline < datetime.datetime.utcnow():
+			req.context['result'] = { 'result': 'error', 'error': u'Nelze odevzdat po termínu odevzdání úlohy' }
+			return
+
 		if module.type == ModuleType.GENERAL:
 			self._upload_files(req, module, user.id, resp)
 			return
@@ -134,11 +168,11 @@ class ModuleSubmit(object):
 			return
 
 		if module.type == ModuleType.QUIZ:
-			result, report = util.quiz.evaluate(module.task, module.id, data)
+			result, report = util.quiz.evaluate(module.task, module, data)
 		elif module.type == ModuleType.SORTABLE:
-			result, report = util.sortable.evaluate(module.task, module.id, data)
+			result, report = util.sortable.evaluate(module.task, module, data)
 		elif module.type == ModuleType.TEXT:
-			result, report = util.text.evaluate(module.task, module.id, data)
+			result, report = util.text.evaluate(module.task, module, data)
 
 
 		points = module.max_points if result else 0
@@ -168,7 +202,7 @@ class ModuleSubmittedFile(object):
 
 		evaluation = session.query(model.Evaluation).get(submittedFile.evaluation)
 
-		if evaluation.user == user.id or user.is_admin or user.is_org:
+		if evaluation.user == user.id or user.is_org:
 			return submittedFile
 		else:
 			resp.status = falcon.HTTP_403
@@ -195,7 +229,7 @@ class ModuleSubmittedFile(object):
 			join(model.Evaluation, model.Evaluation.id == model.SubmittedFile.evaluation).\
 			join(model.Module, model.Module.id == model.Evaluation.module).\
 			join(model.Task, model.Evaluation.module == model.Module.id).\
-			filter(model.Task.evaluation_public, model.Task.time_deadline > datetime.datetime.now()).\
+			filter(model.Task.evaluation_public, model.Task.time_deadline > datetime.datetime.utcnow()).\
 			count() == 0:
 				req.context['result'] = { 'status': 'error', 'error': u'Nelze smazat soubory po termínu odevzdání úlohy' }
 				return
@@ -216,7 +250,7 @@ class ModuleSubmittedFile(object):
 		else:
 			if resp.status == falcon.HTTP_404:
 				req.context['result'] = { 'status': 'error', 'error': u'Soubor nenalezen na serveru' }
-			elif resp.status == falcon.HTTP_404:
+			elif resp.status == falcon.HTTP_403:
 				req.context['result'] = { 'status': 'error', 'error': u'K tomuto souboru nemáte oprávnění' }
 			else:
 				req.context['result'] = { 'status': 'error', 'error': u'Soubor se nepodařilo získat' }

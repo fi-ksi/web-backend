@@ -44,15 +44,15 @@ def to_json(module, user_id):
 	module_json['score'] = module.id if best_status.points else None
 
 	if module.type == ModuleType.PROGRAMMING:
-		code = util.programming.build(module.id)
-		module_json['code'] = code
-		module_json['default_code'] = code
+		prog = util.programming.to_json(json.loads(module.data), user_id)
+		module_json['code'] = prog['default_code']
+		module_json['default_code'] = prog['default_code']
 		if not module.autocorrect:
 			module_json['state'] = 'correct' if count > 0 else 'blank'
 	elif module.type == ModuleType.QUIZ:
-		module_json['questions'] = util.quiz.build(module.id)
+		module_json['questions'] = util.quiz.to_json(json.loads(module.data), user_id)
 	elif module.type == ModuleType.SORTABLE:
-		module_json['sortable_list'] = util.sortable.build(module.id)
+		module_json['sortable_list'] = util.sortable.to_json(json.loads(module.data), user_id)
 	elif module.type == ModuleType.GENERAL:
 		module_json['state'] = 'correct' if count > 0 else 'blank'
 
@@ -64,7 +64,8 @@ def to_json(module, user_id):
 
 		module_json['submitted_files'] = submittedFiles
 	elif module.type == ModuleType.TEXT:
-		module_json['fields'] = util.text.num_fields(module.id)
+		txt = util.text.to_json(json.loads(module.data), user_id)
+		module_json['fields'] = txt['inputs']
 
 	return module_json
 

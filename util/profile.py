@@ -40,7 +40,7 @@ def _profile_to_json(user, profile, task_scores, year_id):
                 'school_country': profile.school_country,
                 'school_finish': profile.school_finish,
                 'tshirt_size': profile.tshirt_size,
-                'achievements': list(util.achievement.ids_set(filter(lambda a: a.year == year_id, user.achievements))),
+                'achievements': list(util.achievement.ids_set(util.user.achievements(user.id, year_id))),
                 'percentile': util.user.percentile(user.id, year_id),
                 'score': points,
                 'seasons': util.user.active_years(user.id),

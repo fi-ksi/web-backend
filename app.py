@@ -27,22 +27,23 @@ class Authorizer(object):
 			token_str = req.auth.split(' ')[-1]
 			token = session.query(model.Token).get(token_str)
 
-			if req.relative_uri != '/auth' and token.granted + timedelta(seconds=token.expire) < datetime.utcnow():
-				raise falcon.HTTPError(falcon.HTTP_401)
+			if token is not None:
+				if req.relative_uri != '/auth' and token.granted + token.expire < datetime.utcnow():
+					raise falcon.HTTPError(falcon.HTTP_401)
 
-			try:
-				req.context['user'] = UserInfo(session.query(model.User).get(token.user), token_str)
-				return
-			except AttributeError:
-				pass
+				try:
+					req.context['user'] = UserInfo(session.query(model.User).get(token.user), token_str)
+					return
+				except AttributeError:
+					pass
 
 		req.context['user'] = UserInfo()
 
 class Year_fill(object):
 
 	def process_request(self, req, resp):
-		if (req.get_param('year') is not None):
-			req.context['year'] = req.get_param('year')
+		if ('YEAR' in req.headers):
+			req.context['year'] = req.headers['YEAR']
 		else:
 			req.context['year'] = session.query(func.max(model.Year.id)).scalar()
 
@@ -102,13 +103,29 @@ api.add_route('/profile/picture', endpoint.PictureUploader())
 api.add_route('/images/{context}/{id}', endpoint.Image())
 api.add_route('/content', endpoint.Content())
 api.add_route('/taskContent/{id}', endpoint.TaskContent())
+	# This endpoint contains: (defined in endpoint/content.py, see also ./gunicorn_cfg.py)
+		# /taskContent/{id}/zadani/{file_path}
+		# /taskContent/{id}/reseni/{file_path}
+		# /taskContent/[id]/icon/{file_name}
+api.add_route('/task-content/{id}/{view}', endpoint.TaskContent())
 api.add_route('/registration', endpoint.Registration())
-api.add_route('/debug', endpoint.Debug())
 api.add_route('/auth', endpoint.Authorize())
 api.add_route('/logout', endpoint.Logout())
 api.add_route('/runCode/{id}/submit', endpoint.RunCode())
 api.add_route('/feedback', endpoint.Feedback())
 api.add_route('/settings/changePassword', endpoint.ChangePassword())
 api.add_route('/forgottenPassword', endpoint.ForgottenPassword())
+api.add_route('/waves', endpoint.Waves())
+api.add_route('/waves/{id}', endpoint.Wave())
+api.add_route('/years', endpoint.Years())
+api.add_route('/years/{id}', endpoint.Year())
+
+
+api.add_route('/admin/corrections', endpoint.admin.Corrections())
+api.add_route('/admin/correction/{id}', endpoint.admin.Correction())
+api.add_route('/admin/correctionsInfos', endpoint.admin.CorrectionsInfo())
+api.add_route('/admin/corrections/{task_id}/publish', endpoint.admin.CorrectionsPublish())
+api.add_route('/admin/subm/eval/{eval_id}/', endpoint.admin.SubmFilesEval())
+api.add_route('/admin/subm/task/{task_id}/', endpoint.admin.SubmFilesTask())
 
 api.add_sink(log_sink)

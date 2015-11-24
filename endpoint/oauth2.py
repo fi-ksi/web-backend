@@ -3,6 +3,7 @@ import falcon
 from db import session
 import auth
 import model
+import util
 
 class Error:
 	INVALID_REQUEST = 'invalid_request'
@@ -45,6 +46,8 @@ class Authorize(object):
 			self._refresh(req, resp)
 		else:
 			resp.status = falcon.HTTP_400
+
+		util.auth.update_tokens()
 
 class Logout(object):
 

@@ -43,16 +43,25 @@ class Correction(object):
 
 		if (corr['comment'] is not None) and (curr_thread is None):
 			# pridavame diskuzni vlakno
-			comment = model.SolutionComment(thread=corr['comment'], user=corr['user'], task=corr['task_id'])
-			session.add(comment)
-			session.commit()
-			session.close()
+			try:
+				comment = model.SolutionComment(thread=corr['comment'], user=corr['user'], task=corr['task_id'])
+				session.add(comment)
+				session.commit()
+			except:
+				session.rollback()
+				raise
+			finally:
+				session.close()
 
 		if (corr['comment'] is None) and (curr_thread is not None):
 			# mazeme diskuzni vlakno
-			comment = session.query(model.SolutionComment).get((curr_thread, corr['user'], corr['task_id']))
-			session.delete(comment)
-			session.commit()
+			try:
+				comment = session.query(model.SolutionComment).get((curr_thread, corr['user'], corr['task_id']))
+				session.delete(comment)
+				session.commit()
+			except:
+				session.rollback()
+				raise
 
 	# POST: pridavani a mazani achievementu
 	def _process_achievements(self, corr):
@@ -61,24 +70,37 @@ class Correction(object):
 		if a_old != a_new:
 			# achievementy se nerovnaji -> proste smazeme vsechny dosavadni a pridame do db ty, ktere nam prisly
 			for a_id in a_old:
-				session.delete(session.query(model.UserAchievement).get(a_id))
-				session.commit()
+				try:
+					session.delete(session.query(model.UserAchievement).get(a_id))
+					session.commit()
+				except:
+					session.rollback()
+					raise
 
 			for a_id in a_new:
-				ua = UserAchievement(user_id=corr['user'], achievement_id=a_id, task_id=corr['task_id'])
-				session.add(ua)
-				session.commit()
-				session.close()
+				try:
+					ua = UserAchievement(user_id=corr['user'], achievement_id=a_id, task_id=corr['task_id'])
+					session.add(ua)
+					session.commit()
+				except:
+					session.rollback()
+					raise
+				finally:
+					session.close()
 
 	# POST: zpracovani hodnoceni modulu
 	def _process_module(self, module, user_id):
-		evaluation = session.query(model.Evaluation).get(module['eval_id'])
-		if evaluation is None: return
-		evaluation.points = module['points']
-		evaluation.time = datetime.datetime.utcnow()
-		evaluation.evaluator = user_id
-		evaluation.full_report += str(datetime.datetime.utcnow()) + " Evaluating by org " + str(user_id) + " : " + str(module['points']) + " points" + '\n'
-		session.commit()
+		try:
+			evaluation = session.query(model.Evaluation).get(module['eval_id'])
+			if evaluation is None: return
+			evaluation.points = module['points']
+			evaluation.time = datetime.datetime.utcnow()
+			evaluation.evaluator = user_id
+			evaluation.full_report += str(datetime.datetime.utcnow()) + " Evaluating by org " + str(user_id) + " : " + str(module['points']) + " points" + '\n'
+			session.commit()
+		except:
+			session.rollback()
+			raise
 
 	# POST ma stejne argumenty, jako GET
 	def on_post(self, req, resp, id):

@@ -19,18 +19,23 @@ class Thread(object):
 			status = falcon.HTTP_400
 			return
 
-		visit = util.thread.get_visit(user_id, id)
+		try:
+			visit = util.thread.get_visit(user_id, id)
 
-		if visit:
-			visit.last_last_visit = visit.last_visit
-		else:
-			visit = model.ThreadVisit(thread=id, user=user_id)
+			if visit:
+				visit.last_last_visit = visit.last_visit
+			else:
+				visit = model.ThreadVisit(thread=id, user=user_id)
 
-		visit.last_visit = text('CURRENT_TIMESTAMP')
+			visit.last_visit = text('CURRENT_TIMESTAMP')
 
-		session.add(visit)
-		session.commit()
-		session.close()
+			session.add(visit)
+			session.commit()
+		except:
+			session.rollback()
+			raise
+		finally:
+			session.close()
 
 	def on_get(self, req, resp, id):
 		user_id = req.context['user'].id if req.context['user'].is_logged_in() else None
@@ -55,9 +60,14 @@ class Threads(object):
 		data = json.loads(req.stream.read())
 		pblic = data['thread']['public'] if data['thread'].has_key('public') else True
 
-		thread = model.Thread(title=data['thread']['title'], public=pblic, year = req.context['year'])
-		session.add(thread)
-		session.commit()
+		try:
+			thread = model.Thread(title=data['thread']['title'], public=pblic, year = req.context['year'])
+			session.add(thread)
+			session.commit()
+		except:
+			session.rollback()
+			raise
+
 		req.context['result'] = { 'thread': util.thread.to_json(thread, user.id) }
 		session.close()
 

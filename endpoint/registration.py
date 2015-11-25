@@ -25,8 +25,12 @@ class Registration(object):
 			req.context['result'] = { 'error': "Nelze vytvořit uživatele, kontaktuj prosím orga." }
 			raise
 
-		session.add(user)
-		session.commit()
+		try:
+			session.add(user)
+			session.commit()
+		except:
+			session.rollback()
+			raise
 
 		try:
 			profile = model.Profile(user_id=user.id, addr_street=data['addr_street'], addr_city=data['addr_city'], addr_zip=data['addr_zip'], addr_country=data['addr_country'],\
@@ -37,9 +41,14 @@ class Registration(object):
 			req.context['result'] = { 'error': "Nelze vytvořit profil, kontaktuj prosím orga." }
 			raise
 
-		session.add(profile)
-		session.commit()
+		try:
+			session.add(profile)
+			session.commit()
+		except:
+			session.rollback()
+			raise
 
 		util.mail.send([ user.email ], u'[KSI] Potvrzení registrace do Korespondenčního semináře z informatiky', u'Ahoj!<br/>Vítáme tě v Korespondenčním semináři z informatiky Fakulty informatiky Masarykovy univerzity. Nyní můžeš začít řešit naplno. Stačí se přihlásit na https://ksi.fi.muni.cz pomocí e-mailu a zvoleného hesla. Přejeme ti hodně úspěchů při řešení semináře!<br/><br/>KSI')
 
 		session.close()
+

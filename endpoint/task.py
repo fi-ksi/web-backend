@@ -1,3 +1,4 @@
+import logging
 import falcon
 from sqlalchemy import func
 
@@ -72,3 +73,4 @@ class TaskDetails(object):
 			'threadDetails': [ util.thread.details_to_json(thread) for thread in threads ],
 			'posts': [util.post.to_json(post, user.id) for post in posts ]
 		}
+

@@ -41,9 +41,13 @@ class Profile(object):
 		profile.school_finish = data['school_finish']
 		profile.tshirt_size = data['tshirt_size']
 
-		session.add(user)
-		session.add(profile)
-		session.commit()
+		try:
+			session.add(user)
+			session.add(profile)
+			session.commit()
+		except:
+			session.rollback()
+			raise
 
 		req.context['result'] = util.profile.to_json(user, profile, req.context['year'])
 		session.close()
@@ -132,6 +136,11 @@ class PictureUploader(object):
 
 		user.profile_picture = new_picture
 
-		session.add(user)
-		session.commit()
-		session.close()
+		try:
+			session.add(user)
+			session.commit()
+		except:
+			session.rollback()
+			raise
+		finally:
+			session.close()

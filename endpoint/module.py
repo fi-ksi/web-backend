@@ -55,8 +55,12 @@ class ModuleSubmit(object):
 			report = '=== Uploading files for module id \'%s\' for task id \'%s\' ===\n\n' % (module.id, module.task)
 
 			evaluation = model.Evaluation(user=user_id, module=module.id)
-			session.add(evaluation)
-			session.commit()
+			try:
+				session.add(evaluation)
+				session.commit()
+			except:
+				session.rollback()
+				raise
 
 			# Lze uploadovat jen omezeny pocet souboru.
 			file_cnt = session.query(model.SubmittedFile).\
@@ -102,9 +106,14 @@ class ModuleSubmit(object):
 				session.add(submitted_file)
 
 		evaluation.full_report = report
-		session.add(evaluation)
-		session.commit()
-		session.close()
+		try:
+			session.add(evaluation)
+			session.commit()
+		except:
+			session.rollback()
+			raise
+		finally:
+			session.close()
 
 		req.context['result'] = { 'result': 'correct' }
 
@@ -118,16 +127,29 @@ class ModuleSubmit(object):
 			evaluation.time = datetime.datetime.utcnow()
 		else:
 			evaluation = model.Evaluation(user=user_id, module=module.id, full_report="")
-			session.add(evaluation)
-			session.commit()
+			try:
+				session.add(evaluation)
+				session.commit()
+			except:
+				session.rollback()
+				raise
 
 		code = model.SubmittedCode(evaluation=evaluation.id, code=data)
-		session.add(code)
-		session.commit()
+		try:
+			session.add(code)
+			session.commit()
+		except:
+			session.rollback()
+			raise
 
 		if not module.autocorrect:
-			session.commit()
-			session.close()
+			try:
+				session.commit()
+			except:
+				session.rollback()
+				raise
+			finally:
+				session.close()
 			req.context['result'] = {'result': 'correct'}
 			return
 
@@ -137,8 +159,13 @@ class ModuleSubmit(object):
 		evaluation.points = points
 		evaluation.full_report += report
 
-		session.commit()
-		session.close()
+		try:
+			session.commit()
+		except:
+			session.rollback()
+			raise
+		finally:
+			session.close()
 
 		req.context['result'] = {'result': result, 'score': points, 'output': output}
 
@@ -182,9 +209,14 @@ class ModuleSubmit(object):
 		if "action" in report:
 			util.module.perform_action(module, user)
 
-		session.add(evaluation)
-		session.commit()
-		session.close()
+		try:
+			session.add(evaluation)
+			session.commit()
+		except:
+			session.rollback()
+			raise
+		finally:
+			session.close()
 
 class ModuleSubmittedFile(object):
 
@@ -237,8 +269,12 @@ class ModuleSubmittedFile(object):
 			try:
 				os.remove(submittedFile.path)
 
-				session.delete(submittedFile)
-				session.commit()
+				try:
+					session.delete(submittedFile)
+					session.commit()
+				except:
+					session.rollback()
+					raise
 				req.context['result'] = { 'status': 'ok' }
 
 			except OSError:

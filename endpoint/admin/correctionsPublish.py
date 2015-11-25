@@ -22,6 +22,13 @@ class CorrectionsPublish(object):
 
 		if public is None: public = True
 
-		task = session.query(model.Task).get(task_id)
-		task.evaluation_public = public
-		session.commit()
+		try:
+			task = session.query(model.Task).get(task_id)
+			task.evaluation_public = public
+			session.commit()
+		except:
+			session.rollback()
+			raise
+		finally:
+			session.close()
+

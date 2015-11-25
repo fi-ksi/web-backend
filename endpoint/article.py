@@ -33,19 +33,25 @@ class Article(object):
 			return
 
 		data = json.loads(req.stream.read())['article']
-		article = session.query(model.Article).get(id)
-		if article is None:
-			resp.status = falcon.HTTP_404
-			return
 
-		# TODO: article picture
-		article.title = data['title']
-		article.body = data['body']
-		article.published = data['published']
-		article.time_created = data['time_published']
+		try:
+			article = session.query(model.Article).get(id)
+			if article is None:
+				resp.status = falcon.HTTP_404
+				return
+	
+			# TODO: article picture
+			article.title = data['title']
+			article.body = data['body']
+			article.published = data['published']
+			article.time_created = data['time_published']
 
-		session.commit()
-		session.close()
+			session.commit()
+		except:
+			session.rollback()
+			raise
+		finally:
+			session.close()
 
 		self.on_get(req, resp, id)
 
@@ -96,17 +102,21 @@ class Articles(object):
 		data = json.loads(req.stream.read())['article']
 
 		# TODO: article picture
-		article = model.Article(
-			author = user.id,
-			title = data['title'],
-			body = data['body'],
-			published = data['published'],
-			year = req.context['year'],
-			time_created = dateutil.parser.parse(data['time_published'])
-		)
+		try:
+			article = model.Article(
+				author = user.id,
+				title = data['title'],
+				body = data['body'],
+				published = data['published'],
+				year = req.context['year'],
+				time_created = dateutil.parser.parse(data['time_published'])
+			)
 
-		session.add(article)
-		session.commit()
+			session.add(article)
+			session.commit()
+		except:
+			session.rollback()
+			raise
 
 		req.context['result'] = { 'article': _artice_to_json(article) }
 

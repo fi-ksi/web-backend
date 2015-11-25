@@ -71,9 +71,14 @@ class ChangePassword(object):
 
 		user.password = auth.get_hashed_password(data['new_password'])
 
-		session.add(user)
-		session.commit()
-		session.close()
+		try:
+			session.add(user)
+			session.commit()
+		except:
+			session.rollback()
+			raise
+		finally:
+			session.close()
 
 		req.context['result'] = { 'result': 'ok' }
 
@@ -92,8 +97,13 @@ class ForgottenPassword(object):
 
 		user.password = auth.get_hashed_password(new_password)
 
-		session.add(user)
-		session.commit()
+		try:
+			session.add(user)
+			session.commit()
+		except:
+			session.rollback()
+			raise
+
 		util.mail.send([user.email], '[KSI] Nové heslo', u'Ahoj,<br/>na základě tvé žádosti ti bylo vygenerováno nové heslo: %s<br/><br/>KSI' % new_password)
 		session.close()
 

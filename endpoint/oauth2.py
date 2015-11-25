@@ -55,11 +55,17 @@ class Logout(object):
 		if not req.context['user'].is_logged_in():
 			return
 
-		token = session.query(model.Token).filter(model.Token.access_token == req.context['user'].token).first()
+		try:
+			token = session.query(model.Token).filter(model.Token.access_token == req.context['user'].token).first()
 
-		if not token:
-			return
+			if not token:
+				return
 
-		session.delete(token)
-		session.commit()
-		session.close()
+			session.delete(token)
+			session.commit()
+		except:
+			session.rollback()
+			raise
+		finally:
+			session.close()
+

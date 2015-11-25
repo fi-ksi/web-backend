@@ -90,10 +90,13 @@ class Posts(object):
 			resp.status = falcon.HTTP_400
 			return
 
-		post = model.Post(thread=thread_id, author=user_id, body=data['body'], parent=parent)
-
-		session.add(post)
-		session.commit()
+		try:
+			post = model.Post(thread=thread_id, author=user_id, body=data['body'], parent=parent)
+			session.add(post)
+			session.commit()
+		except:
+			session.rollback()
+			raise
 
 		req.context['result'] = { 'post': util.post.to_json(post, user_id) }
 

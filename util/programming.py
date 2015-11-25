@@ -86,8 +86,12 @@ def run(module, user_id, data):
 	report = ''
 	log = model.CodeExecution(module=module.id, user=user_id, code=data)
 
-	session.add(log)
-	session.commit()
+	try:
+		session.add(log)
+		session.commit()
+	except:
+		session.rollback()
+		raise
 
 	dir = code_execution_dir(log.id)
 	try:

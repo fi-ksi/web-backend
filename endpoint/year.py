@@ -28,8 +28,13 @@ class Year(object):
 		year.id = data['id']
 		year.year = data['year']
 
-		session.commit()
-		session.close()
+		try:
+			session.commit()
+		except:
+			session.rollback()
+			raise
+		finally:
+			session.close()
 
 		self.on_get(self, req, resp, id)
 
@@ -46,9 +51,14 @@ class Year(object):
 			resp.status = falcon.HTTP_404
 			return
 
-		session.delete(year)
-		session.commit()
-		session.close()
+		try:
+			session.delete(year)
+			session.commit()
+		except:
+			session.rollback()
+			raise
+		finally:
+			session.close()
 
 ###############################################################################
 
@@ -75,9 +85,14 @@ class Years(object):
 			year = data['year']
 		)
 
-		session.add(year)
-		session.commit()
-		session.close()
+		try:
+			session.add(year)
+			session.commit()
+		except:
+			session.rollback()
+			raise
+		finally:
+			session.close()
 
 		req.context['result'] = { 'year': util.year.to_json(year) }
 

@@ -20,23 +20,28 @@ class Wave(object):
 
 		data = json.loads(req.stream.read())['wave']
 
-		wave = session.query(model.Wave).get(id)
-		if wave is None:
-			resp.status = falcon.HTTP_404
-			return
+		try:
+			wave = session.query(model.Wave).get(id)
+			if wave is None:
+				resp.status = falcon.HTTP_404
+				return
 
-		# Menit vlnu muze jen ADMIN nebo aktualni GARANT vlny.
-		if not user.is_admin() and user.id != wave.garant:
-			resp.status = falcon.HTTP_400
-			return
+			# Menit vlnu muze jen ADMIN nebo aktualni GARANT vlny.
+			if not user.is_admin() and user.id != wave.garant:
+				resp.status = falcon.HTTP_400
+				return
 
-		wave.index = data['index']
-		wave.caption = data['caption']
-		wave.time_published = data['time']
-		wave.garant = data['garant']
+			wave.index = data['index']
+			wave.caption = data['caption']
+			wave.time_published = data['time']
+			wave.garant = data['garant']
 
-		session.commit()
-		session.close()
+			session.commit()
+		except:
+			session.rollback()
+			raise
+		finally:
+			session.close()
 
 		self.on_get(self, req, resp, id)
 
@@ -48,19 +53,24 @@ class Wave(object):
 			resp.status = falcon.HTTP_400
 			return
 
-		wave = session.query(model.Wave).get(id)
-		if wave is None:
-			resp.status = falcon.HTTP_404
-			return
+		try:
+			wave = session.query(model.Wave).get(id)
+			if wave is None:
+				resp.status = falcon.HTTP_404
+				return
 
-		# Smazat vlnu muze jen ADMIN nebo aktualni GARANT vlny.
-		if not user.is_admin() and user.id != wave.garant:
-			resp.status = falcon.HTTP_400
-			return
+			# Smazat vlnu muze jen ADMIN nebo aktualni GARANT vlny.
+			if not user.is_admin() and user.id != wave.garant:
+				resp.status = falcon.HTTP_400
+				return
 
-		session.delete(wave)
-		session.commit()
-		session.close()
+			session.delete(wave)
+			session.commit()
+		except:
+			session.rollback()
+			raise
+		finally:
+			session.close()
 
 ###############################################################################
 
@@ -84,17 +94,22 @@ class Waves(object):
 
 		data = json.loads(req.stream.read())['wave']
 
-		wave = model.Wave(
-			year = year,
-			index = data['index'],
-			caption = data['caption'],
-			garant = data['garant'],
-			time_published = data['time_published']
-		)
+		try:
+			wave = model.Wave(
+				year = year,
+				index = data['index'],
+				caption = data['caption'],
+				garant = data['garant'],
+				time_published = data['time_published']
+			)
 
-		session.add(wave)
-		session.commit()
-		session.close()
+			session.add(wave)
+			session.commit()
+		except:
+			session.rollback()
+			raise
+		finally:
+			session.close()
 
 		req.context['result'] = { 'wave': util.wave.to_json(wave) }
 

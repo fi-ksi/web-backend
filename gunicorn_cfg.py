@@ -3,6 +3,7 @@ pidfile='gunicorn_pid'
 daemon=True
 errorlog='gunicorn_error.log'
 workers=4
+debug=True
 
 def pre_request(worker, req):
 	if req.path.startswith('/content/'):
@@ -12,3 +13,4 @@ def pre_request(worker, req):
 		parts = req.path.split("/")
 		req.query = 'path=' + '/'.join(parts[4:])
 		req.path = '/task-content/' + parts[2] + '/' + parts[3]
+

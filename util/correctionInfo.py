@@ -10,7 +10,8 @@ def user_to_json(user):
 	return {
 		'id': user.id,
 		'first_name': user.first_name,
-		'last_name': user.last_name
+		'last_name': user.last_name,
+		'role': user.role
 	}
 
 def _task_corr_state(task):

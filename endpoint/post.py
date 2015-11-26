@@ -17,6 +17,14 @@ class Post(object):
 		user_id = req.context['user'].get_id() if req.context['user'].is_logged_in() else None
 
 		post = session.query(model.Post).get(id)
+		thread = session.query(model.Thread).get(post.thread)
+
+		# Kontrola pristupu k prispevkum:
+		# a) K prispevkum v eval vlakne mohou pristoupit jen orgove a jeden resitel
+		# b) K ostatnim neverejnym prispevkum mohou pristoupit jen orgove.
+		if not thread.public and ((not user.is_logged_in()) or (not user.is_org() or not util.thread.is_eval_thread(user.id, thread.id))):
+			resp.status = falcon.HTTP_400
+			return
 
 		req.context['result'] = { 'post': util.post.to_json(post, user_id) }
 
@@ -29,7 +37,6 @@ class Posts(object):
 			return
 
 		user = req.context['user']
-		user_id = user.id
 		data = json.loads(req.stream.read())['post']
 
 		thread_id = data['thread']
@@ -40,14 +47,15 @@ class Posts(object):
 			return
 
 		task_thread = session.query(model.Task).filter(model.Task.thread == thread_id).first()
-		solution_thread = session.query(model.SolutionComment).filter(model.SolutionComment.thread == thread_id, model.SolutionComment.user == user_id).first()
+		solution_thread = session.query(model.SolutionComment).filter(model.SolutionComment.thread == thread_id, model.SolutionComment.user == user.id).first()
 
-		#po uzamceni 
-		if task_thread and util.task.status(task_thread, user) == util.TaskStatus.LOCKED:
-			resp.status = falcon.HTTP_400
-			return
-		#kdyz to neni public a ani solution, tak je to neco divnyho
-		if not solution_thread and not thread.public:
+		# Podminky pristupu:
+		#  1) Do vlakna ulohy neni mozne pristoupit, pokud je uloha pro uzivatele uzavrena.
+		#  2) K vlaknu komentare nemohou pristoupit dalsi resitele.
+		#  3) Do neverejnych vlaken neni povolen pristup.
+		if (task_thread and util.task.status(task_thread, user) == util.TaskStatus.LOCKED) or \
+			(solution_thread and (solution_thread.user != user.id and not user.is_org())) or \
+			(not thread.public and not solution_thread):
 			resp.status = falcon.HTTP_400
 			return
 
@@ -91,13 +99,13 @@ class Posts(object):
 			return
 
 		try:
-			post = model.Post(thread=thread_id, author=user_id, body=data['body'], parent=parent)
+			post = model.Post(thread=thread_id, author=user.id, body=data['body'], parent=parent)
 			session.add(post)
 			session.commit()
 		except:
 			session.rollback()
 			raise
 
-		req.context['result'] = { 'post': util.post.to_json(post, user_id) }
+		req.context['result'] = { 'post': util.post.to_json(post, user.id) }
 
 		session.close()

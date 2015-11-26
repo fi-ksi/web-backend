@@ -24,12 +24,11 @@ class Thread(object):
 
 			if visit:
 				visit.last_last_visit = visit.last_visit
+				visit.last_visit = text('CURRENT_TIMESTAMP')
 			else:
-				visit = model.ThreadVisit(thread=id, user=user_id)
+				visit = model.ThreadVisit(thread=id, user=user_id, last_visit=text('CURRENT_TIMESTAMP'))
+				session.add(visit)
 
-			visit.last_visit = text('CURRENT_TIMESTAMP')
-
-			session.add(visit)
 			session.commit()
 		except:
 			session.rollback()
@@ -38,10 +37,11 @@ class Thread(object):
 			session.close()
 
 	def on_get(self, req, resp, id):
+		user = req.context['user']
 		user_id = req.context['user'].id if req.context['user'].is_logged_in() else None
 		thread = session.query(model.Thread).get(id)
 
-		if not thread or not thread.public:
+		if (not thread) or (not thread.public and not (user.is_org() or util.thread.is_eval_thread(user.id, thread.id))):
 			resp.status = falcon.HTTP_400
 			return
 
@@ -95,7 +95,7 @@ class ThreadDetails(object):
 		user = req.context['user']
 		thread = session.query(model.Thread).get(id)
 
-		if not thread or not thread.public:
+		if (not thread) or (not thread.public and not (user.is_org() or util.thread.is_eval_thread(user.id, thread.id))):
 			resp.status = falcon.HTTP_400
 			return
 

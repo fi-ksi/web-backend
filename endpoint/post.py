@@ -87,7 +87,7 @@ class Posts(object):
 						user_class.first_name + ' ' + user_class.last_name + u':</i></p><p>' + data['body'] +\
 						config.karlik_img(), True)
 			else:
-				util.mail.send([ config.ksi_mail() ], '[KSI-WEB] Nový příspěvek v obecné diskuzi',
+				util.mail.send([ config.ksi_conf() ], '[KSI-WEB] Nový příspěvek v obecné diskuzi',
 					u'<p>Ahoj,<br/>do obecné diskuze na <a href="'+ config.ksi_web() + '/">' + config.ksi_web() +u'</a> byl přidán nový příspěvek:</p><p><i>' +\
 					user_class.first_name + u' ' + user_class.last_name + u':</i></p>' + data['body'] +\
 					u'<p><a href='  + config.ksi_web() + u'/forum/' + str(thread.id) + u'>Přejít do diskuze.</a></p>' +\

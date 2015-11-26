@@ -96,7 +96,7 @@ def percentile(user_id, year_id):
 def get_profile_picture(user):
         return PROFILE_PICTURE_URL % user.id if user.profile_picture and os.path.isfile(user.profile_picture) else None
 
-def to_json(user, year_id):
+def to_json(user, year_id, total_score=None):
         data = { 'id': user.id, 'first_name': user.first_name, 'last_name': user.last_name, 'profile_picture': get_profile_picture(user), 'gender': user.sex }
 
         # skryty resitel je pro potreby frontendu normalni resitel
@@ -104,7 +104,12 @@ def to_json(user, year_id):
             data['role'] = 'participant'
         else:
             data['role'] = user.role
-        data['score'] =  sum_points(user.id, year_id)
+
+        if total_score:
+            data['score'] = total_score
+        else:
+            data['score'] = sum_points(user.id, year_id)
+
         data['tasks_num'] = len(util.task.fully_submitted(user.id, year_id))
         data['achievements'] = list(util.achievement.ids_set(achievements(user.id, year_id)))
 

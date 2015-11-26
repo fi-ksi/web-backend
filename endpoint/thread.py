@@ -19,24 +19,29 @@ class Thread(object):
 			status = falcon.HTTP_400
 			return
 
-		visit = util.thread.get_visit(user_id, id)
+		try:
+			visit = util.thread.get_visit(user_id, id)
 
-		if visit:
-			visit.last_last_visit = visit.last_visit
-		else:
-			visit = model.ThreadVisit(thread=id, user=user_id)
+			if visit:
+				visit.last_last_visit = visit.last_visit
+				visit.last_visit = text('CURRENT_TIMESTAMP')
+			else:
+				visit = model.ThreadVisit(thread=id, user=user_id, last_visit=text('CURRENT_TIMESTAMP'))
+				session.add(visit)
 
-		visit.last_visit = text('CURRENT_TIMESTAMP')
-
-		session.add(visit)
-		session.commit()
-		session.close()
+			session.commit()
+		except:
+			session.rollback()
+			raise
+		finally:
+			session.close()
 
 	def on_get(self, req, resp, id):
+		user = req.context['user']
 		user_id = req.context['user'].id if req.context['user'].is_logged_in() else None
 		thread = session.query(model.Thread).get(id)
 
-		if not thread or not thread.public:
+		if (not thread) or (not thread.public and not (user.is_org() or util.thread.is_eval_thread(user.id, thread.id))):
 			resp.status = falcon.HTTP_400
 			return
 
@@ -55,9 +60,14 @@ class Threads(object):
 		data = json.loads(req.stream.read())
 		pblic = data['thread']['public'] if data['thread'].has_key('public') else True
 
-		thread = model.Thread(title=data['thread']['title'], public=pblic, year = req.context['year'])
-		session.add(thread)
-		session.commit()
+		try:
+			thread = model.Thread(title=data['thread']['title'], public=pblic, year = req.context['year'])
+			session.add(thread)
+			session.commit()
+		except:
+			session.rollback()
+			raise
+
 		req.context['result'] = { 'thread': util.thread.to_json(thread, user.id) }
 		session.close()
 
@@ -85,7 +95,7 @@ class ThreadDetails(object):
 		user = req.context['user']
 		thread = session.query(model.Thread).get(id)
 
-		if not thread or not thread.public:
+		if (not thread) or (not thread.public and not (user.is_org() or util.thread.is_eval_thread(user.id, thread.id))):
 			resp.status = falcon.HTTP_400
 			return
 

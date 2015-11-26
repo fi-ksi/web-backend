@@ -25,6 +25,7 @@ class Module(Base):
 	max_points = Column(DECIMAL(precision=1, scale=10, asdecimal=False), nullable=False)
 	autocorrect = Column(Boolean, nullable=False, default=False, server_default=text('FALSE'))
 	order = Column(SmallInteger, nullable=False, default=1, server_default='1')
+	bonus = Column(Boolean, nullable=False)
 	action = Column(Text)
 	data = Column(Text)
 

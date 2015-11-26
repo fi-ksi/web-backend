@@ -12,7 +12,7 @@ class CorrectionsPublish(object):
 	?public=(1|0)
 		tento argument je nepovinny, pokud neni vyplnen, dojde ke zverejneni
 	"""
-	def on_get(self, req, resp, task_id):
+	def on_get(self, req, resp, id):
 		user = req.context['user']
 		public = req.get_param_as_bool('public')
 
@@ -22,6 +22,13 @@ class CorrectionsPublish(object):
 
 		if public is None: public = True
 
-		task = session.query(model.Task).get(task_id)
-		task.evaluation_public = public
-		session.commit()
+		try:
+			task = session.query(model.Task).get(task_id)
+			task.evaluation_public = public
+			session.commit()
+		except:
+			session.rollback()
+			raise
+		finally:
+			session.close()
+

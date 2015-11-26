@@ -38,8 +38,12 @@ class OAuth2Token(object):
 		token.refresh_token = self.refresh
 		token.user = client_id
 
-		session.add(token)
-		session.commit()
+		try:
+			session.add(token)
+			session.commit()
+		except:
+			session.rollback()
+			raise
 
 	@property
 	def data(self):

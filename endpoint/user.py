@@ -32,7 +32,16 @@ class Users(object):
 	def on_get(self, req, resp):
 		filter = req.get_param('filter')
 		sort = req.get_param('sort')
-		users = session.query(model.User)
+
+		per_user = session.query(model.Evaluation.user.label('user'), func.max(model.Evaluation.points).label('points')).\
+			join(model.Module, model.Evaluation.module == model.Module.id).\
+			join(model.Task, model.Task.id == model.Module.task).\
+			filter(model.Task.evaluation_public).\
+			join(model.Wave, model.Wave.id == model.Task.wave).\
+			filter(model.Wave.year == req.context['year']).\
+			group_by(model.Evaluation.user, model.Evaluation.module).subquery()
+
+		users = session.query(model.User, func.sum(per_user.c.points).label("total_score")).join(per_user, model.User.id == per_user.c.user).group_by(model.User)
 
 		if filter == 'organisators':
 			users = users.filter(model.User.role == 'org')
@@ -40,7 +49,7 @@ class Users(object):
 			users = users.filter(model.User.role == 'participant')
 
 		users = users.all()
-		users_json = [ util.user.to_json(user, req.context['year']) for user in users if filter != 'participants' or util.user.any_task_submitted(user.id, req.context['year'])]
+		users_json = [ util.user.to_json(user.User, req.context['year'], user.total_score) for user in users if filter != 'participants' or util.user.any_task_submitted(user.User.id, req.context['year'])]
 
 		if sort == 'score':
 			users_json = sorted(users_json, key=lambda user: user['score'], reverse=True)
@@ -71,9 +80,14 @@ class ChangePassword(object):
 
 		user.password = auth.get_hashed_password(data['new_password'])
 
-		session.add(user)
-		session.commit()
-		session.close()
+		try:
+			session.add(user)
+			session.commit()
+		except:
+			session.rollback()
+			raise
+		finally:
+			session.close()
 
 		req.context['result'] = { 'result': 'ok' }
 
@@ -92,8 +106,13 @@ class ForgottenPassword(object):
 
 		user.password = auth.get_hashed_password(new_password)
 
-		session.add(user)
-		session.commit()
+		try:
+			session.add(user)
+			session.commit()
+		except:
+			session.rollback()
+			raise
+
 		util.mail.send([user.email], '[KSI] Nové heslo', u'Ahoj,<br/>na základě tvé žádosti ti bylo vygenerováno nové heslo: %s<br/><br/>KSI' % new_password)
 		session.close()
 

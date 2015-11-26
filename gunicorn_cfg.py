@@ -12,3 +12,4 @@ def pre_request(worker, req):
 		parts = req.path.split("/")
 		req.query = 'path=' + '/'.join(parts[4:])
 		req.path = '/task-content/' + parts[2] + '/' + parts[3]
+

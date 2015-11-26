@@ -12,7 +12,7 @@ class CorrectionsPublish(object):
 	?public=(1|0)
 		tento argument je nepovinny, pokud neni vyplnen, dojde ke zverejneni
 	"""
-	def on_get(self, req, resp, task_id):
+	def on_get(self, req, resp, id):
 		user = req.context['user']
 		public = req.get_param_as_bool('public')
 

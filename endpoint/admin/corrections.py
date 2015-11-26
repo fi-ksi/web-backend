@@ -37,7 +37,7 @@ class Correction(object):
 			'correction': util.correction.to_json(corr_task, corr_modules)
 		}
 
-	# POST: propojeni diskuzniho vlakna komentare
+	# PUT: propojeni diskuzniho vlakna komentare
 	def _process_thread(self, corr):
 		curr_thread = util.task.comment_thread(corr['task_id'], corr['user'])
 
@@ -63,7 +63,7 @@ class Correction(object):
 				session.rollback()
 				raise
 
-	# POST: pridavani a mazani achievementu
+	# PUT: pridavani a mazani achievementu
 	def _process_achievements(self, corr):
 		a_old = util.achievement.ids_list(util.achievement.per_task(corr['user'], corr['task_id']))
 		a_new = corr['achievements']
@@ -88,7 +88,7 @@ class Correction(object):
 				finally:
 					session.close()
 
-	# POST: zpracovani hodnoceni modulu
+	# PUT: zpracovani hodnoceni modulu
 	def _process_module(self, module, user_id):
 		try:
 			evaluation = session.query(model.Evaluation).get(module['eval_id'])
@@ -102,8 +102,8 @@ class Correction(object):
 			session.rollback()
 			raise
 
-	# POST ma stejne argumenty, jako GET
-	def on_post(self, req, resp, id):
+	# PUT ma stejne argumenty, jako GET
+	def on_put(self, req, resp, id):
 		user = req.context['user']
 
 		if (not user.is_logged_in()) or (not user.is_org()):

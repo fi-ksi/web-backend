@@ -35,3 +35,7 @@ def count_unread(user_id, thread_id):
 
 	return session.query(model.Post).filter(model.Post.thread == thread_id, model.Post.published_at > visit.last_visit).count()
 
+def is_eval_thread(user_id, thread_id):
+	return session.query(model.SolutionComment).\
+		filter(model.SolutionComment.user == user_id, model.SolutionComment.thread == thread_id).count() > 0
+

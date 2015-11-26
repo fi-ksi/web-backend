@@ -12,8 +12,10 @@ class TaskStatus:
 	CORRECTING = 'correcting'
 	DONE = 'done'
 
-# Vraci dvojici { task_id : sum(body) } pro vsechny plne odevzdane moduly v uloze
+# Vraci dvojici { task_id : sum(body) } pro vsechny plne odevzdane ulohy
+# sum(body) je suma bodu za vsechny moduly v dane uloze
 # Plne odevzdane moduly = bez autocorrect, nebo s autocorrect majici plny pocet bodu
+# Moduly s maximem 0 bodu jsou bonusove a jsou vzdy fully_submitted (i pokud nebyly odevzdany)
 def fully_submitted(user_id, year_id=None):
 	if user_id is None:
 		return []
@@ -23,11 +25,11 @@ def fully_submitted(user_id, year_id=None):
 			q = q.join(model.Wave, model.Task.wave == model.Wave.id).filter(model.Wave.year == year_id)
 	q = q.outerjoin(model.Module).group_by(model.Task.id)
 
-	max_modules_count = { task.id: task.modules for task in q.all() }
+	max_modules_count = { task.id: task.modules for task in q.filter(model.Module.bonus == False).all() }
 
 	real_modules_count = { task.id: task.modules for task in q.join(model.Evaluation).filter(model.Evaluation.user == user_id, or_(model.Module.autocorrect != True, model.Module.max_points == model.Evaluation.points)).group_by(model.Task.id).all() }
 
-	return { int(key): int(val) for key, val in real_modules_count.items() if max_modules_count[key] == val }
+	return { int(key): int(val) for key, val in real_modules_count.items() if max_modules_count[key] <= val }
 
 def after_deadline():
 	return { int(task.id) for task in session.query(model.Task).filter(model.Task.time_deadline < datetime.datetime.utcnow() ).all() }
@@ -81,7 +83,7 @@ def comment_thread(task_id, user_id):
 # plny pocet bodu, jinak False
 # Pokud uloha nema automaticky opravovane moduly, vraci True.
 def autocorrected_full(task_id, user_id):
-	q = session.query(model.Module).join(model.Task, model.Module.task == model.Task.id).filter(model.Task.id == task_id)
+	q = session.query(model.Module).join(model.Task, model.Module.task == model.Task.id).filter(model.Task.id == task_id).filter(not model.Module.bonus)
 	
 	max_modules_count = q.count()
 
@@ -147,7 +149,7 @@ def to_json(task, user=None, adeadline=None, fsubmitted=None):
 		'author': task.author,
 		'details': task.id,
 		'intro': task.intro,
-		'max_score': sum([ module.max_points for module in task.modules ]),
+		'max_score': format(sum([ module.max_points for module in task.modules if not module.bonus ]), '.1f'),
 		'time_published': time_published(task.id).isoformat(),
 		'time_deadline': task.time_deadline.isoformat(),
 		'state': tstatus,
@@ -187,5 +189,5 @@ def best_score_to_json(best_score):
 		'id': best_score.User.id,
 		'user': best_score.User.id,
 		'achievements': [ achievement.achievement_id for achievement in achievements ],
-		'score': int(best_score.sum)
+		'score': format(best_score.sum, '.1f')
 	}

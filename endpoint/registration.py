@@ -25,9 +25,6 @@ class Registration(object):
 			req.context['result'] = { 'error': "Nelze vytvořit uživatele, kontaktuj prosím orga." }
 			raise
 
-		session.add(user)
-		session.commit()
-
 		try:
 			session.add(user)
 			session.commit()

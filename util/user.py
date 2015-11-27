@@ -34,7 +34,7 @@ def active_years(user_id):
 		join(model.Wave, model.Wave.year == model.Year.id).\
 		join(model.Task, model.Task.wave == model.Wave.id).\
 		join(model.Module, model.Module.task == model.Task.id).\
-		join(model.Evaluation, model.Evaluation.module == model.Task.id).\
+		join(model.Evaluation, model.Evaluation.module == model.Module.id).\
 		filter(model.Evaluation.user == user_id).\
 		group_by(model.Year).all()
 	return a
@@ -96,7 +96,10 @@ def percentile(user_id, year_id):
 def get_profile_picture(user):
         return PROFILE_PICTURE_URL % user.id if user.profile_picture and os.path.isfile(user.profile_picture) else None
 
-def to_json(user, year_id, total_score=None):
+# Spoustu atributu pro serializaci lze teto funkci predat za ucelem
+# minimalizace SQL dotazu. Toho se vyuziva napriklad pri vypisovani vysledkovky.
+# Pokud jsou tyto atributy None, provedou se klasicke dotazy.
+def to_json(user, year_id, total_score=None, tasks_cnt=None, profile=None, achs=None, seasons=None):
         data = { 'id': user.id, 'first_name': user.first_name, 'last_name': user.last_name, 'profile_picture': get_profile_picture(user), 'gender': user.sex }
 
         # skryty resitel je pro potreby frontendu normalni resitel
@@ -105,19 +108,15 @@ def to_json(user, year_id, total_score=None):
         else:
             data['role'] = user.role
 
-        if total_score:
-            data['score'] = total_score
-        else:
-            data['score'] = sum_points(user.id, year_id)
-
-        data['tasks_num'] = len(util.task.fully_submitted(user.id, year_id))
-        data['achievements'] = list(util.achievement.ids_set(achievements(user.id, year_id)))
+        data['score'] = total_score if total_score is not None else sum_points(user.id, year_id)
+        data['tasks_num'] = tasks_cnt if tasks_cnt is not None else len(util.task.fully_submitted(user.id, year_id))
+        data['achievements'] = achs if achs is not None else list(util.achievement.ids_set(achievements(user.id, year_id)))
 
         if user.role == 'participant' or user.role == 'participant_hidden':
-                profile = session.query(model.Profile).get(user.id)
+                if profile is None: profile = session.query(model.Profile).get(user.id)
                 data['addr_country'] = profile.addr_country
                 data['school_name'] = profile.school_name
-                data['seasons'] = active_years(user.id)
+                data['seasons'] = seasons if seasons is not None else active_years(user.id)
         else:
                 data['nick_name'] = user.nick_name
                 data['tasks'] = [ task.id for task in user.tasks ]

@@ -52,10 +52,11 @@ class Posts(object):
 		# Podminky pristupu:
 		#  1) Do vlakna ulohy neni mozne pristoupit, pokud je uloha pro uzivatele uzavrena.
 		#  2) K vlaknu komentare nemohou pristoupit dalsi resitele.
-		#  3) Do neverejnych vlaken neni povolen pristup.
+		#  3) Do obecnych neverejnych vlaken muhou pristupovat orgove -- tato situace nastava pri POSTovani prnviho prispevku
+		#     k opravovani, protoze vlakno opravovani jeste neni sprazeno s evaluation.
 		if (task_thread and util.task.status(task_thread, user) == util.TaskStatus.LOCKED) or \
 			(solution_thread and (solution_thread.user != user.id and not user.is_org())) or \
-			(not thread.public and not solution_thread):
+			(not thread.public and not solution_thread and not user.is_org()):
 			resp.status = falcon.HTTP_400
 			return
 

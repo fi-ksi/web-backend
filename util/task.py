@@ -83,8 +83,8 @@ def comment_thread(task_id, user_id):
 # plny pocet bodu, jinak False
 # Pokud uloha nema automaticky opravovane moduly, vraci True.
 def autocorrected_full(task_id, user_id):
-	q = session.query(model.Module).join(model.Task, model.Module.task == model.Task.id).filter(model.Task.id == task_id).filter(not model.Module.bonus)
-	
+	q = session.query(model.Module).join(model.Task, model.Module.task == model.Task.id).filter(model.Task.id == task_id).filter(model.Module.bonus == False)
+
 	max_modules_count = q.count()
 
 	real_modules_count = q.join(model.Evaluation, model.Evaluation.module == model.Module.id).filter(model.Evaluation.user == user_id, or_(model.Module.autocorrect != True, model.Module.max_points == model.Evaluation.points)).group_by(model.Module).count()

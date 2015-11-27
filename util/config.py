@@ -10,8 +10,8 @@ MAX_UPLOAD_FILE_COUNT = 20
 def get(key):
 	return session.query(model.Config).get(key).value
 
-def ksi_mail():
-	return et("ksi_conf")
+def ksi_conf():
+	return get("ksi_conf")
 
 def karlik_img():
 	return get("mail_sign")
@@ -19,7 +19,7 @@ def karlik_img():
 def ksi_web():
 	return get("web_url")
 
-def ksi_mail():
+def mail_sender():
 	return get("mail_sender")
 
 def feedback():

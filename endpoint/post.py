@@ -52,10 +52,11 @@ class Posts(object):
 		# Podminky pristupu:
 		#  1) Do vlakna ulohy neni mozne pristoupit, pokud je uloha pro uzivatele uzavrena.
 		#  2) K vlaknu komentare nemohou pristoupit dalsi resitele.
-		#  3) Do neverejnych vlaken neni povolen pristup.
+		#  3) Do obecnych neverejnych vlaken muhou pristupovat orgove -- tato situace nastava pri POSTovani prnviho prispevku
+		#     k opravovani, protoze vlakno opravovani jeste neni sprazeno s evaluation.
 		if (task_thread and util.task.status(task_thread, user) == util.TaskStatus.LOCKED) or \
 			(solution_thread and (solution_thread.user != user.id and not user.is_org())) or \
-			(not thread.public and not solution_thread):
+			(not thread.public and not solution_thread and not user.is_org()):
 			resp.status = falcon.HTTP_400
 			return
 
@@ -87,7 +88,7 @@ class Posts(object):
 						user_class.first_name + ' ' + user_class.last_name + u':</i></p><p>' + data['body'] +\
 						config.karlik_img(), True)
 			else:
-				util.mail.send([ config.ksi_mail() ], '[KSI-WEB] Nový příspěvek v obecné diskuzi',
+				util.mail.send([ config.ksi_conf() ], '[KSI-WEB] Nový příspěvek v obecné diskuzi',
 					u'<p>Ahoj,<br/>do obecné diskuze na <a href="'+ config.ksi_web() + '/">' + config.ksi_web() +u'</a> byl přidán nový příspěvek:</p><p><i>' +\
 					user_class.first_name + u' ' + user_class.last_name + u':</i></p>' + data['body'] +\
 					u'<p><a href='  + config.ksi_web() + u'/forum/' + str(thread.id) + u'>Přejít do diskuze.</a></p>' +\

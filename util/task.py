@@ -63,52 +63,61 @@ def points(task_id, user_id):
 
 	return sum(module.points for module in ppm if module.points is not None)
 
-# vraci, jestli je uloha opravena
+# vraci seznam id vsech opravenych uloh daneho uzivatele
 # tzn. u uloh, ktere jsou odevzdavany opakovane (automaticky vyhodnocovane)
-# vraci True, pokud resitel udela submit alespon jednoho (teoreticky spatneho) reseni
-def corrected(task_id, user_id):
-	return session.query(model.Evaluation).\
-		join(model.Module, model.Evaluation.module == model.Module.id).\
-		filter(model.Module.task == task_id, model.Evaluation.user == user_id).\
-		join(model.Task, model.Task.id == model.Module.task).\
+# vraci ulohu, pokud resitel udelal submit alespon jednoho (teoreticky spatneho) reseni
+def corrected(user_id):
+	return [ r for (r, ) in session.query(model.Task.id).\
 		filter(model.Task.evaluation_public).\
-		group_by(model.Evaluation.module).count() > 0
+		join(model.Module, model.Module.task == model.Task.id).\
+		join(model.Evaluation, model.Evaluation.module == model.Module.id).\
+		filter(model.Evaluation.user == user_id).\
+		group_by(model.Task).all() ]
 
 def comment_thread(task_id, user_id):
 	query = session.query(model.SolutionComment).filter(model.SolutionComment.task == task_id, model.SolutionComment.user == user_id).first()
 
 	return query.thread if query is not None else None
 
-# Vraci true, pokud maji vsechny automaticky opravovane moduly v uloze
-# plny pocet bodu, jinak False
-# Pokud uloha nema automaticky opravovane moduly, vraci True.
-def autocorrected_full(task_id, user_id):
-	q = session.query(model.Module).join(model.Task, model.Module.task == model.Task.id).filter(model.Task.id == task_id).filter(model.Module.bonus == False)
+# Vraci seznam automaticky opravovanych uloh, ktere maji plny pocet bodu.
+# Pokud uloha nema automaticky opravovane moduly, vrati ji taky.
+def autocorrected_full(user_id):
+	q = session.query(model.Task.id.label('task_id'), func.count(distinct(model.Module)).label('mod_cnt')).\
+		join(model.Module, model.Module.task == model.Task.id).\
+		filter(model.Module.bonus == False).group_by(model.Task)
 
-	max_modules_count = q.count()
+	max_modules_count = q.subquery()
 
-	real_modules_count = q.join(model.Evaluation, model.Evaluation.module == model.Module.id).filter(model.Evaluation.user == user_id, or_(model.Module.autocorrect != True, model.Module.max_points == model.Evaluation.points)).group_by(model.Module).count()
+	real_modules_count = q.join(model.Evaluation, model.Evaluation.module == model.Module.id).filter(model.Evaluation.user == user_id, or_(model.Module.autocorrect != True, model.Module.max_points == model.Evaluation.points)).subquery()
 
-	return max_modules_count == real_modules_count
+	return [ r for (r, ) in session.query(model.Task.id).\
+		join(max_modules_count, model.Task.id == max_modules_count.c.task_id).\
+		join(real_modules_count, model.Task.id == real_modules_count.c.task_id).\
+		filter(max_modules_count.c.mod_cnt == real_modules_count.c.mod_cnt).all() ]
 
-def status(task, user, adeadline=None, fsubmitted=None):
-	task_opened_in_wave =  session.query(model.Task).\
-	join(model.Wave, model.Wave.id == model.Task.wave).\
-	filter(model.Wave.public).all()
+# Argumenty None slouzi k tomu, aby se usetrily SQL pozadavky:
+#  pri hromadnem ziskavani stavu je mozne je vyplnit a pocet SQL dotazu bude mensi
+#  Pokud jsou None, potrebne informace se zjisti z databaze.
+def status(task, user, adeadline=None, fsubmitted=None, wave=None, corr=None, acfull=None):
+	if not wave:
+		wave = session.query(model.Wave).get(task.wave)
 
 	# pokud neni prihlasen zadny uzivatel, otevreme jen ulohu bez prerekvizit
 	# = prvvni uloha
 	if user is None or user.id is None:
-		return TaskStatus.BASE if task.prerequisite is None and task in task_opened_in_wave else TaskStatus.LOCKED
+		return TaskStatus.BASE if task.prerequisite is None and wave.public else TaskStatus.LOCKED
 
 	# pokud uloha neni v otevrene vlne, je LOCKED
 	# vyjimkou jsou uzivatele s rolemi 'org' a 'admin', tem se zobrazuji vsechny ulohu
-	if not task in task_opened_in_wave and not user.role in ('org', 'admin'):
+	if not wave.public and not user.role in ('org', 'admin'):
 		return TaskStatus.LOCKED
 
+	if corr is None: corr = task.id in corrected(user.id)
+	if acfull is None: acfull = task.id in autocorrected_full(user.id)
+
 	# Pokud je uloha opravena, je DONE.
-	# Uloha neni DONE dokud nemaji vsechny automaticky orpavovane moduly plny pocet bodu.
-	if corrected(task.id, user.id) and autocorrected_full(task.id, user.id):
+	# Uloha neni DONE dokud nemaji vsechny automaticky opravovane moduly plny pocet bodu.
+	if corr and acfull:
 		return TaskStatus.DONE
 
 	if not fsubmitted:
@@ -138,10 +147,13 @@ def time_published(task_id):
 		join(model.Task, model.Task.wave == model.Wave.id).\
 		filter(model.Task.id == task_id).scalar()
 
-def to_json(task, user=None, adeadline=None, fsubmitted=None):
+def to_json(task, user=None, adeadline=None, fsubmitted=None, wave=None, corr=None, acfull=None):
 	max_points = sum([ module.max_points for module in task.modules ])
-	tstatus = status(task, user, adeadline, fsubmitted)
+	tstatus = status(task, user, adeadline, fsubmitted, wave, corr, acfull)
 	pict_base = task.picture_base if task.picture_base is not None else "/taskContent/" + str(task.id) + "/icon/"
+
+	if not wave:
+		wave = session.query(model.Wave).get(task.wave)
 
 	return {
 		'id': task.id,
@@ -150,7 +162,7 @@ def to_json(task, user=None, adeadline=None, fsubmitted=None):
 		'details': task.id,
 		'intro': task.intro,
 		'max_score': format(sum([ module.max_points for module in task.modules if not module.bonus ]), '.1f'),
-		'time_published': time_published(task.id).isoformat(),
+		'time_published': wave.time_published.isoformat(),
 		'time_deadline': task.time_deadline.isoformat(),
 		'state': tstatus,
 		'prerequisities': [] if not task.prerequisite_obj else util.prerequisite.to_json(task.prerequisite_obj),

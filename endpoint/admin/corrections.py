@@ -1,5 +1,5 @@
 import falcon
-from sqlalchemy import func
+from sqlalchemy import func, and_
 
 from db import session
 import model
@@ -31,10 +31,10 @@ class Correction(object):
 			filter(model.Task.id == task)
 
 		corr_task = corrs.group_by(model.Task).first()
-		corr_modules = corrs.group_by(model.Module)
+		corr_modules = corrs.group_by(model.Module).all()
 
 		req.context['result'] = {
-			'correction': util.correction.to_json(corr_task, corr_modules)
+			'correction': util.correction.to_json(corr_task, [ (corr, mod) for (corr, task, mod) in corr_modules ])
 		}
 
 	# PUT: propojeni diskuzniho vlakna komentare
@@ -146,7 +146,7 @@ class Corrections(object):
 			return
 
 		# Ziskame prislusna 'evaluation's
-		corrs = session.query(model.Evaluation, model.Task, model.Module)
+		corrs = session.query(model.Evaluation, model.Task, model.Module, model.Thread.id.label('thread_id'))
 		if participant is not None:
 			corrs = corrs.filter(model.Evaluation.user == participant)
 		corrs = corrs.join(model.Module, model.Module.id == model.Evaluation.module).\
@@ -156,17 +156,36 @@ class Corrections(object):
 			filter(model.Year.id == year)
 		if task is not None:
 			corrs = corrs.filter(model.Task.id == task)
+		corrs = corrs.outerjoin(model.SolutionComment, model.SolutionComment.user == model.Evaluation.user).\
+			outerjoin(model.Thread, and_(model.SolutionComment.thread == model.Thread.id, model.SolutionComment.user == model.Evaluation.user))
 
+		# Evaluations si pogrupime podle uloh, podle toho vedeme result a pak pomocne podle modulu (to vyuzivame pri budovani vystupu)
 		corrs_tasks = corrs.group_by(model.Task, model.Evaluation.user).all()
-		corrs_modules = corrs.group_by(model.Module)
+		corrs_modules = corrs.group_by(model.Module).all()
 
+		# Achievementy po ulohach a uzivatelich:
+		corrs_achs = session.query(model.Task.id, model.UserAchievement.user_id.label('user_id'), model.Achievement.id.label('a_id'))
+		if task is not None: corrs_achs = corrs_achs.filter(model.Task.id == task)
+		if participant is not None: corrs_achs = corrs_achs.filter(model.UserAchievement.user_id == participant)
+		corrs_achs = corrs_achs.join(model.UserAchievement, model.UserAchievement.task_id == model.Task.id).\
+			join(model.Achievement, model.Achievement.id == model.UserAchievement.achievement_id).\
+			group_by(model.Task, model.UserAchievement.user_id, model.Achievement).all()
+
+		# ziskame vsechny plne opravene ulohy:
+		tasks_corrected = util.correction.tasks_corrected()
+
+		# Vsechny achievementy
 		achievements = session.query(model.Achievement).\
 			filter(model.Achievement.year == req.context['year']).all()
 
 		req.context['result'] = {
-			'corrections': [ util.correction.to_json(corr, corrs_modules.filter(model.Task.id == corr.Task.id)) for corr in corrs_tasks ],
+			'corrections': [ util.correction.to_json(corr, [ (evl, mod) for (evl, tsk, mod, thr) in filter(lambda x: x.Task.id == corr.Task.id, corrs_modules) ],\
+					corr.thread_id,\
+					[ r for (a,b,r) in filter(lambda (task_id, user_id, a_id): task_id == corr.Task.id and user_id == corr.Evaluation.user, corrs_achs) ],\
+					corr.Task.id in tasks_corrected ) \
+				for corr in corrs_tasks ],
 			'tasks': [ util.correction.task_to_json(q.Task) for q in corrs.group_by(model.Task).all() ],
-			'modules': [ util.correction.module_to_json(q.Module) for q in corrs_modules.all() ],
+			'modules': [ util.correction.module_to_json(q.Module) for q in corrs_modules ],
 			'achievements': [ util.achievement.to_json(achievement, user.id) for achievement in achievements ]
 		}
 

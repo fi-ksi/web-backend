@@ -7,8 +7,19 @@ import model
 import util
 import os
 
-def evals_corrected(evals):
-	return evals.filter(and_(model.Evaluation.evaluator == None, not_(model.Module.autocorrect))).count() == 0
+# Vraci seznam plne opravenych uloh (tj. takovych uloh, kde jsou vsechna reseni jiz opravena)
+def tasks_corrected():
+	task_corrected = session.query(model.Task.id.label('task_id'), (func.count(model.Evaluation) > 0).label('notcorrected')).\
+		join(model.Module, model.Module.task == model.Task.id).\
+		join(model.Evaluation, model.Module.id == model.Evaluation.module).\
+		filter(model.Evaluation.evaluator == None, not_(model.Module.autocorrect)).\
+		group_by(model.Task).subquery()
+
+	return  [ r for (r, ) in session.query(model.Task.id).\
+		outerjoin(task_corrected, task_corrected.c.task_id == model.Task.id).\
+		filter(or_(task_corrected.c.notcorrected == False, task_corrected.c.notcorrected == None))
+	]
+
 
 def _corr_general_to_json(module, evaluation):
 	submittedFiles = session.query(model.SubmittedFile).\
@@ -18,33 +29,36 @@ def _corr_general_to_json(module, evaluation):
 		'files': [ {'id': inst.id, 'filename': os.path.basename(inst.path)} for inst in submittedFiles ]
 	}
 
-def _corr_module_to_json(evaluation):
+def _corr_module_to_json(evaluation, module):
 	res = {
-		'id': evaluation.module,
+		'id': module.id,
 		'eval_id': evaluation.id,
 		'points': evaluation.points,
 		'last_modified': evaluation.time.isoformat(),
 		'corrected_by': evaluation.evaluator
 	}
 
-	module = session.query(model.Module).get(evaluation.module)
 	if module.type == model.module.ModuleType.GENERAL:
 		res['general'] = _corr_general_to_json(module, evaluation)
 
 	return res
 
-# \evals je seskupeno podle module_id
-def to_json(corr, evals):
+# \evals je (Evaluation, Module) a je seskupeno podle modulu
+def to_json(corr, evals, thread_id=None, achievements=None, corrected=None):
 	user = corr.Evaluation.user
+
+	if thread_id is None: thread_is = util.task.comment_thread(corr.Task.id, user)
+	if achievements is None: achievements = util.achievement.ids_list(util.achievement.per_task(user, corr.Task.id))
+	if corrected is None: corrected = corr.Task.id in tasks_corrected()
 
 	return {
 		'id': corr.Task.id*100000 + user,
 		'task_id': corr.Task.id,
-		'state': 'corrected' if evals_corrected(evals) else 'notcorrected',
+		'state': 'corrected' if corrected else 'notcorrected',
 		'user': corr.Evaluation.user,
-		'comment': util.task.comment_thread(corr.Task.id, user),
-		'achievements': util.achievement.ids_list(util.achievement.per_task(user, corr.Task.id)),
-		'modules': [ _corr_module_to_json(evl.Evaluation) for evl in evals ]
+		'comment': thread_id,
+		'achievements': achievements,
+		'modules': [ _corr_module_to_json(evl, module) for (evl, module) in evals ]
 	}
 
 def module_to_json(module):

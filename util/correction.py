@@ -29,13 +29,13 @@ def _corr_general_to_json(module, evaluation):
 		'files': [ {'id': inst.id, 'filename': os.path.basename(inst.path)} for inst in submittedFiles ]
 	}
 
-def _corr_module_to_json(evaluation, module):
+def _corr_eval_to_json(module, evaluation):
 	res = {
-		'id': module.id,
-		'eval_id': evaluation.id,
+		'id': evaluation.id,
 		'points': evaluation.points,
 		'last_modified': evaluation.time.isoformat(),
-		'corrected_by': evaluation.evaluator
+		'corrected_by': evaluation.evaluator,
+		'full_report': evaluation.full_report
 	}
 
 	if module.type == model.module.ModuleType.GENERAL:
@@ -43,22 +43,40 @@ def _corr_module_to_json(evaluation, module):
 
 	return res
 
-# \evals je (Evaluation, Module) a je seskupeno podle modulu
-def to_json(corr, evals, thread_id=None, achievements=None, corrected=None):
-	user = corr.Evaluation.user
-
-	if thread_id is None: thread_is = util.task.comment_thread(corr.Task.id, user)
-	if achievements is None: achievements = util.achievement.ids_list(util.achievement.per_task(user, corr.Task.id))
-	if corrected is None: corrected = corr.Task.id in tasks_corrected()
+# U modulu se zobrazuje jen jedno evaluation:
+#  Pokud to ma byt nejadekvatnejsi evaluation, je \evl=None.
+#  Pokud to ma byt specificke evaluation, je toto evalustion ulozeno v \evl
+def _corr_module_to_json(evals, module, evl=None):
+	if evl is None:
+		# Ano, v Pythonu neexistuje max() pres dva klice
+		evl = sorted(evals, key=lambda x: (x.points, x.time), reverse=True)[0]
 
 	return {
-		'id': corr.Task.id*100000 + user,
-		'task_id': corr.Task.id,
+		'id': module.id,
+		'evaluations_list': [ evaluation.id for evaluation in evals ],
+		'evaluation': _corr_eval_to_json(module, evl)
+	}
+
+# \modules je [(Evaluation, Module, specific_eval)] a je seskupeno podle modulu
+#  specific_eval je Evaluation pokud se ma klientovi poslat jen jedno evaluation
+# \evals je [Evaluation]
+# \achievements je [Ahievement.id]
+# \corrected je Bool
+def to_json(modules, evals, task_id, thread_id=None, achievements=None, corrected=None):
+	user_id = evals[0].user
+
+	if thread_id is None: thread_id = util.task.comment_thread(task_id, user_id)
+	if achievements is None: achievements = util.achievement.ids_list(util.achievement.per_task(user_id, task_id))
+	if corrected is None: corrected = task_id in tasks_corrected()
+
+	return {
+		'id': task_id*100000 + user_id,
+		'task_id': task_id,
 		'state': 'corrected' if corrected else 'notcorrected',
-		'user': corr.Evaluation.user,
+		'user': user_id,
 		'comment': thread_id,
 		'achievements': achievements,
-		'modules': [ _corr_module_to_json(evl, module) for (evl, module) in evals ]
+		'modules': [ _corr_module_to_json(filter(lambda x: x.module == module.id, evals), module, spec_evl) for (evl, module, spec_evl) in modules ]
 	}
 
 def module_to_json(module):

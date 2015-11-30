@@ -52,7 +52,7 @@ class ModuleSubmit(object):
 			evaluation.time = datetime.datetime.utcnow()
 			report = evaluation.full_report
 		else:
-			report = '=== Uploading files for module id \'%s\' for task id \'%s\' ===\n\n' % (module.id, module.task)
+			report = str(datetime.datetime.now()) + ' : === Uploading files for module id \'%s\' for task id \'%s\' ===\n' % (module.id, module.task)
 
 			evaluation = model.Evaluation(user=user_id, module=module.id)
 			try:
@@ -94,7 +94,7 @@ class ModuleSubmit(object):
 			part.save_as(path)
 			mime = magic.Magic(mime=True).from_file(path)
 
-			report += '  [y] uploaded file: \'%s\' (mime: %s) to file %s\n' % (part.filename, mime, path)
+			report += str(datetime.datetime.now()) + ' :  [y] uploaded file: \'%s\' (mime: %s) to file %s\n' % (part.filename, mime, path)
 
 			# Pokud je tento soubor jiz v databazi, zaznam znovu nepridavame
 			file_in_db = session.query(model.SubmittedFile).\
@@ -157,7 +157,7 @@ class ModuleSubmit(object):
 
 		points = module.max_points if result == 'correct' else 0
 		evaluation.points = points
-		evaluation.full_report += report
+		evaluation.full_report += str(datetime.datetime.now()) + " : " + report + '\n'
 
 		try:
 			session.commit()
@@ -268,6 +268,10 @@ class ModuleSubmittedFile(object):
 
 			try:
 				os.remove(submittedFile.path)
+
+				evaluation = session.query(model.Evaluation).get(submittedFile.evaluation)
+				if evaluation:
+					evaluation.full_report += str(datetime.datetime.now()) + " : removed file " + submittedFile.path + '\n'
 
 				try:
 					session.delete(submittedFile)

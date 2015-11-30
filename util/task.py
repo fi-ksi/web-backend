@@ -82,7 +82,7 @@ def comment_thread(task_id, user_id):
 # Vraci seznam automaticky opravovanych uloh, ktere maji plny pocet bodu.
 # Pokud uloha nema automaticky opravovane moduly, vrati ji taky.
 def autocorrected_full(user_id):
-	q = session.query(model.Task.id.label('task_id'), func.count(distinct(model.Module)).label('mod_cnt')).\
+	q = session.query(model.Task.id.label('task_id'), func.count(distinct(model.Module.id)).label('mod_cnt')).\
 		join(model.Module, model.Module.task == model.Task.id).\
 		filter(model.Module.bonus == False).group_by(model.Task)
 

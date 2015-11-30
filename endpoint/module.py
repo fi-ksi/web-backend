@@ -256,14 +256,14 @@ class ModuleSubmittedFile(object):
 	def on_delete(self, req, resp, id):
 		submittedFile = self._get_submitted_file(req, resp, id)
 		if submittedFile:
-			if session.query(model.SubmittedFile).\
-			filter(model.SubmittedFile.id == submittedFile.id).\
-			join(model.Evaluation, model.Evaluation.id == model.SubmittedFile.evaluation).\
-			join(model.Module, model.Module.id == model.Evaluation.module).\
-			join(model.Task, model.Evaluation.module == model.Module.id).\
-			filter(model.Task.evaluation_public, model.Task.time_deadline > datetime.datetime.utcnow()).\
-			count() == 0:
-				req.context['result'] = { 'status': 'error', 'error': u'Nelze smazat soubory po termínu odevzdání úlohy' }
+			# Kontrola casu (soubory lze mazat jen pred deadline)
+			task = session.query(model.Task).\
+				join(model.Module, model.Module.task == model.Task.id).\
+				join(model.Evaluation, model.Evaluation.module == model.Module.id).\
+				filter(model.Evaluation.id == submittedFile.evaluation).first()
+
+			if task.time_deadline < datetime.datetime.utcnow():
+				req.context['result'] = { 'result': 'error', 'error': u'Nelze smazat soubory po termínu odevzdání úlohy' }
 				return
 
 			try:

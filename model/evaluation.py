@@ -17,5 +17,5 @@ class Evaluation(Base):
 	module = Column(Integer, ForeignKey('modules.id'), nullable=False)
 	evaluator = Column(Integer, ForeignKey('users.id'))
 	points = Column(DECIMAL(precision=1, scale=10, asdecimal=False), nullable=False, default=0, server_default='0')
-	full_report = Column(Text, nullable=False)
+	full_report = Column(Text, nullable=False, default="")
 	time = Column(TIMESTAMP, default=datetime.datetime.utcnow, server_default=text('CURRENT_TIMESTAMP'))

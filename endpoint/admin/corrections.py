@@ -1,15 +1,19 @@
 import falcon
-from sqlalchemy import func
+from sqlalchemy import func, and_
 
 from db import session
 import model
 import util
 import datetime
 import json
+import re
 
 class Correction(object):
-	# GET pozadavek na konkretni correction se spousti prevazne jako ospoved na POST
-	# id je umele id, konstrukce viz util/correction.py
+	"""
+	GET pozadavek na konkretni correction se spousti prevazne jako odpoved na POST
+	id je umele id, konstrukce viz util/correction.py
+	Parametry: moduleX_version=Y (X a Y jsou cisla)
+	"""
 	def on_get(self, req, resp, id):
 		user = req.context['user']
 		year = req.context['year']
@@ -30,11 +34,23 @@ class Correction(object):
 			filter(model.Year.id == year).\
 			filter(model.Task.id == task)
 
-		corr_task = corrs.group_by(model.Task).first()
-		corr_modules = corrs.group_by(model.Module)
+		task_id = corrs.group_by(model.Task).first()
+		if task_id is None:
+			resp.status = falcon.HTTP_404
+			return
+
+		task_id = task_id.Task.id
+		corr_evals = corrs.group_by(model.Evaluation).all()
+		corr_modules = corrs.group_by(model.Module).all()
+
+		# Parsovani GET pozadavku:
+		specific_evals = {}
+		for param in req.params:
+			module = re.findall(r'\d+', param)
+			if module: specific_evals[int(module[0])] = session.query(model.Evaluation).get(req.get_param_as_int(param))
 
 		req.context['result'] = {
-			'correction': util.correction.to_json(corr_task, corr_modules)
+			'correction': util.correction.to_json([ (corr, mod, specific_evals[mod.id] if mod.id in specific_evals else None) for (corr, task, mod) in corr_modules ], [ evl for (evl, tsk, mod) in corr_evals ], task_id)
 		}
 
 	# PUT: propojeni diskuzniho vlakna komentare
@@ -71,7 +87,7 @@ class Correction(object):
 			# achievementy se nerovnaji -> proste smazeme vsechny dosavadni a pridame do db ty, ktere nam prisly
 			for a_id in a_old:
 				try:
-					session.delete(session.query(model.UserAchievement).get(a_id))
+					session.delete(session.query(model.UserAchievement).get((corr['user'], a_id, corr['task_id'])))
 					session.commit()
 				except:
 					session.rollback()
@@ -79,7 +95,7 @@ class Correction(object):
 
 			for a_id in a_new:
 				try:
-					ua = UserAchievement(user_id=corr['user'], achievement_id=a_id, task_id=corr['task_id'])
+					ua = model.UserAchievement(user_id=corr['user'], achievement_id=a_id, task_id=corr['task_id'])
 					session.add(ua)
 					session.commit()
 				except:
@@ -88,19 +104,24 @@ class Correction(object):
 				finally:
 					session.close()
 
-	# PUT: zpracovani hodnoceni modulu
-	def _process_module(self, module, user_id):
+	# PUT: zpracovani hodnoceni
+	def _process_evaluation(self, data_eval, user_id):
 		try:
-			evaluation = session.query(model.Evaluation).get(module['eval_id'])
+			evaluation = session.query(model.Evaluation).get(data_eval['id'])
 			if evaluation is None: return
-			evaluation.points = module['points']
+			evaluation.points = data_eval['points']
 			evaluation.time = datetime.datetime.utcnow()
-			evaluation.evaluator = user_id
-			evaluation.full_report += str(datetime.datetime.utcnow()) + " Evaluating by org " + str(user_id) + " : " + str(module['points']) + " points" + '\n'
+			evaluation.evaluator = data_eval['corrected_by'] if 'corrected_by' in data_eval else user_id
+			evaluation.full_report += str(datetime.datetime.now()) + " : edited by org " + str(user_id) + " : " + str(data_eval['points']) + " points" + '\n'
 			session.commit()
 		except:
 			session.rollback()
 			raise
+
+	# PUT: zpracovani hodnoceni modulu
+	def _process_module(self, data_module, user_id):
+		for evl in data_module['evaluations']:
+			self._process_evaluation(evl, user_id)
 
 	# PUT ma stejne argumenty, jako GET
 	def on_put(self, req, resp, id):
@@ -146,7 +167,7 @@ class Corrections(object):
 			return
 
 		# Ziskame prislusna 'evaluation's
-		corrs = session.query(model.Evaluation, model.Task, model.Module)
+		corrs = session.query(model.Evaluation, model.Task, model.Module, model.Thread.id.label('thread_id'))
 		if participant is not None:
 			corrs = corrs.filter(model.Evaluation.user == participant)
 		corrs = corrs.join(model.Module, model.Module.id == model.Evaluation.module).\
@@ -156,17 +177,42 @@ class Corrections(object):
 			filter(model.Year.id == year)
 		if task is not None:
 			corrs = corrs.filter(model.Task.id == task)
+		corrs = corrs.outerjoin(model.SolutionComment, and_(model.SolutionComment.user == model.Evaluation.user, model.SolutionComment.task == model.Task.id)).\
+			outerjoin(model.Thread, model.SolutionComment.thread == model.Thread.id)
 
+		# Evaluations si pogrupime podle uloh, podle toho vedeme result a pak pomocne podle modulu (to vyuzivame pri budovani vystupu)
 		corrs_tasks = corrs.group_by(model.Task, model.Evaluation.user).all()
-		corrs_modules = corrs.group_by(model.Module)
+		corrs_modules = corrs.group_by(model.Module, model.Evaluation.user).all()
+		corrs_evals = corrs.group_by(model.Evaluation, model.Evaluation.user).all()
 
+		# Achievementy po ulohach a uzivatelich:
+		corrs_achs = session.query(model.Task.id, model.UserAchievement.user_id.label('user_id'), model.Achievement.id.label('a_id'))
+		if task is not None: corrs_achs = corrs_achs.filter(model.Task.id == task)
+		if participant is not None: corrs_achs = corrs_achs.filter(model.UserAchievement.user_id == participant)
+		corrs_achs = corrs_achs.join(model.UserAchievement, model.UserAchievement.task_id == model.Task.id).\
+			join(model.Achievement, model.Achievement.id == model.UserAchievement.achievement_id).\
+			group_by(model.Task, model.UserAchievement.user_id, model.Achievement).all()
+
+		# ziskame vsechny plne opravene ulohy:
+		tasks_corrected = util.correction.tasks_corrected()
+
+		# Vsechny achievementy
 		achievements = session.query(model.Achievement).\
 			filter(model.Achievement.year == req.context['year']).all()
 
+		# Argumenty (a jejich format) funkce util.correction.to_json popsany v ~/util/correction.py
+
 		req.context['result'] = {
-			'corrections': [ util.correction.to_json(corr, corrs_modules.filter(model.Task.id == corr.Task.id)) for corr in corrs_tasks ],
+			'corrections': [ util.correction.to_json( \
+					[ (evl, mod, None) for (evl, tsk, mod, thr) in filter(lambda x: x.Task.id == corr.Task.id and x.Evaluation.user == corr.Evaluation.user, corrs_modules) ],\
+					[ evl for (evl, tsk, mod, thr) in filter(lambda x: x.Task.id == corr.Task.id and x.Evaluation.user == corr.Evaluation.user, corrs_evals) ],\
+					filter(lambda x: x.Task.id == corr.Task.id and x.Evaluation.user == corr.Evaluation.user, corrs_evals)[0].Task.id,\
+					corr.thread_id,\
+					[ r for (a,b,r) in filter(lambda (task_id, user_id, a_id): task_id == corr.Task.id and user_id == corr.Evaluation.user, corrs_achs) ],\
+					corr.Task.id in tasks_corrected ) \
+				for corr in corrs_tasks ],
 			'tasks': [ util.correction.task_to_json(q.Task) for q in corrs.group_by(model.Task).all() ],
-			'modules': [ util.correction.module_to_json(q.Module) for q in corrs_modules.all() ],
+			'modules': [ util.correction.module_to_json(q.Module) for q in corrs.group_by(model.Module).all() ],
 			'achievements': [ util.achievement.to_json(achievement, user.id) for achievement in achievements ]
 		}
 

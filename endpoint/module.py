@@ -52,7 +52,7 @@ class ModuleSubmit(object):
 			evaluation.time = datetime.datetime.utcnow()
 			report = evaluation.full_report
 		else:
-			report = '=== Uploading files for module id \'%s\' for task id \'%s\' ===\n\n' % (module.id, module.task)
+			report = str(datetime.datetime.now()) + ' : === Uploading files for module id \'%s\' for task id \'%s\' ===\n' % (module.id, module.task)
 
 			evaluation = model.Evaluation(user=user_id, module=module.id)
 			try:
@@ -94,7 +94,7 @@ class ModuleSubmit(object):
 			part.save_as(path)
 			mime = magic.Magic(mime=True).from_file(path)
 
-			report += '  [y] uploaded file: \'%s\' (mime: %s) to file %s\n' % (part.filename, mime, path)
+			report += str(datetime.datetime.now()) + ' :  [y] uploaded file: \'%s\' (mime: %s) to file %s\n' % (part.filename, mime, path)
 
 			# Pokud je tento soubor jiz v databazi, zaznam znovu nepridavame
 			file_in_db = session.query(model.SubmittedFile).\
@@ -157,7 +157,7 @@ class ModuleSubmit(object):
 
 		points = module.max_points if result == 'correct' else 0
 		evaluation.points = points
-		evaluation.full_report += report
+		evaluation.full_report += str(datetime.datetime.now()) + " : " + report + '\n'
 
 		try:
 			session.commit()
@@ -256,18 +256,22 @@ class ModuleSubmittedFile(object):
 	def on_delete(self, req, resp, id):
 		submittedFile = self._get_submitted_file(req, resp, id)
 		if submittedFile:
-			if session.query(model.SubmittedFile).\
-			filter(model.SubmittedFile.id == submittedFile.id).\
-			join(model.Evaluation, model.Evaluation.id == model.SubmittedFile.evaluation).\
-			join(model.Module, model.Module.id == model.Evaluation.module).\
-			join(model.Task, model.Evaluation.module == model.Module.id).\
-			filter(model.Task.evaluation_public, model.Task.time_deadline > datetime.datetime.utcnow()).\
-			count() == 0:
-				req.context['result'] = { 'status': 'error', 'error': u'Nelze smazat soubory po termínu odevzdání úlohy' }
+			# Kontrola casu (soubory lze mazat jen pred deadline)
+			task = session.query(model.Task).\
+				join(model.Module, model.Module.task == model.Task.id).\
+				join(model.Evaluation, model.Evaluation.module == model.Module.id).\
+				filter(model.Evaluation.id == submittedFile.evaluation).first()
+
+			if task.time_deadline < datetime.datetime.utcnow():
+				req.context['result'] = { 'result': 'error', 'error': u'Nelze smazat soubory po termínu odevzdání úlohy' }
 				return
 
 			try:
 				os.remove(submittedFile.path)
+
+				evaluation = session.query(model.Evaluation).get(submittedFile.evaluation)
+				if evaluation:
+					evaluation.full_report += str(datetime.datetime.now()) + " : removed file " + submittedFile.path + '\n'
 
 				try:
 					session.delete(submittedFile)

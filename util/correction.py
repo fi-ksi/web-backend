@@ -52,7 +52,7 @@ def _corr_module_to_json(evals, module, evl=None):
 		evl = sorted(evals, key=lambda x: (x.points, x.time), reverse=True)[0]
 
 	return {
-		'id': module.id,
+		'module_id': module.id,
 		'evaluations_list': [ evaluation.id for evaluation in evals ],
 		'evaluation': _corr_eval_to_json(module, evl)
 	}

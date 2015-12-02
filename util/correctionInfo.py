@@ -16,11 +16,11 @@ def user_to_json(user):
 
 def _task_corr_state(task):
 	if task.evaluation_public: return "published"
+	if task.id in util.correction.tasks_corrected(): return "corrected"
 	evals = session.query(model.Evaluation, model.Module).\
 		join(model.Module, model.Module.id == model.Evaluation.module).\
 		join(model.Task, model.Task.id == model.Module.task).\
 		filter(model.Task.id == task.id)
-	if util.correction.evals_corrected(evals): return "corrected"
 	if evals.filter(model.Evaluation.evaluator != None).count() > 0: return "working"
 	return "base"
 

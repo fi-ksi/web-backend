@@ -25,6 +25,10 @@ class User(object):
 	def on_get(self, req, resp, id):
 		user = session.query(model.User).get(id)
 
+		if user is None:
+			resp.status = falcon.HTTP_404
+			return
+
 		req.context['result'] = { 'user': util.user.to_json(user, req.context['year']) }
 
 

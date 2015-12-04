@@ -31,7 +31,7 @@ def _corr_general_to_json(module, evaluation):
 
 def _corr_eval_to_json(module, evaluation):
 	res = {
-		'id': evaluation.id,
+		'eval_id': evaluation.id,
 		'points': evaluation.points,
 		'last_modified': evaluation.time.isoformat(),
 		'corrected_by': evaluation.evaluator,

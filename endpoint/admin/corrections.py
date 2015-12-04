@@ -107,7 +107,7 @@ class Correction(object):
 	# PUT: zpracovani hodnoceni
 	def _process_evaluation(self, data_eval, user_id):
 		try:
-			evaluation = session.query(model.Evaluation).get(data_eval['id'])
+			evaluation = session.query(model.Evaluation).get(data_eval['eval_id'])
 			if evaluation is None: return
 			evaluation.points = data_eval['points']
 			evaluation.time = datetime.datetime.utcnow()
@@ -120,8 +120,7 @@ class Correction(object):
 
 	# PUT: zpracovani hodnoceni modulu
 	def _process_module(self, data_module, user_id):
-		for evl in data_module['evaluations']:
-			self._process_evaluation(evl, user_id)
+		self._process_evaluation(data_module['evaluation'], user_id)
 
 	# PUT ma stejne argumenty, jako GET
 	def on_put(self, req, resp, id):

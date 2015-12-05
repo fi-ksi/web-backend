@@ -2,7 +2,7 @@ from db import session
 import model
 from util import config
 
-def to_json(achievement, user_id):
+def to_json(achievement):
 	return { 'id': achievement.id, 'title': achievement.title, 'active': True, 'picture': '/content/achievements/' + achievement.code + '.svg', 'description': achievement.description }
 
 def ids_set(achievements):

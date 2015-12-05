@@ -17,7 +17,16 @@ class Post(object):
 		user_id = req.context['user'].get_id() if req.context['user'].is_logged_in() else None
 
 		post = session.query(model.Post).get(id)
+
+		if post is None:
+			resp.status = falcon.HTTP_404
+			return
+
 		thread = session.query(model.Thread).get(post.thread)
+
+		if thread is None:
+			resp.status = falcon.HTTP_404
+			return
 
 		# Kontrola pristupu k prispevkum:
 		# a) K prispevkum v eval vlakne mohou pristoupit jen orgove a jeden resitel

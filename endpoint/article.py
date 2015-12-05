@@ -23,6 +23,10 @@ class Article(object):
 	def on_get(self, req, resp, id):
 		data = session.query(model.Article).get(id)
 
+		if data is None:
+			resp.status = falcon.HTTP_404
+			return
+
 		req.context['result'] = { 'article': _artice_to_json(data) }
 
 	# aktualizace existujiciho clanku

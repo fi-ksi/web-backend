@@ -12,6 +12,10 @@ class Task(object):
 		user = req.context['user']
 		task = session.query(model.Task).get(id)
 
+		if task is None:
+			resp.status = falcon.HTTP_404
+			return
+
 		if (not user.is_logged_in()) or (not user.is_org()):
 			if not task in session.query(model.Task).\
 					join(model.Wave, model.Task.wave == model.Wave.id).\
@@ -70,7 +74,7 @@ class TaskDetails(object):
 			'taskDetails': util.task.details_to_json(task, user, status, achievements, best_scores, comment_thread),
 			'modules': [ util.module.to_json(module, user.id) for module in task.modules ],
 			'moduleScores': [ util.module.score_to_json(score) for score in scores if score.points is not None ],
-			'achievements': [ util.achievement.to_json(achievement, user.id) for achievement in achievements ],
+			'achievements': [ util.achievement.to_json(achievement) for achievement in achievements ],
 			'userScores': [ util.task.best_score_to_json(best_score) for best_score in best_scores ],
 			'threads': [ util.thread.to_json(thread, user.id) for thread in threads ],
 			'threadDetails': [ util.thread.details_to_json(thread) for thread in threads ],

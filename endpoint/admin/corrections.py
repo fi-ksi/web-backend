@@ -212,6 +212,6 @@ class Corrections(object):
 				for corr in corrs_tasks ],
 			'tasks': [ util.correction.task_to_json(q.Task) for q in corrs.group_by(model.Task).all() ],
 			'modules': [ util.correction.module_to_json(q.Module) for q in corrs.group_by(model.Module).all() ],
-			'achievements': [ util.achievement.to_json(achievement, user.id) for achievement in achievements ]
+			'achievements': [ util.achievement.to_json(achievement) for achievement in achievements ]
 		}
 

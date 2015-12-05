@@ -171,7 +171,7 @@ class ForgottenPassword(object):
 			session.rollback()
 			raise
 
-		util.mail.send([user.email], '[KSI] Nové heslo', u'Ahoj,<br/>na základě tvé žádosti ti bylo vygenerováno nové heslo: %s<br/><br/>KSI' % new_password)
+		util.mail.send(user.email, '[KSI] Nové heslo', u'Ahoj,<br/>na základě tvé žádosti ti bylo vygenerováno nové heslo: %s<br/><br/>KSI' % new_password)
 		session.close()
 
 		req.context['result'] = { 'result': 'ok' }

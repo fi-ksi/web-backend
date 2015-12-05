@@ -76,12 +76,12 @@ class Posts(object):
 			
 			if task_thread:
 				task_author = session.query(model.User).filter(model.User.id == task_thread.author).first()
-				util.mail.send([ task_author.email ], u'[KSI-WEB] Nový příspěvek k úloze ' + task_thread.title, 
+				util.mail.send(task_author.email, u'[KSI-WEB] Nový příspěvek k úloze ' + task_thread.title, 
 					u'<p>Ahoj,<br/>k tvé úloze <a href="' + config.ksi_web() + u'/ulohy/' + str(task_thread.id) + u'">' +\
 					task_thread.title + u'</a> na <a href="'+ config.ksi_web() + '/">' + config.ksi_web() +u'</a> byl přidán nový komentář:</p><p><i>' +\
 					user_class.first_name + u' ' + user_class.last_name + u':</i></p>' + data['body'] +\
 					u'<p><a href="'  + config.ksi_web() + u'/ulohy/' + str(task_thread.id) + u'/diskuse">Přejít do diskuze.</a></p>' +\
-					config.karlik_img(), True)
+					config.karlik_img() + util.mail.easteregg())
 			elif solution_thread:
 				correctors = [ r for r, in session.query(model.User.email).\
 					join(model.Evaluation, model.Evaluation.evaluator == model.User.id).\
@@ -95,13 +95,13 @@ class Posts(object):
 						u'<p>Ahoj,<br/>k tvé korektuře úlohy <a href="' + config.ksi_web() + u'/ulohy/' + str(task.id) + u'">' + task.title +\
 						u'</a> na <a href="'+ config.ksi_web() + '/">' + config.ksi_web() +u'</a> byl přidán nový komentář:<p><p><i>' +\
 						user_class.first_name + ' ' + user_class.last_name + u':</i></p><p>' + data['body'] +\
-						config.karlik_img(), True)
+						config.karlik_img() + util.mail.easteregg())
 			else:
-				util.mail.send([ config.ksi_conf() ], '[KSI-WEB] Nový příspěvek v obecné diskuzi',
+				util.mail.send(config.ksi_conf(), '[KSI-WEB] Nový příspěvek v obecné diskuzi',
 					u'<p>Ahoj,<br/>do obecné diskuze na <a href="'+ config.ksi_web() + '/">' + config.ksi_web() +u'</a> byl přidán nový příspěvek:</p><p><i>' +\
 					user_class.first_name + u' ' + user_class.last_name + u':</i></p>' + data['body'] +\
 					u'<p><a href='  + config.ksi_web() + u'/forum/' + str(thread.id) + u'>Přejít do diskuze.</a></p>' +\
-					config.karlik_img(), True)
+					config.karlik_img() + util.mail.easteregg())
 
 		parent = data['parent']
 		if parent and not session.query(model.Post).filter(model.Post.id == parent, model.Post.thread == thread_id).first():

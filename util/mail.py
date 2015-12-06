@@ -2,6 +2,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email import Charset
 import sys
+import copy
 
 from db import session
 import random
@@ -23,20 +24,22 @@ def send(to, subject, text, params={}, bcc=[]):
 	msg['From'] = config.mail_sender()
 	msg['To'] = (','.join(to)) if isinstance(to, (list)) else to
 	msg['Return-Path'] = config.get('return_path')
+	msg['Errors-To'] = config.get('return_path')
 
 	for key, value in params: msg[key] = params[value]
 
-	try:
-		s = smtplib.SMTP('relay.muni.cz')
-		send_to = (to if isinstance(to, (list)) else [ to ]) + (bcc if isinstance(bcc, (list)) else [ bcc ])
-		s.sendmail(msg['From'], send_to, msg.as_string())
-		s.quit()
-	except:
-		e = sys.exc_info()[0]
-		print str(e)
+	s = smtplib.SMTP('relay.muni.cz')
+	send_to = (to if isinstance(to, (list)) else [ to ]) + (bcc if isinstance(bcc, (list)) else [ bcc ])
+	s.sendmail(msg['From'], send_to, msg.as_string())
+	s.quit()
 
 def send_multiple(to, subject, text, params={}, bcc=[]):
-	send(bcc, subject, text, params)
+	bcc_params = copy.deepcopy(params)
+	bcc_params['To'] = to
+	for b in bcc:
+		bcc_params['Cc'] = b
+		send([], subject, text, bcc_params, b)
+
 	for recipient in to:
 		send(recipient, subject, text, params)
 

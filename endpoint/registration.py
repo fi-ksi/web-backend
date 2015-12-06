@@ -48,7 +48,11 @@ class Registration(object):
 			session.rollback()
 			raise
 
-		util.mail.send(user.email, u'[KSI] Potvrzení registrace do Korespondenčního semináře z informatiky', u'Ahoj!<br/>Vítáme tě v Korespondenčním semináři z informatiky Fakulty informatiky Masarykovy univerzity. Nyní můžeš začít řešit naplno. Stačí se přihlásit na https://ksi.fi.muni.cz pomocí e-mailu a zvoleného hesla. Přejeme ti hodně úspěchů při řešení semináře!<br/><br/>KSI')
+		try:
+			util.mail.send(user.email, u'[KSI] Potvrzení registrace do Korespondenčního semináře z informatiky', u'Ahoj!<br/>Vítáme tě v Korespondenčním semináři z informatiky Fakulty informatiky Masarykovy univerzity. Nyní můžeš začít řešit naplno. Stačí se přihlásit na https://ksi.fi.muni.cz pomocí e-mailu a zvoleného hesla. Přejeme ti hodně úspěchů při řešení semináře!<br/><br/>KSI')
+		except:
+			e = sys.exc_info()[0]
+			print str(e)
 
 		session.close()
 

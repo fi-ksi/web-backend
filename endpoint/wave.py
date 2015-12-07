@@ -8,6 +8,10 @@ class Wave(object):
 		user = req.context['user']
 		wave = session.query(model.Wave).get(id)
 
+		if wave is None:
+			resp.status = falcon.HTTP_404
+			return
+
 		req.context['result'] = { 'wave': util.wave.to_json(wave) }
 
 	# UPDATE vlny

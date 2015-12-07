@@ -127,5 +127,6 @@ api.add_route('/admin/correctionsInfos', endpoint.admin.CorrectionsInfo())
 api.add_route('/admin/corrections/{id}/publish', endpoint.admin.CorrectionsPublish())
 api.add_route('/admin/subm/eval/{eval_id}/', endpoint.admin.SubmFilesEval())
 api.add_route('/admin/subm/task/{task_id}/', endpoint.admin.SubmFilesTask())
+api.add_route('/admin/e-mail/', endpoint.admin.Email())
 
 api.add_sink(log_sink)

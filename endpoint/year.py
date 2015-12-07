@@ -7,6 +7,10 @@ class Year(object):
 	def on_get(self, req, resp, id):
 		year = session.query(model.Year).get(id)
 
+		if year is None:
+			resp.status = falcon.HTTP_404
+			return
+
 		req.context['result'] = { 'year': util.year.to_json(year) }
 
 	# UPDATE rocniku

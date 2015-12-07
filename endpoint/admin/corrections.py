@@ -107,11 +107,13 @@ class Correction(object):
 	# PUT: zpracovani hodnoceni
 	def _process_evaluation(self, data_eval, user_id):
 		try:
-			evaluation = session.query(model.Evaluation).get(data_eval['id'])
+			evaluation = session.query(model.Evaluation).get(data_eval['eval_id'])
 			if evaluation is None: return
 			evaluation.points = data_eval['points']
 			evaluation.time = datetime.datetime.utcnow()
-			evaluation.evaluator = data_eval['corrected_by'] if 'corrected_by' in data_eval else user_id
+			# TEMPORARY
+			#evaluation.evaluator = data_eval['corrected_by'] if 'corrected_by' in data_eval else user_id
+			evaluation.evaluator = user_id
 			evaluation.full_report += str(datetime.datetime.now()) + " : edited by org " + str(user_id) + " : " + str(data_eval['points']) + " points" + '\n'
 			session.commit()
 		except:
@@ -120,8 +122,7 @@ class Correction(object):
 
 	# PUT: zpracovani hodnoceni modulu
 	def _process_module(self, data_module, user_id):
-		for evl in data_module['evaluations']:
-			self._process_evaluation(evl, user_id)
+		self._process_evaluation(data_module['evaluation'], user_id)
 
 	# PUT ma stejne argumenty, jako GET
 	def on_put(self, req, resp, id):
@@ -213,6 +214,6 @@ class Corrections(object):
 				for corr in corrs_tasks ],
 			'tasks': [ util.correction.task_to_json(q.Task) for q in corrs.group_by(model.Task).all() ],
 			'modules': [ util.correction.module_to_json(q.Module) for q in corrs.group_by(model.Module).all() ],
-			'achievements': [ util.achievement.to_json(achievement, user.id) for achievement in achievements ]
+			'achievements': [ util.achievement.to_json(achievement) for achievement in achievements ]
 		}
 

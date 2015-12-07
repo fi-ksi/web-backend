@@ -25,6 +25,10 @@ class User(object):
 	def on_get(self, req, resp, id):
 		user = session.query(model.User).get(id)
 
+		if user is None:
+			resp.status = falcon.HTTP_404
+			return
+
 		req.context['result'] = { 'user': util.user.to_json(user, req.context['year']) }
 
 
@@ -167,7 +171,11 @@ class ForgottenPassword(object):
 			session.rollback()
 			raise
 
-		util.mail.send([user.email], '[KSI] Nové heslo', u'Ahoj,<br/>na základě tvé žádosti ti bylo vygenerováno nové heslo: %s<br/><br/>KSI' % new_password)
+		try:
+			util.mail.send(user.email, '[KSI] Nové heslo', u'Ahoj,<br/>na základě tvé žádosti ti bylo vygenerováno nové heslo: %s<br/><br/>KSI' % new_password)
+		except:
+			e = sys.exc_info()[0]
+			print str(e)
 		session.close()
 
 		req.context['result'] = { 'result': 'ok' }

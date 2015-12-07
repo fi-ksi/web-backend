@@ -77,7 +77,8 @@ def score_to_json(module_score):
 	return {
 		'id': module_score.Module.id,
 		'is_corrected': module_score.points is not None,
-		'score': format(module_score.points, '.1f')
+		'score': format(module_score.points, '.1f'),
+		'reviewed_by': module_score.evaluator
 	}
 
 def submission_dir(module_id, user_id):

@@ -23,7 +23,7 @@ class CorrectionsPublish(object):
 		if public is None: public = True
 
 		try:
-			task = session.query(model.Task).get(task_id)
+			task = session.query(model.Task).get(id)
 			task.evaluation_public = public
 			session.commit()
 		except:

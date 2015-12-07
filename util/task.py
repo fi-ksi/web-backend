@@ -48,7 +48,7 @@ def max_points_dict():
 
 def points_per_module(task_id, user_id):
 	return session.query(model.Module, \
-		func.max(model.Evaluation.points).label('points')).\
+		func.max(model.Evaluation.points).label('points'), model.Evaluation.evaluator.label('evaluator')).\
 		join(model.Evaluation, model.Evaluation.module == model.Module.id).\
 		filter(model.Module.task == task_id, model.Evaluation.user == user_id).\
 		join(model.Task, model.Task.id == model.Module.task).\

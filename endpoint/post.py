@@ -4,6 +4,7 @@ import json, falcon
 from db import session
 import model
 import util
+import sys
 
 from thread import Thread
 from util import config
@@ -14,6 +15,7 @@ class Post(object):
 		self.on_get(req, resp, id)
 
 	def on_get(self, req, resp, id):
+		user = req.context['user']
 		user_id = req.context['user'].get_id() if req.context['user'].is_logged_in() else None
 
 		post = session.query(model.Post).get(id)
@@ -31,7 +33,7 @@ class Post(object):
 		# Kontrola pristupu k prispevkum:
 		# a) K prispevkum v eval vlakne mohou pristoupit jen orgove a jeden resitel
 		# b) K ostatnim neverejnym prispevkum mohou pristoupit jen orgove.
-		if not thread.public and ((not user.is_logged_in()) or (not user.is_org() or not util.thread.is_eval_thread(user.id, thread.id))):
+		if not thread.public and ((not user.is_logged_in()) or (not user.is_org() and not util.thread.is_eval_thread(user.id, thread.id))):
 			resp.status = falcon.HTTP_400
 			return
 
@@ -98,7 +100,8 @@ class Posts(object):
 					task = session.query(model.Task).get(solution_thread.task)
 					try:
 						util.mail.send(correctors, u'[KSI-WEB] Nový komentář k tvé korektuře úlohy ' + task.title, \
-							u'<p>Ahoj,<br/>k tvé korektuře úlohy <a href="' + config.ksi_web() + u'/ulohy/' + str(task.id) + u'">' + task.title +\
+							u'<p>Ahoj,<br/>k tvé <a href="'+ config.ksi_web() + u'/admin/opravovani?task_='+str(task.id)+u'&participant_='+str(user_class.id)+\
+							u'">korektuře</a> úlohy <a href="' + config.ksi_web() + u'/ulohy/' + str(task.id) + u'">' + task.title +\
 							u'</a> na <a href="'+ config.ksi_web() + '/">' + config.ksi_web() +u'</a> byl přidán nový komentář:<p><p><i>' +\
 							user_class.first_name + ' ' + user_class.last_name + u':</i></p><p>' + data['body'] +\
 							config.karlik_img() + util.mail.easteregg())

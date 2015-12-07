@@ -111,7 +111,9 @@ class Correction(object):
 			if evaluation is None: return
 			evaluation.points = data_eval['points']
 			evaluation.time = datetime.datetime.utcnow()
-			evaluation.evaluator = data_eval['corrected_by'] if 'corrected_by' in data_eval else user_id
+			# TEMPORARY
+			#evaluation.evaluator = data_eval['corrected_by'] if 'corrected_by' in data_eval else user_id
+			evaluation.evaluator = user_id
 			evaluation.full_report += str(datetime.datetime.now()) + " : edited by org " + str(user_id) + " : " + str(data_eval['points']) + " points" + '\n'
 			session.commit()
 		except:

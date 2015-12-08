@@ -89,7 +89,7 @@ class ModuleSubmit(object):
 		if not boundary:
 			raise multipart.MultipartError("No boundary for multipart/form-data.")
 
-		for part in multipart.MultipartParser(req.stream, boundary, req.content_length):
+		for part in multipart.MultipartParser(req.stream, boundary, req.content_length, 2**30, 2**20, 2**18, 2**16, 'utf-8'):
 			path = '%s/%s' % (dir, part.filename)
 			part.save_as(path)
 			mime = magic.Magic(mime=True).from_file(path)

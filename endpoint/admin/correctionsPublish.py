@@ -24,6 +24,9 @@ class CorrectionsPublish(object):
 
 		try:
 			task = session.query(model.Task).get(id)
+			if task is None:
+				resp.status = falcon.HTTP_404
+				return
 			task.evaluation_public = public
 			session.commit()
 		except:

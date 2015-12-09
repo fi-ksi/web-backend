@@ -202,15 +202,19 @@ class Corrections(object):
 
 		# Argumenty (a jejich format) funkce util.correction.to_json popsany v ~/util/correction.py
 
+		corrections = []
+		for corr in corrs_tasks:
+			evals = filter(lambda x: x.Task.id == corr.Task.id and x.Evaluation.user == corr.Evaluation.user, corrs_evals)
+			corrections.append(util.correction.to_json( \
+				[ (evl, mod, None) for (evl, tsk, mod, thr) in filter(lambda x: x.Task.id == corr.Task.id and x.Evaluation.user == corr.Evaluation.user, corrs_modules) ],\
+				[ evl for (evl, tsk, mod, thr) in evals ],\
+				evals[0].Task.id,\
+				corr.thread_id,\
+				[ r for (a,b,r) in filter(lambda (task_id, user_id, a_id): task_id == corr.Task.id and user_id == corr.Evaluation.user, corrs_achs) ],\
+				corr.Task.id in tasks_corrected ))
+
 		req.context['result'] = {
-			'corrections': [ util.correction.to_json( \
-					[ (evl, mod, None) for (evl, tsk, mod, thr) in filter(lambda x: x.Task.id == corr.Task.id and x.Evaluation.user == corr.Evaluation.user, corrs_modules) ],\
-					[ evl for (evl, tsk, mod, thr) in filter(lambda x: x.Task.id == corr.Task.id and x.Evaluation.user == corr.Evaluation.user, corrs_evals) ],\
-					filter(lambda x: x.Task.id == corr.Task.id and x.Evaluation.user == corr.Evaluation.user, corrs_evals)[0].Task.id,\
-					corr.thread_id,\
-					[ r for (a,b,r) in filter(lambda (task_id, user_id, a_id): task_id == corr.Task.id and user_id == corr.Evaluation.user, corrs_achs) ],\
-					corr.Task.id in tasks_corrected ) \
-				for corr in corrs_tasks ],
+			'corrections': corrections,
 			'tasks': [ util.correction.task_to_json(q.Task) for q in corrs.group_by(model.Task).all() ],
 			'modules': [ util.correction.module_to_json(q.Module) for q in corrs.group_by(model.Module).all() ],
 			'achievements': [ util.achievement.to_json(achievement) for achievement in achievements ]

@@ -11,7 +11,9 @@ def user_to_json(user):
 		'id': user.id,
 		'first_name': user.first_name,
 		'last_name': user.last_name,
-		'role': user.role
+		'role': user.role,
+		'profile_picture': util.user.get_profile_picture(user),
+		'gender': user.sex
 	}
 
 def _task_corr_state(task):

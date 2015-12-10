@@ -151,21 +151,30 @@ class Corrections(object):
 	?task=task_id
 	?participant=user_id
 	"""
+	"""
+	Tento endpoint je svou podstatou velmi sileny,
+	protoze spojuje dohromady Tasks, Modules, Threads, Posts, Achievements, ... a my se snazime vsechny tyto vysledky
+	vratit v konstatnim case. To vede k pomerne silenym hackum, viz nize.
+	Cil: minimalizovat pocet SQL dotazu, provest jeden velky dotaz a vysledky pak filtrovat pythonim filter().
+	"""
 	def on_get(self, req, resp):
+		# Ziskama GET parametry
 		user = req.context['user']
 		year = req.context['year']
 		task = req.get_param_as_int('task')
 		participant = req.get_param_as_int('participant')
 
+		# Vysledek vracime jen v pripade, kdy je vyplneno alespon jedlo z 'task' nebo 'participant'
 		if task is None and participant is None:
 			resp.status = falcon.HTTP_400
 			return
 
+		# Login
 		if (not user.is_logged_in()) or (not user.is_org()):
 			resp.status = falcon.HTTP_400
 			return
 
-		# Ziskame prislusna 'evaluation's v podobe seznamu [eval_id], toto je subquery pro dalsi pozadavky
+		# Ziskame prislusna 'evaluation's v podobe seznamu [eval_id], toto je subquery pro dalsi pozadavky.
 		evals = session.query(model.Evaluation.id.label('eval_id'))
 		if participant is not None:
 			evals = evals.filter(model.Evaluation.user == participant)
@@ -178,6 +187,10 @@ class Corrections(object):
 			evals = evals.filter(model.Task.id == task)
 		evals = evals.subquery()
 
+		# Terminilogie:
+		# "Opraveni" je Evaluation.group_by(Task, User).
+		# Jedno opraveni muze mit mit vic modulu a evaluations, ma vzy ale prave jednoho uzivatele a prave jednu ulohu.
+
 		# Pomocny vypocet toho, jestli je dane hodnoceni opravene / neopravene
 		# Tato query bere task_id a user_id a pokud je opraveni opravene, vrati v is_corrected True
 		corrected = session.query(model.Task.id.label('task_id'), model.User.id.label('user_id'), (func.count(model.Evaluation) > 0).label('is_corrected')).\
@@ -187,9 +200,9 @@ class Corrections(object):
 			filter(or_(model.Module.autocorrect == True, model.Evaluation.evaluator != None)).\
 			group_by(model.Task.id, model.User.id).subquery()
 
-		# Ziskame corrections -> evalustions obohacena o dalsi pole, jako je napriklad uloha, modul, ci diskuzni vlakno reseni
+		# Ziskame corrections. Corrections = evalustions obohacena o dalsi pole, jako je napriklad uloha, modul, ci diskuzni vlakno reseni
 		# Tady se bohuzel trochu duplikuje predchozi kod, ale neumim to vyresit lepe...
-		corrs = session.query(model.Evaluation, model.Task, model.Module, model.Thread.id.label('thread_id'), corrected.c.is_corrected.label('is_corrected')).\
+		corrs = session.query(model.Evaluation, model.Task, model.Module, model.Thread, corrected.c.is_corrected.label('is_corrected')).\
 			join(evals, model.Evaluation.id == evals.c.eval_id).\
 			join(model.Module, model.Evaluation.module == model.Module.id).\
 			join(model.Task, model.Task.id == model.Module.task).\
@@ -210,7 +223,7 @@ class Corrections(object):
 			join(model.Achievement, model.Achievement.id == model.UserAchievement.achievement_id).\
 			group_by(model.Task, model.UserAchievement.user_id, model.Achievement).all()
 
-		# Vsechny achievementy
+		# Vsechny achievementy pro hlavni seznam
 		achievements = session.query(model.Achievement).\
 			filter(model.Achievement.year == req.context['year']).all()
 
@@ -218,23 +231,59 @@ class Corrections(object):
 		files = session.query(model.SubmittedFile).\
 			join(evals, model.SubmittedFile.evaluation == evals.c.eval_id).all()
 
-		# Argumenty (a jejich format) funkce util.correction.to_json popsany v ~/util/correction.py
+		# Prispevky ve vsech relevantnich diskuzich
+		db_posts = session.query(model.Post, model.Thread).\
+			join(model.Thread, model.Post.thread == model.Thread.id).\
+			join(model.SolutionComment, model.SolutionComment.thread == model.Thread.id).\
+			join(model.Module, model.Module.task == model.SolutionComment.task).\
+			join(model.Evaluation, and_(model.Evaluation.module == model.Module.id, model.SolutionComment.user == model.Evaluation.user)).\
+			join(evals, evals.c.eval_id == model.Evaluation.id)
+
+		# Korenove prispevky vlaken
+		root_posts = db_posts.filter(model.Post.parent == None).\
+			group_by(model.Thread, model.Post).all()
+		db_posts = db_posts.group_by(model.Post).all()
+
+		# Budujeme vystup 'corrections'
+		# Argumenty (a jejich format) funkce util.correction.to_json popsany v ~/util/correction.py (toto je pomerne magicka funkce)
 		corrections = []
+		threads = []
+		thr_details = []
 		for corr in corrs_tasks:
 			evals = filter(lambda x: x.Task.id == corr.Task.id and x.Evaluation.user == corr.Evaluation.user, corrs_evals)
 			corrections.append(util.correction.to_json( \
 				[ (evl, mod, None) for (evl, tsk, mod, thr, iscor) in filter(lambda x: x.Task.id == corr.Task.id and x.Evaluation.user == corr.Evaluation.user, corrs_modules) ],\
 				[ evl for (evl, tsk, mod, thr, iscor) in evals ],\
 				evals[0].Task.id,\
-				corr.thread_id,\
+				corr.Thread.id if corr.Thread else None,\
 				[ r for (a,b,r) in filter(lambda (task_id, user_id, a_id): task_id == corr.Task.id and user_id == corr.Evaluation.user, corrs_achs) ],\
 				corr.is_corrected if corr.is_corrected is not None else False,
 				files))
 
+			if corr.Thread:
+				threads.append(util.thread.to_json(corr.Thread, user.id))
+				r_posts = [ pst.id for (pst,thrd) in filter(lambda (post,thr): thr.id == corr.Thread.id, root_posts) ]
+				thr_details.append(util.thread.details_to_json(corr.Thread, r_posts))
+
+		# Ziskavame last_visit jednotlivych vlaken (opet na jeden SQL pozadavek)
+		last_visit = util.thread.get_user_visit(user.id, year)
+		posts = []
+		for (post, thread) in db_posts:
+			lastv = None
+			for lv in last_visit:
+				if lv.thread == post.thread:
+					lastv = lv
+					break
+			posts.append(util.post.to_json(post, user.id, lastv))
+
+		# A konecne vratime vysledek.
 		req.context['result'] = {
 			'corrections': corrections,
 			'tasks': [ util.correction.task_to_json(q.Task) for q in corrs.group_by(model.Task).all() ],
 			'modules': [ util.correction.module_to_json(q.Module) for q in corrs.group_by(model.Module).all() ],
-			'achievements': [ util.achievement.to_json(achievement) for achievement in achievements ]
+			'achievements': [ util.achievement.to_json(achievement) for achievement in achievements ],
+			'threads': threads,
+			'posts': posts,
+			'threadDetails': thr_details
 		}
 

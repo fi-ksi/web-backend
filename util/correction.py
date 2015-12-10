@@ -20,16 +20,27 @@ def tasks_corrected():
 		filter(or_(task_corrected.c.notcorrected == False, task_corrected.c.notcorrected == None))
 	]
 
+# Pomocny vypocet toho, jestli je dane hodnoceni opravene / neopravene
+def corr_corrected(task_id, user_id):
+	return session.query(model.Evaluation).\
+		join(model.Module, model.Evaluation.module == model.Module.id).\
+		filter(model.Evaluation.user == user_id, model.Module.task == task_id).\
+		filter(or_(model.Module.autocorrect == True, model.Evaluation.evaluator != None)).count() > 0
 
-def _corr_general_to_json(module, evaluation):
-	submittedFiles = session.query(model.SubmittedFile).\
-		join(model.Evaluation, model.SubmittedFile.evaluation == evaluation.id).all()
+# \files je nepovinny seznam souboru pro zmenseni poctu SQL dotazu
+def _corr_general_to_json(module, evaluation, files=None):
+	if files is None:
+		files = session.query(model.SubmittedFile).\
+			join(model.Evaluation, model.SubmittedFile.evaluation == evaluation.id).all()
+	else:
+		files = filter(lambda smbfl: smbfl.evaluation == evaluation.id, files)
 
 	return {
-		'files': [ {'id': inst.id, 'filename': os.path.basename(inst.path)} for inst in submittedFiles ]
+		'files': [ {'id': inst.id, 'filename': os.path.basename(inst.path)} for inst in files ]
 	}
 
-def _corr_eval_to_json(module, evaluation):
+# \files je seznam souboru pro souborovy modul
+def _corr_eval_to_json(module, evaluation, files=None):
 	res = {
 		'eval_id': evaluation.id,
 		'points': evaluation.points,
@@ -39,14 +50,15 @@ def _corr_eval_to_json(module, evaluation):
 	}
 
 	if module.type == model.module.ModuleType.GENERAL:
-		res['general'] = _corr_general_to_json(module, evaluation)
+		res['general'] = _corr_general_to_json(module, evaluation, files)
 
 	return res
 
 # U modulu se zobrazuje jen jedno evaluation:
 #  Pokud to ma byt nejadekvatnejsi evaluation, je \evl=None.
 #  Pokud to ma byt specificke evaluation, je toto evalustion ulozeno v \evl
-def _corr_module_to_json(evals, module, evl=None):
+# \files je seznam souboru pro souborovy modul
+def _corr_module_to_json(evals, module, evl=None, files=None):
 	if evl is None:
 		# Ano, v Pythonu neexistuje max() pres dva klice
 		evl = sorted(evals, key=lambda x: (x.points, x.time), reverse=True)[0]
@@ -54,7 +66,7 @@ def _corr_module_to_json(evals, module, evl=None):
 	return {
 		'module_id': module.id,
 		'evaluations_list': [ evaluation.id for evaluation in evals ],
-		'evaluation': _corr_eval_to_json(module, evl)
+		'evaluation': _corr_eval_to_json(module, evl, files)
 	}
 
 # \modules je [(Evaluation, Module, specific_eval)] a je seskupeno podle modulu
@@ -62,12 +74,13 @@ def _corr_module_to_json(evals, module, evl=None):
 # \evals je [Evaluation]
 # \achievements je [Ahievement.id]
 # \corrected je Bool
-def to_json(modules, evals, task_id, thread_id=None, achievements=None, corrected=None):
+# \files je seznam souboru
+def to_json(modules, evals, task_id, thread_id=None, achievements=None, corrected=None, files=None):
 	user_id = evals[0].user
 
 	if thread_id is None: thread_id = util.task.comment_thread(task_id, user_id)
 	if achievements is None: achievements = util.achievement.ids_list(util.achievement.per_task(user_id, task_id))
-	if corrected is None: corrected = task_id in tasks_corrected()
+	if corrected is None: corrected = corr_corrected(task_id, user_id)
 
 	return {
 		'id': task_id*100000 + user_id,
@@ -76,7 +89,7 @@ def to_json(modules, evals, task_id, thread_id=None, achievements=None, correcte
 		'user': user_id,
 		'comment': thread_id,
 		'achievements': achievements,
-		'modules': [ _corr_module_to_json(filter(lambda x: x.module == module.id, evals), module, spec_evl) for (evl, module, spec_evl) in modules ]
+		'modules': [ _corr_module_to_json(filter(lambda x: x.module == module.id, evals), module, spec_evl, files) for (evl, module, spec_evl) in modules ]
 	}
 
 def module_to_json(module):

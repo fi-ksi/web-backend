@@ -1,5 +1,5 @@
 import falcon
-from sqlalchemy import func, and_
+from sqlalchemy import func, and_, or_
 
 from db import session
 import model
@@ -111,7 +111,6 @@ class Correction(object):
 			if evaluation is None: return
 			evaluation.points = data_eval['points']
 			evaluation.time = datetime.datetime.utcnow()
-			print data_eval['corrected_by']
 			evaluation.evaluator = data_eval['corrected_by'] if 'corrected_by' in data_eval else user_id
 			evaluation.full_report += str(datetime.datetime.now()) + " : edited by org " + str(user_id) + " : " + str(data_eval['points']) + " points" + '\n'
 			session.commit()
@@ -166,21 +165,39 @@ class Corrections(object):
 			resp.status = falcon.HTTP_400
 			return
 
-		# Ziskame prislusna 'evaluation's
-		corrs = session.query(model.Evaluation, model.Task, model.Module, model.Thread.id.label('thread_id'))
+		# Ziskame prislusna 'evaluation's v podobe seznamu [eval_id], toto je subquery pro dalsi pozadavky
+		evals = session.query(model.Evaluation.id.label('eval_id'))
 		if participant is not None:
-			corrs = corrs.filter(model.Evaluation.user == participant)
-		corrs = corrs.join(model.Module, model.Module.id == model.Evaluation.module).\
+			evals = evals.filter(model.Evaluation.user == participant)
+		evals = evals.join(model.Module, model.Module.id == model.Evaluation.module).\
 			join(model.Task, model.Task.id == model.Module.task).\
 			join(model.Wave, model.Task.wave == model.Wave.id).\
 			join(model.Year, model.Year.id == model.Wave.year).\
 			filter(model.Year.id == year)
 		if task is not None:
-			corrs = corrs.filter(model.Task.id == task)
-		corrs = corrs.outerjoin(model.SolutionComment, and_(model.SolutionComment.user == model.Evaluation.user, model.SolutionComment.task == model.Task.id)).\
+			evals = evals.filter(model.Task.id == task)
+		evals = evals.subquery()
+
+		# Pomocny vypocet toho, jestli je dane hodnoceni opravene / neopravene
+		# Tato query bere task_id a user_id a pokud je opraveni opravene, vrati v is_corrected True
+		corrected = session.query(model.Task.id.label('task_id'), model.User.id.label('user_id'), (func.count(model.Evaluation) > 0).label('is_corrected')).\
+			join(model.Module, model.Module.task == model.Task.id).\
+			join(model.Evaluation, model.Evaluation.module == model.Module.id).\
+			join(model.User, model.Evaluation.user == model.User.id).\
+			filter(or_(model.Module.autocorrect == True, model.Evaluation.evaluator != None)).\
+			group_by(model.Task.id, model.User.id).subquery()
+
+		# Ziskame corrections -> evalustions obohacena o dalsi pole, jako je napriklad uloha, modul, ci diskuzni vlakno reseni
+		# Tady se bohuzel trochu duplikuje predchozi kod, ale neumim to vyresit lepe...
+		corrs = session.query(model.Evaluation, model.Task, model.Module, model.Thread.id.label('thread_id'), corrected.c.is_corrected.label('is_corrected')).\
+			join(evals, model.Evaluation.id == evals.c.eval_id).\
+			join(model.Module, model.Evaluation.module == model.Module.id).\
+			join(model.Task, model.Task.id == model.Module.task).\
+			outerjoin(corrected, and_(model.Task.id == corrected.c.task_id, model.Evaluation.user == corrected.c.user_id)).\
+			outerjoin(model.SolutionComment, and_(model.SolutionComment.user == model.Evaluation.user, model.SolutionComment.task == model.Task.id)).\
 			outerjoin(model.Thread, model.SolutionComment.thread == model.Thread.id)
 
-		# Evaluations si pogrupime podle uloh, podle toho vedeme result a pak pomocne podle modulu (to vyuzivame pri budovani vystupu)
+		# Evaluations si pogrupime podle uloh, podle toho vedeme result a pak pomocne podle modulu (to vyuzivame pri budovani vystupu) a jeste podle evaluations
 		corrs_tasks = corrs.group_by(model.Task, model.Evaluation.user).all()
 		corrs_modules = corrs.group_by(model.Module, model.Evaluation.user).all()
 		corrs_evals = corrs.group_by(model.Evaluation, model.Evaluation.user).all()
@@ -193,25 +210,26 @@ class Corrections(object):
 			join(model.Achievement, model.Achievement.id == model.UserAchievement.achievement_id).\
 			group_by(model.Task, model.UserAchievement.user_id, model.Achievement).all()
 
-		# ziskame vsechny plne opravene ulohy:
-		tasks_corrected = util.correction.tasks_corrected()
-
 		# Vsechny achievementy
 		achievements = session.query(model.Achievement).\
 			filter(model.Achievement.year == req.context['year']).all()
 
-		# Argumenty (a jejich format) funkce util.correction.to_json popsany v ~/util/correction.py
+		# Pripravime si vsechny relevantni soubory k opravovanim na jeden pozadavek
+		files = session.query(model.SubmittedFile).\
+			join(evals, model.SubmittedFile.evaluation == evals.c.eval_id).all()
 
+		# Argumenty (a jejich format) funkce util.correction.to_json popsany v ~/util/correction.py
 		corrections = []
 		for corr in corrs_tasks:
 			evals = filter(lambda x: x.Task.id == corr.Task.id and x.Evaluation.user == corr.Evaluation.user, corrs_evals)
 			corrections.append(util.correction.to_json( \
-				[ (evl, mod, None) for (evl, tsk, mod, thr) in filter(lambda x: x.Task.id == corr.Task.id and x.Evaluation.user == corr.Evaluation.user, corrs_modules) ],\
-				[ evl for (evl, tsk, mod, thr) in evals ],\
+				[ (evl, mod, None) for (evl, tsk, mod, thr, iscor) in filter(lambda x: x.Task.id == corr.Task.id and x.Evaluation.user == corr.Evaluation.user, corrs_modules) ],\
+				[ evl for (evl, tsk, mod, thr, iscor) in evals ],\
 				evals[0].Task.id,\
 				corr.thread_id,\
 				[ r for (a,b,r) in filter(lambda (task_id, user_id, a_id): task_id == corr.Task.id and user_id == corr.Evaluation.user, corrs_achs) ],\
-				corr.Task.id in tasks_corrected ))
+				corr.is_corrected,
+				files))
 
 		req.context['result'] = {
 			'corrections': corrections,

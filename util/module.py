@@ -41,7 +41,7 @@ def to_json(module, user_id):
 	else:
 		module_json['state'] = 'blank'
 
-	module_json['score'] = module.id if best_status.points else None
+	module_json['score'] = module.id if best_status.points is not None else None
 
 	try:
 

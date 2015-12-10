@@ -13,8 +13,10 @@ def to_json(thread, user_id=None):
 		'details': thread.id
 	}
 
-def details_to_json(thread):
-	root_posts = [ post.id for post in session.query(model.Post).filter(model.Post.thread == thread.id, model.Post.parent == None) ]
+def details_to_json(thread, root_posts=None):
+	if root_posts is None:
+		print "Accessing root posts"
+		root_posts = [ post.id for post in session.query(model.Post).filter(model.Post.thread == thread.id, model.Post.parent == None) ]
 
 	return {
 		'id': thread.id,
@@ -23,6 +25,11 @@ def details_to_json(thread):
 
 def get_visit(user_id, thread_id):
 	return session.query(model.ThreadVisit).filter(model.ThreadVisit.user == user_id, model.ThreadVisit.thread == thread_id).first()
+
+def get_user_visit(user_id, year_id):
+	return session.query(model.ThreadVisit).\
+		join(model.Thread, model.Thread.id == model.ThreadVisit.thread).\
+		filter(model.ThreadVisit.user == user_id, model.Thread.year == year_id).all()
 
 def count_unread(user_id, thread_id):
 	if user_id is None:

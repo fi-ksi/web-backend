@@ -228,7 +228,7 @@ class Corrections(object):
 				evals[0].Task.id,\
 				corr.thread_id,\
 				[ r for (a,b,r) in filter(lambda (task_id, user_id, a_id): task_id == corr.Task.id and user_id == corr.Evaluation.user, corrs_achs) ],\
-				corr.is_corrected,
+				corr.is_corrected if corr.is_corrected is not None else False,
 				files))
 
 		req.context['result'] = {

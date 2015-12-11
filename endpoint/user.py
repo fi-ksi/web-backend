@@ -34,7 +34,7 @@ class User(object):
 
 class Users(object):
 	def on_get(self, req, resp):
-		filter = req.get_param('filter')
+		filt = req.get_param('filter')
 		sort = req.get_param('sort')
 
 		# Tady se dela spoustu magie kvuli tomu, aby se usetrily SQL dotazy
@@ -70,9 +70,9 @@ class Users(object):
 			group_by(model.User)
 
 		# Filtrovani skupin uzivatelu
-		if filter == 'organisators':
+		if filt == 'organisators':
 			users = users.filter(model.User.role == 'org')
-		elif filter == 'participants':
+		elif filt == 'participants':
 			# Resitele zobrazujeme jen v aktualnim rocniku (pro jine neni tasks_cnt definovano)
 			users = users.filter(model.User.role == 'participant').\
 				filter(text("tasks_cnt"), text("tasks_cnt") > 0)
@@ -102,6 +102,14 @@ class Users(object):
 			join(model.User, model.Evaluation.user == model.User.id).\
 			group_by(model.User, model.Year).all()
 
+		# Ziskani seznamu uloh vsech orgu na jeden dotaz
+		if filt == 'organisators':
+			users_tasks = session.query(model.User, model.Task).\
+				join(model.Task, model.User.id == model.Task.author).\
+				group_by(model.User, model.Task).all()
+		else:
+			users_tasks = []
+
 		# Uzivatele s nedefinovanymi tasks_cnt v tomto rocniku  neodevzdali zadnou ulohu
 		# -> nastavime jim natvrdo 'tasks_cnt' = 0 a total_score = 0, abychom omezili
 		# dalsi SQL dotazy v util.user.to_json
@@ -110,7 +118,8 @@ class Users(object):
 			user.tasks_cnt if user.tasks_cnt else 0, \
 			user.Profile, \
 			[ item.a_id for item in achievements if item.user_id == user.User.id ], \
-			[ item.year_id for item in seasons if item.user_id == user.User.id ]) for user in users ]
+			[ item.year_id for item in seasons if item.user_id == user.User.id ], \
+			[ task for (_, task) in filter(lambda (usr,task): usr.id == user.User.id, users_tasks) ]) for user in users ]
 
 		req.context['result'] = { "users": users_json }
 

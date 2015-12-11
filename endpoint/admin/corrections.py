@@ -274,7 +274,7 @@ class Corrections(object):
 				if lv.thread == post.thread:
 					lastv = lv
 					break
-			posts.append(util.post.to_json(post, user.id, lastv))
+			posts.append(util.post.to_json(post, user.id, lastv, True))
 
 		# A konecne vratime vysledek.
 		req.context['result'] = {

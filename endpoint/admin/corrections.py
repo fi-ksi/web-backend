@@ -1,5 +1,5 @@
 import falcon
-from sqlalchemy import func, and_, or_
+from sqlalchemy import func, and_, or_,  not_
 
 from db import session
 import model
@@ -150,6 +150,7 @@ class Corrections(object):
 	musi byt vyplnen alespon jeden z argumentu:
 	?task=task_id
 	?participant=user_id
+	?state=notcorrected|corrected
 	"""
 	"""
 	Tento endpoint je svou podstatou velmi sileny,
@@ -163,6 +164,7 @@ class Corrections(object):
 		year = req.context['year']
 		task = req.get_param_as_int('task')
 		participant = req.get_param_as_int('participant')
+		state = req.get_param('state')
 
 		# Vysledek vracime jen v pripade, kdy je vyplneno alespon jedlo z 'task' nebo 'participant'
 		if task is None and participant is None:
@@ -205,9 +207,15 @@ class Corrections(object):
 		corrs = session.query(model.Evaluation, model.Task, model.Module, model.Thread, corrected.c.is_corrected.label('is_corrected')).\
 			join(evals, model.Evaluation.id == evals.c.eval_id).\
 			join(model.Module, model.Evaluation.module == model.Module.id).\
-			join(model.Task, model.Task.id == model.Module.task).\
-			outerjoin(corrected, and_(model.Task.id == corrected.c.task_id, model.Evaluation.user == corrected.c.user_id)).\
-			outerjoin(model.SolutionComment, and_(model.SolutionComment.user == model.Evaluation.user, model.SolutionComment.task == model.Task.id)).\
+			join(model.Task, model.Task.id == model.Module.task)
+		# filtr opravenych uloh
+		if state == 'corrected':
+			corrs = corrs.join(corrected, and_(model.Task.id == corrected.c.task_id, model.Evaluation.user == corrected.c.user_id))
+		else:
+			corrs = corrs.outerjoin(corrected, and_(model.Task.id == corrected.c.task_id, model.Evaluation.user == corrected.c.user_id))
+		if state == 'notcorrected':
+			corrs = corrs.filter(or_(corrected.c.is_corrected == None, not_(corrected.c.is_corrected)))
+		corrs = corrs.outerjoin(model.SolutionComment, and_(model.SolutionComment.user == model.Evaluation.user, model.SolutionComment.task == model.Task.id)).\
 			outerjoin(model.Thread, model.SolutionComment.thread == model.Thread.id)
 
 		# Evaluations si pogrupime podle uloh, podle toho vedeme result a pak pomocne podle modulu (to vyuzivame pri budovani vystupu) a jeste podle evaluations

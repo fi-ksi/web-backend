@@ -99,7 +99,8 @@ def get_profile_picture(user):
 # Spoustu atributu pro serializaci lze teto funkci predat za ucelem
 # minimalizace SQL dotazu. Toho se vyuziva napriklad pri vypisovani vysledkovky.
 # Pokud jsou tyto atributy None, provedou se klasicke dotazy.
-def to_json(user, year_id, total_score=None, tasks_cnt=None, profile=None, achs=None, seasons=None):
+# \users_tasks je [model.Task]
+def to_json(user, year_id, total_score=None, tasks_cnt=None, profile=None, achs=None, seasons=None, users_tasks=None):
         data = { 'id': user.id, 'first_name': user.first_name, 'last_name': user.last_name, 'profile_picture': get_profile_picture(user), 'gender': user.sex }
 
         # skryty resitel je pro potreby frontendu normalni resitel
@@ -118,8 +119,9 @@ def to_json(user, year_id, total_score=None, tasks_cnt=None, profile=None, achs=
                 data['school_name'] = profile.school_name
                 data['seasons'] = seasons if seasons is not None else active_years(user.id)
         else:
+                if users_tasks is None: users_tasks = user.tasks
                 data['nick_name'] = user.nick_name
-                data['tasks'] = [ task.id for task in user.tasks ]
+                data['tasks'] = [ task.id for task in users_tasks ]
                 data['short_info'] = user.short_info
 
         return data

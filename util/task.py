@@ -12,7 +12,7 @@ class TaskStatus:
 	CORRECTING = 'correcting'
 	DONE = 'done'
 
-# Vraci dvojici { task_id : sum(body) } pro vsechny plne odevzdane ulohy
+# Vraci dvojici { task_id : module_cnt } pro vsechny plne odevzdane ulohy
 # sum(body) je suma bodu za vsechny moduly v dane uloze
 # Plne odevzdane moduly = bez autocorrect, nebo s autocorrect majici plny pocet bodu
 # Moduly s maximem 0 bodu jsou bonusove a jsou vzdy fully_submitted (i pokud nebyly odevzdany)
@@ -30,6 +30,24 @@ def fully_submitted(user_id, year_id=None):
 	real_modules_count = { task.id: task.modules for task in q.join(model.Evaluation).filter(model.Evaluation.user == user_id, or_(model.Module.autocorrect != True, model.Module.max_points == model.Evaluation.points)).group_by(model.Task.id).all() }
 
 	return { int(key): int(val) for key, val in real_modules_count.items() if max_modules_count[key] <= val }
+
+# Vraci dvojici { model.Task : sum(body) } pro vsechny jakkoliv odevzdane ulohy
+# sum(body) je suma bodu za vsechny moduly v dane uloze
+def any_submitted(user_id, year_id):
+	# Skore uivatele per modul
+	per_module = session.query(model.Evaluation.module.label('module'), func.max(model.Evaluation.points).label('points')).\
+		join(model.Module, model.Evaluation.module == model.Module.id).\
+		join(model.Task, model.Task.id == model.Module.task).\
+		filter(model.Evaluation.user == user_id).\
+		group_by(model.Evaluation.module).subquery()
+
+	# Skore per task
+	return session.query(model.Task, func.sum(per_module.c.points).label("score")).\
+		join(model.Module, model.Module.task == model.Task.id).\
+		join(per_module, model.Module.id == per_module.c.module).\
+		join(model.Wave, model.Wave.id == model.Task.wave).\
+		filter(model.Wave.year == year_id).\
+		group_by(model.Task).all()
 
 def after_deadline():
 	return { int(task.id) for task in session.query(model.Task).filter(model.Task.time_deadline < datetime.datetime.utcnow() ).all() }

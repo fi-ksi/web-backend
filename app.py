@@ -45,7 +45,15 @@ class Year_fill(object):
 		if ('YEAR' in req.headers):
 			req.context['year'] = req.headers['YEAR']
 		else:
-			req.context['year'] = session.query(func.max(model.Year.id)).scalar()
+			try:
+				req.context['year'] = session.query(func.max(model.Year.id)).scalar()
+			except:
+				session.rollback()
+				try:
+					req.context['year'] = session.query(func.max(model.Year.id)).scalar()
+				except:
+					session.rollback()
+					raise
 
 def log(req, resp):
 	try:

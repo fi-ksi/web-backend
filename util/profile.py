@@ -71,5 +71,5 @@ def task_score_to_json(task, points, user, achievements=None):
 			'id': task.id,
 			'task': task.id,
 			'achievements': achievements,
-			'score': format(points, '.1f')
+			'score': format(points, '.1f') if task.evaluation_public else None
 	}

@@ -185,7 +185,8 @@ def to_json(task, user=None, adeadline=None, fsubmitted=None, wave=None, corr=No
 		'state': tstatus,
 		'prerequisities': [] if not task.prerequisite_obj else util.prerequisite.to_json(task.prerequisite_obj),
 		'picture_base': pict_base,
-		'picture_suffix': '.svg'
+		'picture_suffix': '.svg',
+		'wave': task.wave
 	}
 
 def details_to_json(task, user, status, achievements, best_scores, comment_thread=None):

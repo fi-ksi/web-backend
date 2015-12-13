@@ -26,7 +26,7 @@ def send(to, subject, text, params={}, bcc=[]):
 	msg['Return-Path'] = config.get('return_path')
 	msg['Errors-To'] = config.get('return_path')
 
-	for key, value in params: msg[key] = params[value]
+	for key in params.keys(): msg[key] = params[key]
 
 	s = smtplib.SMTP('relay.muni.cz')
 	send_to = (to if isinstance(to, (list)) else [ to ]) + (bcc if isinstance(bcc, (list)) else [ bcc ])
@@ -45,4 +45,5 @@ def send_multiple(to, subject, text, params={}, bcc=[]):
 
 def send_feedback(text, addr_from):
 	addr_reply = addr_from if len(addr_from) > 0 else None
-	send(config.feedback(), '[KSI-WEB] Zpetna vazba', '<p>'+text.decode('utf-8')+'</p>', True, config.mail_sender(), addr_reply)
+	params = { 'Reply-To': addr_reply }
+	send(config.feedback(), '[KSI-WEB] Zpetna vazba', '<p>'+text.decode('utf-8')+'</p>' + easteregg(), params)

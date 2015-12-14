@@ -14,7 +14,8 @@ def _artice_to_json(inst):
 		'body': inst.body,
 		'time_published': inst.time_created.isoformat(),
 		'picture': inst.picture if inst.picture else DEFAULT_IMAGE,
-		'published': inst.published
+		'published': inst.published,
+		'author': inst.author
 	}
 
 class Article(object):
@@ -43,7 +44,7 @@ class Article(object):
 			if article is None:
 				resp.status = falcon.HTTP_404
 				return
-	
+
 			# TODO: article picture
 			article.title = data['title']
 			article.body = data['body']
@@ -59,20 +60,26 @@ class Article(object):
 
 		self.on_get(req, resp, id)
 
+	# Smazani clanku
 	def on_delete(self, req, resp, id):
 		user = req.context['user']
 		if (not user.is_logged_in()) or (not user.is_org()):
 			resp.status = falcon.HTTP_400
 			return
 
-		article = session.query(model.Article).get(id)
-		if article is None:
-			resp.status = falcon.HTTP_404
-			return
+		try:
+			article = session.query(model.Article).get(id)
+			if article is None:
+				resp.status = falcon.HTTP_404
+				return
 
-		session.delete(article)
-		session.commit()
-		session.close()
+			session.delete(article)
+			session.commit()
+		except:
+			session.rollback()
+			raise
+		finally:
+			session.close()
 
 
 class Articles(object):

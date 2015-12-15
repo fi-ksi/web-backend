@@ -22,7 +22,10 @@ class Content(object):
 	# a) soubor, pokud je v \path cesta k souboru,
 	# b) obsah adresare, pokud je v \path cesta k adresari.
 	def on_get(self, req, resp):
-		filePath = 'data/content/' + req.get_param('path').replace('..', '');
+		if req.get_param('path'):
+			filePath = 'data/content/' + req.get_param('path').replace('..', '')
+		else:
+			filePath = 'data/content/'
 
 		if os.path.isdir(filePath):
 			req.context['result'] = util.content.dir_to_json(filePath)
@@ -43,7 +46,10 @@ class Content(object):
 			resp.status = falcon.HTTP_400
 			return
 
-		filePath = 'data/content/' + req.get_param('path').replace('..', '');
+		if req.get_param('path'):
+			filePath = 'data/content/' + req.get_param('path').replace('..', '');
+		else:
+			filePath = 'data/content/'
 
 		if not req.content_length:
 			resp.status = falcon.HTTP_411
@@ -76,7 +82,10 @@ class Content(object):
 			resp.status = falcon.HTTP_400
 			return
 
-		filePath = 'data/content/' + req.get_param('path').replace('..', '');
+		if req.get_param('path'):
+			filePath = 'data/content/' + req.get_param('path').replace('..', '');
+		else:
+			filePath = 'data/content/'
 
 		if not os.path.isfile(filePath):
 			resp.status = falcon.HTTP_404

@@ -1,12 +1,18 @@
 import falcon, json
 from datetime import datetime, timedelta
 
+import copy
 import model
 import endpoint
 from db import engine, session
 from util import UserInfo
 from sqlalchemy import func
 
+# Cache aktualniho rocniku
+c_year = None
+c_year_update = None
+
+###############################################################################
 
 class JSONTranslator(object):
 
@@ -42,18 +48,24 @@ class Authorizer(object):
 class Year_fill(object):
 
 	def process_request(self, req, resp):
+		global c_year
+		global c_year_update
+
 		if ('YEAR' in req.headers):
 			req.context['year'] = req.headers['YEAR']
 		else:
-			try:
-				req.context['year'] = session.query(func.max(model.Year.id)).scalar()
-			except:
-				session.rollback()
+			if (c_year is None) or (c_year_update is None) or (c_year_update < datetime.utcnow()):
 				try:
-					req.context['year'] = session.query(func.max(model.Year.id)).scalar()
+					c_year = session.query(func.max(model.Year.id)).scalar()
 				except:
 					session.rollback()
-					raise
+					try:
+						c_year = session.query(func.max(model.Year.id)).scalar()
+					except:
+						session.rollback()
+						raise
+				c_year_update = copy.copy(datetime.utcnow()) + timedelta(minutes=30)
+			req.context['year'] = c_year
 
 def log(req, resp):
 	try:

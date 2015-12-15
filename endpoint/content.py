@@ -23,12 +23,13 @@ class Content(object):
 	# b) obsah adresare, pokud je v \path cesta k adresari.
 	def on_get(self, req, resp):
 		if req.get_param('path'):
-			filePath = 'data/content/' + req.get_param('path').replace('..', '')
+			shortPath = req.get_param('path').replace('..', '')
 		else:
-			filePath = 'data/content/'
+			shortPath = "."
+		filePath = 'data/content/' + shortPath
 
 		if os.path.isdir(filePath):
-			req.context['result'] = util.content.dir_to_json(filePath)
+			req.context['result'] = util.content.dir_to_json(shortPath)
 			return
 
 		if not os.path.isfile(filePath):
@@ -47,9 +48,10 @@ class Content(object):
 			return
 
 		if req.get_param('path'):
-			filePath = 'data/content/' + req.get_param('path').replace('..', '');
+			shortPath = req.get_param('path').replace('..', '')
 		else:
-			filePath = 'data/content/'
+			shortPath = "."
+		filePath = 'data/content/' + shortPath
 
 		if not req.content_length:
 			resp.status = falcon.HTTP_411
@@ -83,9 +85,10 @@ class Content(object):
 			return
 
 		if req.get_param('path'):
-			filePath = 'data/content/' + req.get_param('path').replace('..', '');
+			shortPath = req.get_param('path').replace('..', '')
 		else:
-			filePath = 'data/content/'
+			shortPath = "."
+		filePath = 'data/content/' + shortPath
 
 		if not os.path.isfile(filePath):
 			resp.status = falcon.HTTP_404

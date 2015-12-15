@@ -20,3 +20,4 @@ class Article(Base):
 	time_created = Column(TIMESTAMP, default=datetime.datetime.utcnow, server_default=text('CURRENT_TIMESTAMP'))
 	published = Column(Boolean)
 	year = Column(Integer, ForeignKey('years.id'), nullable=False)
+	resource = Column(String(512), nullable=True)

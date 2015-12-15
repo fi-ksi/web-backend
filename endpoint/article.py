@@ -4,6 +4,7 @@ import json
 from sqlalchemy import desc
 import falcon
 import dateutil.parser
+import util
 
 DEFAULT_IMAGE = 'img/box-ksi.svg'
 
@@ -15,7 +16,8 @@ def _artice_to_json(inst):
 		'time_published': inst.time_created.isoformat(),
 		'picture': inst.picture if inst.picture else DEFAULT_IMAGE,
 		'published': inst.published,
-		'author': inst.author
+		'author': inst.author,
+		'resource': inst.resource
 	}
 
 class Article(object):
@@ -28,7 +30,10 @@ class Article(object):
 			resp.status = falcon.HTTP_404
 			return
 
-		req.context['result'] = { 'article': _artice_to_json(data) }
+		req.context['result'] = {
+			'article': _artice_to_json(data),
+			'resources': util.content.dir_to_json(data.resource) if data.resource else []
+		}
 
 	# aktualizace existujiciho clanku
 	def on_put(self, req, resp, id):
@@ -45,11 +50,12 @@ class Article(object):
 				resp.status = falcon.HTTP_404
 				return
 
-			# TODO: article picture
 			article.title = data['title']
 			article.body = data['body']
 			article.published = data['published']
 			article.time_created = data['time_published']
+			article.resource = data['resource']
+			article.picture = data['picture']
 
 			session.commit()
 		except:
@@ -100,8 +106,13 @@ class Articles(object):
 		data = query.all() if limit is None or start is None else query.slice(start, start + limit)
 
 		articles = [ _artice_to_json(inst) for inst in data ]
+		resources = [ util.content.dir_to_json(inst.resource) for inst in data if inst.resource is not None ]
 
-		req.context['result'] = {'articles': articles, 'meta': { 'total': count } }
+		req.context['result'] = {
+			'articles': articles,
+			'meta': { 'total': count },
+			'resources': resources
+		}
 
 	# Pridani noveho clanku
 	def on_post(self, req, resp):
@@ -112,7 +123,6 @@ class Articles(object):
 
 		data = json.loads(req.stream.read())['article']
 
-		# TODO: article picture
 		try:
 			article = model.Article(
 				author = user.id,
@@ -120,7 +130,8 @@ class Articles(object):
 				body = data['body'],
 				published = data['published'],
 				year = req.context['year'],
-				time_created = dateutil.parser.parse(data['time_published'])
+				time_created = dateutil.parser.parse(data['time_published']),
+				picture = data['picture']
 			)
 
 			session.add(article)

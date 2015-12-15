@@ -17,13 +17,15 @@ def _artice_to_json(inst):
 		'picture': inst.picture if inst.picture else DEFAULT_IMAGE,
 		'published': inst.published,
 		'author': inst.author,
-		'resource': inst.resource
+		'content': inst.resource
 	}
 
 class Article(object):
 
 	# GET clanku
 	def on_get(self, req, resp, id):
+		user = req.context['user']
+
 		data = session.query(model.Article).get(id)
 
 		if data is None:
@@ -32,7 +34,7 @@ class Article(object):
 
 		req.context['result'] = {
 			'article': _artice_to_json(data),
-			'resources': util.content.dir_to_json(data.resource) if data.resource else []
+			'contents': util.content.dir_to_json(data.resource) if data.resource and user.is_org() else []
 		}
 
 	# aktualizace existujiciho clanku
@@ -106,12 +108,12 @@ class Articles(object):
 		data = query.all() if limit is None or start is None else query.slice(start, start + limit)
 
 		articles = [ _artice_to_json(inst) for inst in data ]
-		resources = [ util.content.dir_to_json(inst.resource) for inst in data if inst.resource is not None ]
+		resources = [ util.content.dir_to_json(inst.resource) for inst in data if inst.resource is not None ] if user.is_org() else []
 
 		req.context['result'] = {
 			'articles': articles,
 			'meta': { 'total': count },
-			'resources': resources
+			'contents': resources
 		}
 
 	# Pridani noveho clanku

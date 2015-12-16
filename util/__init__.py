@@ -23,6 +23,7 @@ import correctionInfo
 import wave
 import submissions
 import year
+import content
 
 def decode_form_data(req):
 	ctype, pdict = cgi.parse_header(req.content_type)

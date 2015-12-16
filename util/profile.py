@@ -59,7 +59,8 @@ def _profile_to_json(user, profile, task_scores, year_id):
 			'seasons': util.user.active_years(user.id),
 			'successful': int(successful),
 			'results': [ task.id for task in task_scores.keys() ],
-			'role': user.role
+			'role': user.role,
+			'tasks_num': len(util.task.fully_submitted(user.id, year_id))
 	}
 
 # \achievements ocekava seznam ID achievementu nebo None

@@ -11,7 +11,32 @@ from util import config
 
 class Post(object):
 
+	# Uprava prispevku
 	def on_put(self, req, resp, id):
+		user = req.context['user']
+
+		if (not user.is_logged_in()) or (not user.is_org()):
+			resp.status = falcon.HTTP_400
+			return
+
+		data = json.loads(req.stream.read())['post']
+
+		try:
+			post = session.query(model.Post).get(id)
+			if post is None:
+				resp.status = falcon.HTTP_404
+				return
+
+			post.author = data['author']
+			post.body = data['body']
+
+			session.commit()
+		except:
+			session.rollback()
+			raise
+		finally:
+			session.close()
+
 		self.on_get(req, resp, id)
 
 	def on_get(self, req, resp, id):
@@ -38,6 +63,27 @@ class Post(object):
 			return
 
 		req.context['result'] = { 'post': util.post.to_json(post, user_id) }
+
+	def on_delete(self, req, resp, id):
+		user = req.context['user']
+
+		if (not user.is_logged_in()) or (not user.is_org()):
+			resp.status = falcon.HTTP_400
+			return
+
+		try:
+			post = session.query(model.Post).get(id)
+			if post is None:
+				resp.status = falcon.HTTP_404
+				return
+
+			session.delete(post)
+			session.commit()
+		except:
+			session.rollback()
+			raise
+		finally:
+			session.close()
 
 
 class Posts(object):

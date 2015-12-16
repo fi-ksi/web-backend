@@ -4,6 +4,7 @@ import json
 from sqlalchemy import desc
 import falcon
 import dateutil.parser
+import util
 
 DEFAULT_IMAGE = 'img/box-ksi.svg'
 
@@ -14,20 +15,27 @@ def _artice_to_json(inst):
 		'body': inst.body,
 		'time_published': inst.time_created.isoformat(),
 		'picture': inst.picture if inst.picture else DEFAULT_IMAGE,
-		'published': inst.published
+		'published': inst.published,
+		'author': inst.author,
+		'content': inst.resource
 	}
 
 class Article(object):
 
 	# GET clanku
 	def on_get(self, req, resp, id):
+		user = req.context['user']
+
 		data = session.query(model.Article).get(id)
 
 		if data is None:
 			resp.status = falcon.HTTP_404
 			return
 
-		req.context['result'] = { 'article': _artice_to_json(data) }
+		req.context['result'] = {
+			'article': _artice_to_json(data),
+			'contents': util.content.dir_to_json(data.resource) if data.resource and user.is_org() else []
+		}
 
 	# aktualizace existujiciho clanku
 	def on_put(self, req, resp, id):
@@ -43,12 +51,13 @@ class Article(object):
 			if article is None:
 				resp.status = falcon.HTTP_404
 				return
-	
-			# TODO: article picture
+
 			article.title = data['title']
 			article.body = data['body']
 			article.published = data['published']
 			article.time_created = data['time_published']
+			article.resource = data['resource']
+			article.picture = data['picture']
 
 			session.commit()
 		except:
@@ -59,20 +68,26 @@ class Article(object):
 
 		self.on_get(req, resp, id)
 
+	# Smazani clanku
 	def on_delete(self, req, resp, id):
 		user = req.context['user']
 		if (not user.is_logged_in()) or (not user.is_org()):
 			resp.status = falcon.HTTP_400
 			return
 
-		article = session.query(model.Article).get(id)
-		if article is None:
-			resp.status = falcon.HTTP_404
-			return
+		try:
+			article = session.query(model.Article).get(id)
+			if article is None:
+				resp.status = falcon.HTTP_404
+				return
 
-		session.delete(article)
-		session.commit()
-		session.close()
+			session.delete(article)
+			session.commit()
+		except:
+			session.rollback()
+			raise
+		finally:
+			session.close()
 
 
 class Articles(object):
@@ -93,8 +108,13 @@ class Articles(object):
 		data = query.all() if limit is None or start is None else query.slice(start, start + limit)
 
 		articles = [ _artice_to_json(inst) for inst in data ]
+		resources = [ util.content.dir_to_json(inst.resource) for inst in data if inst.resource is not None ] if user.is_org() else []
 
-		req.context['result'] = {'articles': articles, 'meta': { 'total': count } }
+		req.context['result'] = {
+			'articles': articles,
+			'meta': { 'total': count },
+			'contents': resources
+		}
 
 	# Pridani noveho clanku
 	def on_post(self, req, resp):
@@ -105,7 +125,6 @@ class Articles(object):
 
 		data = json.loads(req.stream.read())['article']
 
-		# TODO: article picture
 		try:
 			article = model.Article(
 				author = user.id,
@@ -113,7 +132,8 @@ class Articles(object):
 				body = data['body'],
 				published = data['published'],
 				year = req.context['year'],
-				time_created = dateutil.parser.parse(data['time_published'])
+				time_created = dateutil.parser.parse(data['time_published']),
+				picture = data['picture']
 			)
 
 			session.add(article)

@@ -55,6 +55,12 @@ class Year(object):
 			resp.status = falcon.HTTP_404
 			return
 
+		# Odstranit lze jen neprazdny rocnik
+		waves_cnt = session.query(model.Wave).filter(model.Wave.year == year.id).count()
+		if waves_cnt > 0:
+			resp.status = falcon.HTTP_403
+			return
+
 		try:
 			session.delete(year)
 			session.commit()

@@ -53,7 +53,8 @@ class Wave(object):
 	def on_delete(self, req, resp, id):
 		user = req.context['user']
 
-		if (not user.is_logged_in()) or (not user.is_org()):
+		# Vlnu mohou smazat jen admini
+		if (not user.is_logged_in()) or (not user.is_admin()):
 			resp.status = falcon.HTTP_400
 			return
 
@@ -63,9 +64,10 @@ class Wave(object):
 				resp.status = falcon.HTTP_404
 				return
 
-			# Smazat vlnu muze jen ADMIN nebo aktualni GARANT vlny.
-			if not user.is_admin() and user.id != wave.garant:
-				resp.status = falcon.HTTP_400
+			# Smazat lze jen neprazdnou vlnu.
+			tasks_cnt = session.query(model.Task).filter(model.Task.wave == wave.id).count()
+			if tasks_cnt > 0:
+				resp.status = falcon.HTTP_403
 				return
 
 			session.delete(wave)
@@ -92,7 +94,8 @@ class Waves(object):
 		user = req.context['user']
 		year = req.context['year']
 
-		if (not user.is_logged_in()) or (not user.is_org()):
+		# Vytvorit novou vlnu mohou jen admini.
+		if (not user.is_logged_in()) or (not user.is_admin()):
 			resp.status = falcon.HTTP_400
 			return
 

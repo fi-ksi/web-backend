@@ -25,7 +25,7 @@ def achievements(user_id, year_id):
 
 	return general + task
 
-
+# Vraci [(year_id)] pro vsechny roky, v nichz je aktivni uzivatel \user_id
 def active_years(user_id):
 	if user_id is None:
 		return []
@@ -38,6 +38,16 @@ def active_years(user_id):
 		filter(model.Evaluation.user == user_id).\
 		group_by(model.Year).all()
 	return a
+
+# Vraci [(user,year)] pro vsechny roky v nichz je aktivni uzivatel user
+def active_years_all():
+	return session.query(model.User, model.Year).\
+		join(model.Evaluation, model.Evaluation.user == model.User.id).\
+		join(model.Module, model.Module.id == model.Evaluation.module).\
+		join(model.Task, model.Task.id == model.Module.task).\
+		join(model.Wave, model.Wave.id == model.Task.wave).\
+		join(model.Year, model.Wave.year == model.Year.id).\
+		group_by(model.User, model.Year).all()
 
 # predpoklada query, ve kterem se vyskytuje model User
 # pozadavek profiltruje na ty uzivatele, kteri jsou aktivni v roce \year_id

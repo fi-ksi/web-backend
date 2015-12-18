@@ -74,12 +74,13 @@ def send(to, subject, text, params={}, bcc=[]):
 def send_multiple(to, subject, text, params={}, bcc=[]):
 	bcc_params = copy.deepcopy(params)
 	bcc_params['To'] = 'undisclosed-recipients@fi.muni.cz'
+	bcc.append(util.config.ksi_conf())
 	for b in bcc:
 		bcc_params['Cc'] = b
 		send([], subject, text, bcc_params, b)
 
 	for recipient in to:
-		send(recipient, subject, text, params, [])
+		send(recipient, subject, text, params)
 
 def send_feedback(text, addr_from):
 	addr_reply = addr_from if len(addr_from) > 0 else None

@@ -222,3 +222,13 @@ def best_score_to_json(best_score):
 		'achievements': [ achievement.achievement_id for achievement in achievements ],
 		'score': format(best_score.sum, '.1f')
 	}
+
+def admin_to_json(task):
+	return {
+		'id': task.id,
+		'title': task.title,
+		'wave': task.wave,
+		'git_path': task.git_path
+	}
+
+

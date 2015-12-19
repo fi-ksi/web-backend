@@ -5,3 +5,6 @@ from endpoint.admin.correctionsPublish import CorrectionsPublish
 from endpoint.admin.submFilesEval import SubmFilesEval
 from endpoint.admin.submFilesTask import SubmFilesTask
 from endpoint.admin.email import Email
+from endpoint.admin.task import Task
+from endpoint.admin.task import Tasks
+

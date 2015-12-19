@@ -1,6 +1,8 @@
 from db import session
 import model
 import util
+import falcon
+import json
 
 class Wave(object):
 
@@ -47,7 +49,7 @@ class Wave(object):
 		finally:
 			session.close()
 
-		self.on_get(self, req, resp, id)
+		self.on_get(req, resp, id)
 
 	# Smazani vlny
 	def on_delete(self, req, resp, id):

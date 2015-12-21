@@ -74,7 +74,7 @@ def send(to, subject, text, params={}, bcc=[]):
 def send_multiple(to, subject, text, params={}, bcc=[]):
 	bcc_params = copy.deepcopy(params)
 	bcc_params['To'] = 'undisclosed-recipients@fi.muni.cz'
-	bcc.append(util.config.ksi_conf())
+	bcc.append(config.ksi_conf())
 	for b in bcc:
 		bcc_params['Cc'] = b
 		send([], subject, text, bcc_params, b)

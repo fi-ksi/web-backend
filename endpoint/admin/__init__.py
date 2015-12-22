@@ -7,4 +7,7 @@ from endpoint.admin.submFilesTask import SubmFilesTask
 from endpoint.admin.email import Email
 from endpoint.admin.task import Task
 from endpoint.admin.task import Tasks
+from endpoint.admin.taskDeploy import TaskDeploy
+from endpoint.admin.taskMerge import TaskMerge
+from endpoint.admin.waveDiff import WaveDiff
 

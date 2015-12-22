@@ -150,5 +150,8 @@ api.add_route('/admin/subm/task/{task_id}/', endpoint.admin.SubmFilesTask())
 api.add_route('/admin/e-mail/', endpoint.admin.Email())
 api.add_route('/admin/tasks/', endpoint.admin.Tasks())
 api.add_route('/admin/tasks/{id}', endpoint.admin.Task())
+api.add_route('/admin/tasks/{id}/deploy', endpoint.admin.TaskDeploy())
+api.add_route('/admin/tasks/{id}/merge', endpoint.admin.TaskMerge())
+api.add_route('/admin/waves/{id}/diff', endpoint.admin.WaveDiff())
 
 api.add_sink(log_sink)

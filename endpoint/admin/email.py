@@ -17,7 +17,12 @@ class Email(object):
 		"Bcc": [String],
 		"Gender": (both|male|female) - pokud neni vyplneno, je automaticky povazovano za "both",
 		"KarlikSign": (true|false),
-		"Eastergg": (true|false)
+		"Easteregg": (true|false)
+	}
+
+	Backend edpovida:
+	{
+		count: Integer
 	}
 	"""
 	def on_post(self, req, resp):
@@ -28,6 +33,7 @@ class Email(object):
 			return
 
 		data = json.loads(req.stream.read())['e-mail']
+		print data
 
 		# Filtrovani uzivatelu
 		if data['To'] != []:
@@ -54,6 +60,7 @@ class Email(object):
 
 		try:
 			util.mail.send_multiple(to, data['Subject'], body, params, data['Bcc'])
+			req.context['result'] = { 'count': len(to) }
 		except Exception as e:
 			req.context['result'] = { 'error': str(e) }
 			resp.status = falcon.HTTP_500

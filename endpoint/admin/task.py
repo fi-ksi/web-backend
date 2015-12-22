@@ -20,12 +20,12 @@ class Task(object):
 			resp.status = falcon.HTTP_404
 			return
 
-		req.context['result'] = { 'task': util.task.admin_to_json(task) }
+		req.context['result'] = { 'atask': util.task.admin_to_json(task) }
 
 	# UPDATE ulohy
 	def on_put(self, req, resp, id):
 		user = req.context['user']
-		data = json.loads(req.stream.read())['task']
+		data = json.loads(req.stream.read())['atask']
 		wave = session.query(model.Wave).get(data['wave'])
 
 		if wave is None:
@@ -118,7 +118,7 @@ class Tasks(object):
 			tasks = tasks.filter(model.Task.wave == wave)
 		tasks = tasks.all()
 
-		req.context['result'] = { 'tasks': [ util.task.admin_to_json(task) for task in tasks ] }
+		req.context['result'] = { 'atasks': [ util.task.admin_to_json(task) for task in tasks ] }
 
 	# Vytvoreni nove ulohy
 	"""
@@ -137,7 +137,7 @@ class Tasks(object):
 	def on_post(self, req, resp):
 		user = req.context['user']
 		year = req.context['year']
-		data = json.loads(req.stream.read())['task']
+		data = json.loads(req.stream.read())['atask']
 		wave = session.query(model.Wave).get(data['wave'])
 
 		if wave is None:
@@ -193,7 +193,7 @@ class Tasks(object):
 			session.rollback()
 			raise
 
-		req.context['result'] = { 'task': util.task.admin_to_json(task) }
+		req.context['result'] = { 'atask': util.task.admin_to_json(task) }
 
 		session.close()
 

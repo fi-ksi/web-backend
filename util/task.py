@@ -228,7 +228,9 @@ def admin_to_json(task):
 		'id': task.id,
 		'title': task.title,
 		'wave': task.wave,
-		'git_path': task.git_path
+		'author': task.author,
+		'git_path': task.git_path,
+		'git_branch': task.git_branch,
+		'git_commit': task.git_commit
 	}
-
 

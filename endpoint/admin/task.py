@@ -44,12 +44,14 @@ class Task(object):
 
 			# Ulohu lze editovat jen pred casem zverejneni vlny
 			wave = session.query(model.Wave).get(task.wave)
-			if datetime.datetime.utcnow() > wave.time_published:
+			if (datetime.datetime.utcnow() > wave.time_published) and (not user.is_admin()):
 				resp.status = falcon.HTTP_403
 				return
 
 			task.title = data['title']
 			task.git_path = data['git_path']
+			task.git_branch = data['git_branch']
+			task.git_commit = data['git_commit']
 
 			session.commit()
 		except:
@@ -119,6 +121,19 @@ class Tasks(object):
 		req.context['result'] = { 'tasks': [ util.task.admin_to_json(task) for task in tasks ] }
 
 	# Vytvoreni nove ulohy
+	"""
+	Specifikace POST pozadavku: ?create_git=(true|false)
+	{
+		"task": {
+			"wave": Integer, <- id vlny
+			"title": String,
+			"author": Integer, <- id autora
+			"git_path": String, <- adresar ulohy v GITu vcetne cele cesty
+			"git_branch": String, <- nazev gitove vetve, ve ktere vytvorit ulohu / ze ktere cerpat data pro deploy
+			"git_commit" String <- hash posledniho commitu, pokud je ?create_git=true, nevyplnuje se
+		}
+	}
+	"""
 	def on_post(self, req, resp):
 		user = req.context['user']
 		year = req.context['year']
@@ -139,6 +154,18 @@ class Tasks(object):
 			resp.status = falcon.HTTP_403
 			return
 
+		# Vytvoreni adresare v repu je option
+		if req.get_param_as_bool('create_git'):
+			try:
+				# TODO: Jiri
+				# vytvorit vetev v repu, vytvorit adresar pro ulohu, zkopirovat do adresare mooster ulohu
+				# branch je data['git_branch'], adresar je data['git_path'], do git_commit ulozit ID commitu
+				git_commit = None
+			except:
+				raise
+		else:
+			git_commit = data['git_commit']
+
 		try:
 			# Nejprve vytvorime nove diskuzni vlakno
 			taskThread = model.Thread(
@@ -153,7 +180,10 @@ class Tasks(object):
 			task = model.Task(
 				wave = data['wave'],
 				title = data['title'],
+				author = data['author'],
 				git_path = data['git_path'],
+				git_branch = data['git_branch'],
+				git_commit = git_commit,
 				thread = taskThread.id
 			)
 

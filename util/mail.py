@@ -52,6 +52,7 @@ def send(to, subject, text, params={}, bcc=[]):
 
 	msg['Subject'] = subject
 	msg['From'] = config.mail_sender()
+	msg['Sender'] = 'ksi-admin@fi.muni.cz'
 	msg['To'] = (','.join(to)) if isinstance(to, (list)) else to
 	msg['Return-Path'] = config.get('return_path')
 	msg['Errors-To'] = config.get('return_path')

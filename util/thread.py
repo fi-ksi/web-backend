@@ -15,7 +15,6 @@ def to_json(thread, user_id=None):
 
 def details_to_json(thread, root_posts=None):
 	if root_posts is None:
-		print "Accessing root posts"
 		root_posts = [ post.id for post in session.query(model.Post).filter(model.Post.thread == thread.id, model.Post.parent == None) ]
 
 	return {

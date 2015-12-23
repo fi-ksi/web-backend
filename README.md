@@ -16,6 +16,7 @@ Je vhodne vyuzit virtualenv - pip install virtualenv, virtualenv env, source env
 * py-bcrypt
 * PyPy (build vlozit do ~/pypy/, [how-to](http://doc.pypy.org/en/latest/build.html))
 * python-dateutil
+* lockfile
 
 ## Spusteni
 

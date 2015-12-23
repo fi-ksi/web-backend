@@ -17,8 +17,8 @@ class Task(Base):
 	author = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
 	wave = Column(Integer, ForeignKey('waves.id'), nullable=False)
 	prerequisite = Column(Integer, ForeignKey('prerequisities.id'), nullable=True)
-	intro = Column(String(500), nullable=False)
-	body = Column(Text, nullable=False)
+	intro = Column(String(500), nullable=False, default="")
+	body = Column(Text, nullable=False, default="")
 	solution = Column(Text, nullable=True)
 	thread = Column(Integer, ForeignKey('threads.id'), nullable=False)
 	picture_base = Column(String(255), nullable=True)
@@ -27,8 +27,11 @@ class Task(Base):
 
 	prerequisite_obj = relationship('Prerequisite', primaryjoin='Task.prerequisite==Prerequisite.id', uselist=False)
 	modules = relationship('Module', primaryjoin='Task.id==Module.task', order_by='Module.order')
-	evaluation_public = Column(Boolean, nullable=False)
+	evaluation_public = Column(Boolean, nullable=False, default=False)
+
 	git_path = Column(String(255), nullable=True)
+	git_branch = Column(String(255), nullable=True)
+	git_commit = Column(String(255), nullable=True)
 
 class SolutionComment(Base):
 	__tablename__ = 'solution_comments'

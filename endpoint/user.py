@@ -3,7 +3,7 @@ import os
 import falcon
 import json
 import random, string
-from sqlalchemy import func, distinct, desc, text
+from sqlalchemy import func, distinct, desc, text, or_
 
 from db import session
 import model
@@ -71,7 +71,7 @@ class Users(object):
 
 		# Filtrovani skupin uzivatelu
 		if filt == 'organisators':
-			users = users.filter(model.User.role == 'org')
+			users = users.filter(or_(model.User.role == 'org', model.User.role == 'admin'))
 		elif filt == 'participants':
 			# Resitele zobrazujeme jen v aktualnim rocniku (pro jine neni tasks_cnt definovano)
 			users = users.filter(model.User.role == 'participant').\

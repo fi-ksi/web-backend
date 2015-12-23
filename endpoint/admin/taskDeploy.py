@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 
 from db import session
+from lockfile import LockFile
 import model
 import util
 import falcon
 import json
 import datetime
+import threading
 
 class TaskDeploy(object):
 
@@ -39,11 +41,20 @@ class TaskDeploy(object):
 			resp.status = falcon.HTTP_404
 			return
 
-		# TODO: magic
-		# 1) git checkout task.git_branch
-		# 2) git pull
-		# 3) convert data to DB
-		# 4) task.git_commit = last_commit_hash
+		if (task.git_branch is None) or (task.git_path is None):
+			req.context['result'] = { 'result': 'error', 'error': u'Úloha nemá zadanou gitovskou větev nebo adresář' }
+			resp.status = falcon.HTTP_400
+			return
+
+		deployLock = LockFile(util.admin.taskDeploy.LOCKFILE)
+		if deployLock.is_locked():
+			req.context['result'] = { 'result': 'error', 'error': u'Deploy již probíhá' }
+			resp.status = falcon.HTTP_400
+			return
+
+		deployLock.acquire(60) # Timeout zamku je 1 minuta
+		deployThread = threading.Thread(target=util.admin.taskDeploy.deploy, args=(task, deployLock), kwargs={})
+		deployThread.start()
 
 		req.context['result'] = { 'result': 'ok' }
 		resp.status = falcon.HTTP_200

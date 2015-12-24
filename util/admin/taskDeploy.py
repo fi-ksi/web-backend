@@ -207,6 +207,7 @@ def process_solution(task, filename):
 def process_icons(task, source_path):
 	target_path = "data/task-content/" + str(task.id) + "/icon/"
 	files = [ "base.svg", "correcting.svg", "locked.svg", "done.svg" ]
+	if not os.path.isdir(target_path): os.makedirs(target_path)
 	for f in files:
 		if os.path.isfile(source_path+"/"+f):
 			shutil.copy2(source_path+"/"+f, target_path+f)
@@ -214,6 +215,7 @@ def process_icons(task, source_path):
 # Zkopiruje veskera data do adresare dat backendu
 def process_data(task, source_path):
 	target_path = "data/task-content/" + str(task.id) + "/zadani/"
+	if not os.path.isdir(target_path): os.makedirs(target_path)
 	shutil.rmtree(target_path)
 	shutil.copytree(source_path, target_path)
 
@@ -304,7 +306,7 @@ def process_module_md(module, filename):
 
 	# Ukolem nasledujicich metod je zpracovat logiku modulu a v \data zanechat uvodni text
 	if module.type == model.ModuleType.GENERAL: data = process_module_general(module, data)
-	elif module.type == model.ModuleType.PROGRAMMING: data = process_module_programming(module, data)
+	elif module.type == model.ModuleType.PROGRAMMING: data = process_module_programming(module, data, os.path.dirname(filename))
 	elif module.type == model.ModuleType.QUIZ: data = process_module_quiz(module, data)
 	elif module.type == model.ModuleType.SORTABLE: data = process_module_sortable(module, data)
 	elif module.type == model.ModuleType.TEXT: data = process_module_text(module, data, os.path.dirname(filename))
@@ -321,7 +323,7 @@ def process_module_general(module, lines):
 	module.data = '{}'
 	return lines
 
-def process_module_programming(module, lines):
+def process_module_programming(module, lines, source_path):
 	# Hledame vzorovy kod v zadani
 	line = 0
 	while (line < len(lines)) and (not re.match(r"^```~python", lines[line])): line += 1
@@ -338,8 +340,21 @@ def process_module_programming(module, lines):
 	old_data = json.loads(module.data)
 	data['programming'] = old_data['programming'] if 'programming' in old_data else {}
 	data['programming']['default_code'] = code
-	module.data = json.dumps(data, indent=2)
 
+	# Zkopirujeme skripty do prislusnych adresaru
+	target_path = "data/modules/" + str(module.id) + "/"
+	files = [ "eval.py", "merge.py", "post.py", "stdin.txt" ]
+	if not os.path.isdir(target_path): os.makedirs(target_path)
+	for f in files:
+		if os.path.isfile(source_path+"/"+f):
+			shutil.copy2(source_path+"/"+f, target_path+f)
+
+	data['programming']['merge_script'] = target_path + "merge.py"
+	data['programming']['stdin'] = target_path + "stdin.txt"
+	data['programming']['post_trigger_script'] = target_path + "post.py"
+	data['programming']['check_script'] = target_path + "eval.py"
+
+	module.data = json.dumps(data, indent=2)
 	return lines[:line]
 
 def process_module_quiz(module, lines):

@@ -17,6 +17,7 @@ Je vhodne vyuzit virtualenv - pip install virtualenv, virtualenv env, source env
 * PyPy (build vlozit do ~/pypy/, [how-to](http://doc.pypy.org/en/latest/build.html))
 * python-dateutil
 * lockfile
+* pypandoc
 
 ## Spusteni
 

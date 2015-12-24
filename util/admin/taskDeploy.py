@@ -60,13 +60,15 @@ def process_assignment(task, filename):
 		task.intro = intro.group(1)
 		parsed.pop(0)
 	else:
-		task.intro = ""
+		task.intro = "Intro ulohy nenalezeno"
 
 	# Nadpis ulohy
-	title = re.search("<h1>(.*?)</h1>", parsed[0])
+	title = re.search("<h1(.*?)>(.*?)</h1>", parsed[0])
 	if title is not None:
-		task.title = title.group(1)
+		task.title = title.group(2)
 		parsed.pop(0)
+	else:
+		task.title = "Nazev ulohy nenalezen"
 
 	# Seznam radku spojime na jeden dlouhy text
 	body = '\n'.join(parsed)
@@ -114,10 +116,11 @@ def process_modules(task, git_path):
 				name = "",
 				order = i
 			)
+			session.add(module)
+
 		process_module(module, git_path+"/module"+str(i))
 
 		try:
-			if not modules[i]: session.add(module)
 			session.commit()
 		except:
 			session.rollback()
@@ -130,7 +133,7 @@ def process_modules(task, git_path):
 # \module_path muze byt bez lomitka na konci
 def process_module(module, module_path):
 	process_module_json(module, module_path+"/module.json")
-	# TODO: parse module.md
+	process_module_md(module, module_path+"/module.md")
 
 # Zpracovani souboru module.json
 def process_module_json(module, filename):
@@ -142,6 +145,133 @@ def process_module_json(module, filename):
 	module.bonus = data['bonus'] if 'bonus' in data else False
 	module.action = data['action'] if 'action' in data else ""
 	# TODO: parse programming
+
+# Zpracovani module.md
+# Pandoc spoustime az uplne nakonec, abychom mohli provest analyzu souboru.
+def process_module_md(module, filename):
+	with open(filename, 'r') as f:
+		data = f.readlines()
+
+	# Hledame nazev modulu na nultem radku
+	name = re.search(r"# (.*?)", data[0])
+	if name is not None:
+		module.name = re.search(r"<h1(.*?)>(.*?)</h1>", parse_pandoc(name.group(1))).group(2)
+		parsed.pop(0)
+	else:
+		module.name = "Nazev modulu nenalezen"
+
+	# Ukolem nasledujicich metod je zpracovat logiku modulu a v \data zanechat uvodni text
+	if module.type == model.ModuleType.GENERAL: process_module_general(module, data)
+	elif module.type == model.ModuleType.PROGRAMMING: process_module_programming(module, data)
+	elif module.type == model.ModuleType.QUIZ: process_module_quiz(module, data)
+	elif module.type == model.ModuleType.SORTABLE: process_module_sortable(module, data)
+	elif module.type == model.ModuleType.TEXT: process_module_text(module, data, os.path.dirname(filename))
+	else: module.description = "Neznamy typ modulu"
+
+	# Parsovani tela zadani
+	body = replace_h(parse_pandoc('\n'.join(data)))
+	module.description = body
+
+# Tady opravdu nema nic byt, general module nema zadnou logiku
+def process_module_general(module, lines):
+	module.data = '{}'
+
+def process_module_programming(module, lines):
+	# Hledame vzorovy kod v zadani
+	line = 0
+	while (line < len(lines)) and (not re.match(r"^```~python", lines[line])): line += 1
+	if line == len(lines): return
+
+	# Hledame konec kodu
+	end = line
+	while (end < len(lines)) and (not re.match(r"^```", lines[end])): end += 1
+
+	code = '\n'.join(lines[line:end])
+	lines = lines[:line]
+
+	# Pridame vzorovy kod do \module.data
+	data = json.loads(module.data)
+	data['programming']['default_code'] = code
+	module.data = json.dumps(data)
+
+def process_module_quiz(module, lines):
+	# Hledame jednotlive otazky
+	quiz_data = []
+	line = 0
+	while (line < len(lines)):
+		while (line < len(lines)) and (not re.match(r"^##(.*?) (r|c)", lines[line])): line += 1
+		text_end = line
+		if line == len(lines): break
+
+		# Parsovani otazky
+		head = re.match(r"^##(.*?) (r|c)", lines[line])
+		question['question'] = parse_pandoc(head.group(1))
+		if head.group(2) == 'r':
+			question['type'] = 'radio'
+		else:
+			question['type'] = 'checkbox'
+
+		# Hledame pruvodni text otazky
+		line += 1
+		end = line
+		while (end < len(lines)) and (not re.match(r"^~", lines[end])): end += 1
+		question['text'] = parse_pandoc('\n'.join(lines[line:end]))
+
+		# Parsujeme mozne odpovedi
+		line = end
+		options = []
+		correct = []
+		while end < len(lines):
+			match = re.match(r"^~\s*(.*?)\s*(\*|-)", lines[line]+" -")
+			if not match: break;
+			options.append(parse_pandoc(match.group(1)).replace("<p>", "").replace("</p>", ""))
+			if match.group(2) == '*': correct.append(len(options)-1)
+
+		question['options'] = options
+		question['correct'] = correct
+
+		# Pridame otazku
+		quiz_data.append(question)
+
+	lines = lines[:text_end]
+	module.data = json.dumps(quiz_data)
+
+def process_module_sortable(module, lines):
+	pass
+
+def process_module_text(module, lines, path):
+	text_data = { "inputs": 0 }
+
+	line = 0
+	while (line < len(lines)) and (not re.match(r"^~", lines[line])): line += 1
+	text_end = line
+	if line == len(lines):
+		module.data = json.dumps(text_data)
+		return
+
+	inputs_cnt = 0
+	diff = []
+	while line < len(lines):
+		match = re.match(r"^~\s*(.*?)\s*(\*\*(.*?)\*\*|-)", lines[line]+" -")
+		if not match: break
+
+		inputs_cnt += 1
+		if match.group(3):
+			diff.append(match.group(3))
+		else:
+			if len(diff) > 0: diff.append("")
+
+	text_data['inputs'] = inputs_cnt
+	if len(diff) > 0:
+		text_data['diff'] = diff
+	else:
+		# Zkopirujeme eval skript
+		target = "data/modules/" + str(module.id) + "/eval.py"
+		shutil.copy2(path+"/eval.py", target)
+		text_data['eval_script'] = target
+
+	lines = lines[:text_end]
+	module.data = json.dumps(text_data)
 
 ###############################################################################
 # Pomocne parsovaci funkce:

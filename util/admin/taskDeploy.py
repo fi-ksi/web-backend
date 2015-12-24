@@ -10,6 +10,8 @@ import re
 import os
 import shutil
 import util
+import pyparsing as pp
+from sqlalchemy import and_
 
 # Deploy muze byt jen jediny na cely server -> pouzivame lockfile.
 LOCKFILE = '/var/lock/ksi-task-deploy'
@@ -27,8 +29,8 @@ def deploy(task, deployLock):
 
 	try:
 		# DEBUG:
-		time.sleep(20)
-		#process_task(task, "data/mooster-task")
+		#time.sleep(20)
+		process_task(task, "data/mooster-task")
 	except:
 		raise
 	finally:
@@ -37,6 +39,8 @@ def deploy(task, deployLock):
 ###############################################################################
 # Parsovani dat z repozitare:
 
+# Zpracovani cele ulohy
+# Data commitujeme do databaze postupne, abychom videli, kde doslo k pripadnemu selhani operace
 def process_task(task, path):
 	try:
 		process_meta(task, path+"/task.json")
@@ -73,7 +77,92 @@ def process_meta(task, filename):
 	else:
 		task.picture_base = None
 
-	# TODO: prerequisities
+	# Parsovani prerekvizit
+	if ('prerequisities' in data) and (data['prerequisities'] is not None):
+		if task.prerequisite is not None:
+			prq = session.query(model.Prerequisite).get(task.prerequisite)
+			if prq is None: task.prerequisite = None
+
+		if task.prerequisite is None:
+			prq = model.Prerequisite(type=model.PrerequisiteType.ATOMIC, parent=None, task=None)
+			try:
+				session.add(prq)
+			except:
+				session.rollback()
+				raise
+
+		# Tady mame zaruceno, ze existuje prave jedna korenova prerekvizita
+		try:
+			parsed = parse_prereq_text(data['prerequisities'])
+			parse_prereq_logic(parsed[0], prq)
+			session.commit()
+		except:
+			# TODO: pass meaningful error message to user
+			raise
+
+		task.prerequisite = prq.id
+	else:
+		task.prerequisite = None
+
+# Konvertuje text prerekvizit do seznamu [[['7', '&&', '12'], '||', '4']]
+# Seznam na danem zanoreni obsahuje bud teminal, nebo seznam tri prvku
+def parse_prereq_text(text):
+	number = pp.Regex(r"\d+")
+	expr = pp.operatorPrecedence(number, [
+			("&&", 2, pp.opAssoc.LEFT, ),
+			("||", 2, pp.opAssoc.LEFT, ),
+		])
+	return expr.parseString(text)
+
+# \logic je vysledek z parsovani parse_prereq_text
+# \prereq je aktualne zpracovana prerekvizita (model.Prerequisite)
+def parse_prereq_logic(logic, prereq):
+	print "Parsing", logic
+
+	if isinstance(logic, (unicode)):
+		# ATOMIC
+		prereq.type = model.PrerequisiteType.ATOMIC
+		prereq.task = int(logic)
+
+		# Smazeme potencialni strom deti
+		util.prerequisite.remove_tree(prereq)
+		session.commit()
+
+	elif isinstance(logic, (pp.ParseResults)):
+		# && or ||
+		if logic[1] == '||': prereq.type = model.PrerequisiteType.OR
+		else: prereq.type = model.PrerequisiteType.AND
+		prereq.task = None
+
+		# Rekurzivne se zanorime
+		children = session.query(model.Prerequisite).\
+			filter(model.Prerequisite.parent == prereq.id).all()
+
+		# children musi byt prave dve
+		while len(children) < 2:
+			new_child = model.Prerequisite(type=model.PrerequisiteType.ATOMIC, parent=prereq.id, task=None)
+			try:
+				session.add(new_child)
+				session.commit()
+			except:
+				session.rollback()
+				raise
+			children.append(new_child)
+
+		while len(children) > 2:
+			util.prerequisite.remove_tree(children[2], True)
+			try:
+				session.commit()
+				children.remove(children[2])
+			except:
+				session.rollback()
+				raise
+
+		# Rekurzivne se zanorime
+		parse_prereq_logic(logic[0], children[0])
+		parse_prereq_logic(logic[2], children[1])
+	else:
+		print "Neznamy typ promenne v prerekvizitach"
 
 # Vlozi zadani ulohy do databaze
 def process_assignment(task, filename):
@@ -99,7 +188,7 @@ def process_assignment(task, filename):
 		task.title = "Nazev ulohy nenalezen"
 
 	# Seznam radku spojime na jeden dlouhy text
-	body = '\n'.join(parsed)
+	body = ''.join(parsed)
 	body = replace_h(body)
 	body = change_links(task, body)
 	task.body = body
@@ -224,7 +313,7 @@ def process_module_md(module, filename):
 	print "Processing body"
 
 	# Parsovani tela zadani
-	body = replace_h(parse_pandoc('\n'.join(data)))
+	body = replace_h(parse_pandoc(''.join(data)))
 	module.description = body
 
 # Tady opravdu nema nic byt, general module nema zadnou logiku
@@ -276,7 +365,7 @@ def process_module_quiz(module, lines):
 		line += 1
 		end = line
 		while (end < len(lines)) and (not re.match(r"^~", lines[end])): end += 1
-		question['text'] = parse_pandoc('\n'.join(lines[line:end]))
+		question['text'] = parse_pandoc(''.join(lines[line:end]))
 
 		# Parsujeme mozne odpovedi
 		line = end

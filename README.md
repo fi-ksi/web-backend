@@ -18,6 +18,7 @@ Je vhodne vyuzit virtualenv - pip install virtualenv, virtualenv env, source env
 * python-dateutil
 * lockfile
 * pypandoc
+* pyparsing
 
 ## Spusteni
 

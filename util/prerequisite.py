@@ -1,21 +1,34 @@
 from model import PrerequisiteType
+from db import session
 
 def to_json(prereq):
-		if(prereq.type == PrerequisiteType.ATOMIC):
-			return [ [ prereq.task ] ]
+	if(prereq.type == PrerequisiteType.ATOMIC):
+		return [ [ prereq.task ] ]
 
-		if(prereq.type == PrerequisiteType.AND):
-			return [ [ child.task for child in prereq.children ] ]
+	if(prereq.type == PrerequisiteType.AND):
+		return [ [ child.task for child in prereq.children ] ]
 
-		if(prereq.type == PrerequisiteType.OR):
-			return [ _to_json2(child) for child in prereq.children ]
+	if(prereq.type == PrerequisiteType.OR):
+		return [ _to_json2(child) for child in prereq.children ]
 
 def _to_json2(prereq):
-		if(prereq.type == PrerequisiteType.ATOMIC):
-			return [ prereq.task ]
+	if(prereq.type == PrerequisiteType.ATOMIC):
+		return [ prereq.task ]
 
-		if(prereq.type == PrerequisiteType.AND):
-			return [ child.task for child in prereq.children ]
+	if(prereq.type == PrerequisiteType.AND):
+		return [ child.task for child in prereq.children ]
+
+# Smaze vsechny deti \root, \root zachova pri delete_root
+# Po zavolani funkce je nutne volat session.commit()
+def remove_tree(root, delete_root=False):
+	if root is None: return
+	for child in root.children: remove_tree(child, True)
+	if delete_root:
+		try:
+			session.delete(root)
+		except:
+			session.rollback()
+			raise
 
 class PrerequisitiesEvaluator:
 

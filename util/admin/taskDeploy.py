@@ -9,6 +9,7 @@ import pypandoc
 import re
 import os
 import shutil
+import util
 
 # Deploy muze byt jen jediny na cely server -> pouzivame lockfile.
 LOCKFILE = '/var/lock/ksi-task-deploy'
@@ -25,7 +26,9 @@ def deploy(task, deployLock):
 	# 5) task.git_commit = last_commit_hash
 
 	try:
+		# DEBUG:
 		time.sleep(20)
+		#process_task(task, "data/mooster-task")
 	except:
 		raise
 	finally:
@@ -34,9 +37,34 @@ def deploy(task, deployLock):
 ###############################################################################
 # Parsovani dat z repozitare:
 
+def process_task(task, path):
+	try:
+		process_meta(task, path+"/task.json")
+		session.commit()
+
+		process_assignment(task, path+"/assignment.md")
+		session.commit()
+
+		process_solution(task, path+"/solution.md")
+		session.commit()
+
+		process_icons(task, path+"/icons/")
+		process_data(task, path+"/data/")
+
+		process_modules(task, path)
+		session.commit()
+	except:
+		session.rollback()
+		raise
+	finally:
+		print "Exiting thread"
+		session.close()
+
 def process_meta(task, filename):
+	print "Processing meta " + filename
+
 	with open(filename, 'r') as f:
-		data = json.loads(f)
+		data = json.loads(f.read())
 
 	task.author = data['author']
 	task.time_deadline = data['time_deadline']
@@ -97,6 +125,7 @@ def process_icons(task, source_path):
 # Zkopiruje veskera data do adresare dat backendu
 def process_data(task, source_path):
 	target_path = "data/task-content/" + str(task.id) + "/zadani/"
+	shutil.rmtree(target_path)
 	shutil.copytree(source_path, target_path)
 
 def process_modules(task, git_path):
@@ -105,10 +134,11 @@ def process_modules(task, git_path):
 		filter(model.Module.task == task.id).\
 		order_by(model.Module.order).all()
 
-	i = 1
-	while (os.path.isdir(git_path+"/module"+str(i))):
-		if modules[i]:
+	i = 0
+	while (os.path.isdir(git_path+"/module"+str(i+1))):
+		if i < len(modules):
 			module = modules[i]
+			module.order = i
 		else:
 			module = model.Module(
 				task = task.id,
@@ -118,13 +148,25 @@ def process_modules(task, git_path):
 			)
 			session.add(module)
 
-		process_module(module, git_path+"/module"+str(i))
+		print "Processing module" + str(i+1)
+		process_module(module, git_path+"/module"+str(i+1))
 
 		try:
 			session.commit()
 		except:
 			session.rollback()
 			raise
+
+		i += 1
+
+	# Smazeme prebytecne moduly
+	while i < len(modules):
+		module = modules[i]
+		try:
+			session.delete(module)
+			session.commit()
+		except:
+			session.rollback()
 
 		i += 1
 
@@ -137,36 +179,49 @@ def process_module(module, module_path):
 
 # Zpracovani souboru module.json
 def process_module_json(module, filename):
+	print "Processing module json"
 	with open(filename, 'r') as f:
-		data = json.loads(f)
-	module.type = data['type'],
+		data = json.loads(f.read())
+
+	if data['type'] == 'text': module.type = model.ModuleType.TEXT
+	elif data['type'] == 'general': module.type = model.ModuleType.GENERAL
+	elif data['type'] == 'programming': module.type = model.ModuleType.PROGRAMMING
+	elif data['type'] == 'quiz': module.type = model.ModuleType.QUIZ
+	elif data['type'] == 'sortable': module.type = model.ModuleType.SORTABLE
+	else: module.type = model.ModuleType.GENERAL
+
 	module.max_points = data['max_points']
 	module.autocorrect = data['autocorrect']
 	module.bonus = data['bonus'] if 'bonus' in data else False
 	module.action = data['action'] if 'action' in data else ""
-	# TODO: parse programming
 
 # Zpracovani module.md
 # Pandoc spoustime az uplne nakonec, abychom mohli provest analyzu souboru.
 def process_module_md(module, filename):
+	print "Processing module md"
+
 	with open(filename, 'r') as f:
 		data = f.readlines()
 
 	# Hledame nazev modulu na nultem radku
-	name = re.search(r"# (.*?)", data[0])
+	name = re.search(r"(# .*)", data[0])
 	if name is not None:
 		module.name = re.search(r"<h1(.*?)>(.*?)</h1>", parse_pandoc(name.group(1))).group(2)
-		parsed.pop(0)
+		data.pop(0)
 	else:
 		module.name = "Nazev modulu nenalezen"
 
+	print "Processing specific module"
+
 	# Ukolem nasledujicich metod je zpracovat logiku modulu a v \data zanechat uvodni text
-	if module.type == model.ModuleType.GENERAL: process_module_general(module, data)
-	elif module.type == model.ModuleType.PROGRAMMING: process_module_programming(module, data)
-	elif module.type == model.ModuleType.QUIZ: process_module_quiz(module, data)
-	elif module.type == model.ModuleType.SORTABLE: process_module_sortable(module, data)
-	elif module.type == model.ModuleType.TEXT: process_module_text(module, data, os.path.dirname(filename))
+	if module.type == model.ModuleType.GENERAL: data = process_module_general(module, data)
+	elif module.type == model.ModuleType.PROGRAMMING: data = process_module_programming(module, data)
+	elif module.type == model.ModuleType.QUIZ: data = process_module_quiz(module, data)
+	elif module.type == model.ModuleType.SORTABLE: data = process_module_sortable(module, data)
+	elif module.type == model.ModuleType.TEXT: data = process_module_text(module, data, os.path.dirname(filename))
 	else: module.description = "Neznamy typ modulu"
+
+	print "Processing body"
 
 	# Parsovani tela zadani
 	body = replace_h(parse_pandoc('\n'.join(data)))
@@ -175,6 +230,7 @@ def process_module_md(module, filename):
 # Tady opravdu nema nic byt, general module nema zadnou logiku
 def process_module_general(module, lines):
 	module.data = '{}'
+	return lines
 
 def process_module_programming(module, lines):
 	# Hledame vzorovy kod v zadani
@@ -183,29 +239,34 @@ def process_module_programming(module, lines):
 	if line == len(lines): return
 
 	# Hledame konec kodu
-	end = line
+	end = line+1
 	while (end < len(lines)) and (not re.match(r"^```", lines[end])): end += 1
 
-	code = '\n'.join(lines[line:end])
-	lines = lines[:line]
+	code = ''.join(lines[line+1:end])
 
 	# Pridame vzorovy kod do \module.data
-	data = json.loads(module.data)
+	data = {}
+	old_data = json.loads(module.data)
+	data['programming'] = old_data['programming'] if 'programming' in old_data else {}
 	data['programming']['default_code'] = code
-	module.data = json.dumps(data)
+	module.data = json.dumps(data, indent=2)
+
+	return lines[:line]
 
 def process_module_quiz(module, lines):
 	# Hledame jednotlive otazky
 	quiz_data = []
 	line = 0
+	text_end = 0
 	while (line < len(lines)):
-		while (line < len(lines)) and (not re.match(r"^##(.*?) (r|c)", lines[line])): line += 1
-		text_end = line
+		while (line < len(lines)) and (not re.match(r"^##(.*?) \((r|c)\)", lines[line])): line += 1
+		if text_end == 0: text_end = line
 		if line == len(lines): break
 
 		# Parsovani otazky
-		head = re.match(r"^##(.*?) (r|c)", lines[line])
-		question['question'] = parse_pandoc(head.group(1))
+		question = {}
+		head = re.match(r"^##(.*?) \((r|c)\)", lines[line])
+		question['question'] = re.match("<p>(.*)</p>", parse_pandoc(head.group(1))).group(1)
 		if head.group(2) == 'r':
 			question['type'] = 'radio'
 		else:
@@ -221,11 +282,13 @@ def process_module_quiz(module, lines):
 		line = end
 		options = []
 		correct = []
-		while end < len(lines):
+		while line < len(lines):
 			match = re.match(r"^~\s*(.*?)\s*(\*|-)", lines[line]+" -")
 			if not match: break;
-			options.append(parse_pandoc(match.group(1)).replace("<p>", "").replace("</p>", ""))
+			options.append(parse_pandoc(match.group(1)).replace("<p>", "").replace("</p>", "").replace('\n', ''))
 			if match.group(2) == '*': correct.append(len(options)-1)
+
+			line += 1
 
 		question['options'] = options
 		question['correct'] = correct
@@ -233,11 +296,16 @@ def process_module_quiz(module, lines):
 		# Pridame otazku
 		quiz_data.append(question)
 
-	lines = lines[:text_end]
-	module.data = json.dumps(quiz_data)
+	module.data = json.dumps({ 'quiz': quiz_data }, indent=2)
+	return lines[:text_end]
 
 def process_module_sortable(module, lines):
-	pass
+	sort_data = {}
+	sort_data['fixed'] = []
+	sort_data['movable'] = []
+	sort_data['correct'] = []
+	module.data = json.dumps({ 'sortable': sort_data }, indent=2)
+	return lines
 
 def process_module_text(module, lines, path):
 	text_data = { "inputs": 0 }
@@ -245,8 +313,8 @@ def process_module_text(module, lines, path):
 	line = 0
 	while (line < len(lines)) and (not re.match(r"^~", lines[line])): line += 1
 	text_end = line
-	if line == len(lines):
-		module.data = json.dumps(text_data)
+	if line >= len(lines):
+		module.data = json.dumps(text_data, indent=2)
 		return
 
 	inputs_cnt = 0
@@ -261,6 +329,8 @@ def process_module_text(module, lines, path):
 		else:
 			if len(diff) > 0: diff.append("")
 
+		line += 1
+
 	text_data['inputs'] = inputs_cnt
 	if len(diff) > 0:
 		text_data['diff'] = diff
@@ -270,8 +340,8 @@ def process_module_text(module, lines, path):
 		shutil.copy2(path+"/eval.py", target)
 		text_data['eval_script'] = target
 
-	lines = lines[:text_end]
-	module.data = json.dumps(text_data)
+	module.data = json.dumps({ 'text': text_data }, indent=2)
+	return lines[:text_end]
 
 ###############################################################################
 # Pomocne parsovaci funkce:
@@ -282,9 +352,9 @@ def parse_pandoc(source):
 
 # <h2> -> <h3>, <h3> -> <h4>, <h4> -> <h5> (to musi stacit)
 def replace_h(source):
-	return body.replace("<h2>", "<h3>").replace("</h2>", "</h3>"). \
-		replace("<h3>", "<h4>").replace("</h3>", "</h4>"). \
-		replace("<h4>", "<h5>").replace("</h4>", "</h5>")
+	return source.replace("<h4", "<h5").replace("</h4>", "</h5>"). \
+		replace("<h3", "<h4").replace("</h3>", "</h4>"). \
+		replace("<h2", "<h3").replace("</h2>", "</h3>")
 
 # Nahrazuje <ksi-pseudocode> za prislusne HTML
 def ksi_pseudocode(source):
@@ -304,7 +374,7 @@ def ksi_collapse(source):
 
 # Nahrazuje odkazy do data/ za odkazy do backendu
 def change_links(task, source):
-	return re.sub(r"\"data/", r"\""+util.config.ksi_web()+"/task-content/"+str(task.id)+"/", source)
+	return re.sub(r"data/", util.config.ksi_web()+":3000/taskContent/"+str(task.id)+"/zadani/", source)
 
 ###############################################################################
 

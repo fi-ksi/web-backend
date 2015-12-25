@@ -327,7 +327,7 @@ def process_module_programming(module, lines, source_path):
 	# Hledame vzorovy kod v zadani
 	line = 0
 	while (line < len(lines)) and (not re.match(r"^```~python", lines[line])): line += 1
-	if line == len(lines): return
+	if line == len(lines): return lines
 
 	# Hledame konec kodu
 	end = line+1
@@ -388,7 +388,7 @@ def process_module_quiz(module, lines):
 		correct = []
 		while line < len(lines):
 			match = re.match(r"^~\s*(.*?)\s*(\*|-)", lines[line]+" -")
-			if not match: break;
+			if not match: break
 			options.append(parse_pandoc(match.group(1)).replace("<p>", "").replace("</p>", "").replace('\n', ''))
 			if match.group(2) == '*': correct.append(len(options)-1)
 
@@ -408,8 +408,44 @@ def process_module_sortable(module, lines):
 	sort_data['fixed'] = []
 	sort_data['movable'] = []
 	sort_data['correct'] = []
+
+	line = 0
+	while (line < len(lines)) and (not re.match(r"^~", lines[line])): line += 1
+	text_end = line
+
+	# Parsovani fixed casti
+	while line < len(lines):
+		match = re.match(r"^~\s*(.*)", lines[line])
+		if not match: break
+		parsed = parse_pandoc(match.group(1)).replace("<p>", "").replace("</p>", "").replace('\n', '')
+		sort_data['fixed'].append( { 'content': parsed, 'offset': get_sortable_offset(parsed) } )
+		line += 1
+
+	# Volny radek mezi fixed a movable casti
+	line += 1
+
+	# Movable cast
+	while line < len(lines):
+		match = re.match(r"^~\s*(.*)", lines[line])
+		if not match: break
+		parsed = parse_pandoc(match.group(1)).replace("<p>", "").replace("</p>", "").replace('\n', '')
+		sort_data['movable'].append( { 'content': parsed, 'offset': get_sortable_offset(parsed) } )
+		line += 1
+
+	# Parsovani spravnych poradi
+	while line < len(lines):
+		match = re.match(r"^\s*\((((a|b)\d+,)*(a|b)\d+)\)", lines[line])
+		if match:
+			sort_data['correct'].append(match.group(1).split(','))
+		line += 1
+
 	module.data = json.dumps({ 'sortable': sort_data }, indent=2)
-	return lines
+	return lines[:text_end]
+
+def get_sortable_offset(text):
+	if re.match(r"^if ", text) or re.match(r"^Vstup: ", text) or re.match(r"^while", text) or re.match(r"^for", text): return 1
+	elif re.match(r"^fi$", text) or re.match(r"^return ", text) or re.match(r"^fi$", text): return -1
+	return 0
 
 def process_module_text(module, lines, path):
 	text_data = { "inputs": 0 }
@@ -419,7 +455,7 @@ def process_module_text(module, lines, path):
 	text_end = line
 	if line >= len(lines):
 		module.data = json.dumps(text_data, indent=2)
-		return
+		return lines
 
 	inputs_cnt = 0
 	diff = []
@@ -440,9 +476,10 @@ def process_module_text(module, lines, path):
 		text_data['diff'] = diff
 	else:
 		# Zkopirujeme eval skript
-		target = "data/modules/" + str(module.id) + "/eval.py"
-		shutil.copy2(path+"/eval.py", target)
-		text_data['eval_script'] = target
+		target_path = "data/modules/" + str(module.id) + "/"
+		if not os.path.isdir(target_path): os.makedirs(target_path)
+		shutil.copy2(path+"/eval.py", target_path+"eval.py")
+		text_data['eval_script'] = target_path+"eval.py"
 
 	module.data = json.dumps({ 'text': text_data }, indent=2)
 	return lines[:text_end]

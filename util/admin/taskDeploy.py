@@ -188,7 +188,7 @@ def process_assignment(task, filename):
 		task.title = "Nazev ulohy nenalezen"
 
 	# Seznam radku spojime na jeden dlouhy text
-	body = ''.join(parsed)
+	body = '\n'.join(parsed)
 	body = replace_h(body)
 	body = change_links(task, body)
 	task.body = body
@@ -315,7 +315,7 @@ def process_module_md(module, filename):
 	print "Processing body"
 
 	# Parsovani tela zadani
-	body = replace_h(parse_pandoc(''.join(data)))
+	body = replace_h(parse_pandoc('\n'.join(data)))
 	module.description = body
 
 # Tady opravdu nema nic byt, general module nema zadnou logiku
@@ -497,20 +497,38 @@ def replace_h(source):
 		replace("<h3", "<h4").replace("</h3>", "</h4>"). \
 		replace("<h2", "<h3").replace("</h2>", "</h3>")
 
+# Stara se o vnitrek jednoho pseudokodu
+# na vstup dostane \match, \match.group() obsahuje "<ksi-pseudocode>TEXT</ksi-pseudocode>"
+def one_ksi_pseudocode(match):
+	source = match.group()
+	source = re.sub(ur"(function|funkce|procedure|Vstup|Výstup|if|then|return|else|fi|while|for)", r"**\1**", source)
+	source = re.sub(r"<ksi-pseudocode>", r"<div style='padding-left:20px'>\n", source)
+	source = re.sub(r"</ksi-pseudocode>", r"</div>", source)
+	source = re.sub(r"\n", r"\n\n", source) # Takto donutime pandoc davat kazdy radek do samostateho odstavce
+	source = re.sub(r"(\t|    )", r"&emsp;", source)
+	return source
+
 # Nahrazuje <ksi-pseudocode> za prislusne HTML
 def ksi_pseudocode(source):
-	source = re.sub(ur"(<ksi-pseudocode>.*)(function|procedure|Vstup|Výstup|if|then|return|else|fi)(.*</ksi-pseudocode>)", r"\1**\2**\3", source)
-	source = re.sub(r"<ksi-pseudocode>", r"<div style=\"padding-left:20px\">", source)
-	source = re.sub(r"</ksi-pseudocode>", r"</div>", source)
+	source = re.sub(u"<ksi-pseudocode>\n((.|\n)*?)</ksi-pseudocode>", one_ksi_pseudocode, source)
 	return source
+
+# Nahrauje jedno <ksi-collapse>
+def one_ksi_collapse(match):
+	global coll_id
+	coll_id += 1
+
+	return """
+<div class="panel panel-ksi panel-group">
+<div class="panel-heading panel-heading-ksi"><h4 class="panel-title"><a data-toggle="collapse" href="#collapse""" + str(coll_id) + """">""" + match.group(1) + """</a></h4></div>
+<div id="collapse""" + str(coll_id) + """" class="panel-collapse collapse">
+<div class="panel-body">"""
 
 # Nahrazuje <ksi-collapse> za HTML plne silenych <div>u
 def ksi_collapse(source):
-	source = re.sub(r"<ksi-pseudocode title=\"(.*?)\">", lambda m, i=iter(int, 1): r"""
-		<div class="panel panel-ksi panel-group">
-		<div class="panel-heading panel-heading-ksi"><h4 class="panel-title"><a data-toggle="collapse" href="#collapse""" + str(next(i)) + """">""" + m.group(1) + """</a></h4></div>
-		<div id="collapse""" + str(next(i)-1) + """" class="panel-collapse collapse">
-		<div class="panel-body">""", source)
+	global coll_id
+	coll_id = 0
+	source = re.sub(r"<ksi-collapse title=\"(.*?)\">", one_ksi_collapse, source)
 	return source.replace("</ksi-collapse>", "</div></div></div>")
 
 # Nahrazuje odkazy do data/ za odkazy do backendu

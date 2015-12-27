@@ -7,6 +7,7 @@ from model.module import ModuleType
 import model
 import util
 import json
+import shutil
 
 def modules_for_task(task_id):
 	return session.query(model.Module).filter(model.Module.task == task_id).all()
@@ -110,3 +111,26 @@ def perform_action(module, user):
 		else:
 			print("Unknown action!")
 			# ToDo: More actions
+
+# \module je model.Module
+def delete_module(module):
+	# Ve vsech techto slozkach muze byt neco k modulu
+	module_paths = [\
+		"data/modules/"+str(module.id),\
+		"data/programming-modules/"+str(module.id),\
+		"data/text-modules/"+str(module.id) ]
+
+	for path in module_paths:
+		if os.path.isdir(path):
+			try:
+				shutil.rmtree(path, ignore_errors=True)
+			except:
+				pass
+
+	try:
+		session.delete(module)
+		session.commit()
+	except:
+		session.rollback()
+		raise
+

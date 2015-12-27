@@ -89,6 +89,14 @@ class Task(object):
 				session.delete(thread)
 				session.commit()
 
+			# Pak odstranime vsechny moduly
+			for module in task.modules:
+				print module
+				util.module.delete_module(module)
+
+			if task.prerequisite_obj:
+				util.prerequisite.remove_tree(task.prerequisite_obj, True)
+
 			session.delete(task)
 			session.commit()
 		except:

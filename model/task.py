@@ -1,6 +1,6 @@
 import datetime
 
-from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey, Boolean, Enum
 from sqlalchemy.orm import relationship
 
 from . import Base
@@ -32,6 +32,8 @@ class Task(Base):
 	git_path = Column(String(255), nullable=True)
 	git_branch = Column(String(255), nullable=True)
 	git_commit = Column(String(255), nullable=True)
+	deploy_date = Column(DateTime, default=datetime.datetime.utcnow)
+	deploy_status = Column(Enum('default', 'deploying', 'done', 'error'), nullable=False, default='default')
 
 class SolutionComment(Base):
 	__tablename__ = 'solution_comments'

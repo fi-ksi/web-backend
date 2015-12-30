@@ -231,6 +231,8 @@ def admin_to_json(task):
 		'author': task.author,
 		'git_path': task.git_path,
 		'git_branch': task.git_branch,
-		'git_commit': task.git_commit
+		'git_commit': task.git_commit,
+		'deploy_date': task.deploy_date.isoformat() if task.deploy_date else None,
+		'deploy_status': task.deploy_status
 	}
 

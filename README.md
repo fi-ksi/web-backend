@@ -45,3 +45,8 @@ You can put lines 3 & 4 in a for loop if you have a list of files to skip.
 
 Pokud naleznete hezci reseni, budu rad...
 
+## `config.py`
+Pro funnkcnost backendu musi byt v korenove slozece repozitare souboor `config.py` s heslem k databazi ve formatu:
+
+	SQL_ALCHEMY_URI = 'mysql://ksi:4R98HgIufjDnC9wnn89@127.0.0.1/ksi_prod?charset=utf8'
+

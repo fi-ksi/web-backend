@@ -8,6 +8,8 @@ import falcon
 import json
 import datetime
 import threading
+import os
+import re
 
 class TaskDeploy(object):
 
@@ -58,4 +60,43 @@ class TaskDeploy(object):
 
 		req.context['result'] = { 'result': 'ok' }
 		resp.status = falcon.HTTP_200
+
+	"""
+	Vraci JSON:
+	{
+		"id": task_id,
+		"status": String,
+		"log": String,
+	}
+	"""
+	def on_get(self, req, resp, id):
+		user = req.context['user']
+
+		# Kontrola opravneni
+		if (not user.is_logged_in()) or (not user.is_org()):
+			resp.status = falcon.HTTP_400
+			return
+
+		status = {}
+
+		task = session.query(model.Task).get(id)
+		if task is None:
+			resp.status = falcon.HTTP_404
+			return
+
+		if os.path.isfile(util.admin.taskDeploy.LOGFILE):
+			with open(util.admin.taskDeploy.LOGFILE, 'r') as f:
+				data = f.readlines()
+			if re.search(r"^(\d*)", data[0]).group(1) == str(id): log = ''.join(data[1:])
+		else:
+			log = None
+
+		status = {
+			'id': task.id,
+			'log': log,
+			'deploy_date': task.deploy_date.isoformat() if task.deploy_date else None,
+			'deploy_status': task.deploy_status
+		}
+
+		req.context['result'] = status
 

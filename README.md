@@ -19,6 +19,7 @@ Je vhodne vyuzit virtualenv - pip install virtualenv, virtualenv env, source env
 * lockfile
 * pypandoc
 * pyparsing
+* gitpython
 
 ## Spusteni
 
@@ -28,11 +29,6 @@ Je vhodne vyuzit virtualenv - pip install virtualenv, virtualenv env, source env
 Modifikaci parametru `--bind` lze zmenit cilovou IP adresu a port (format: `<ip>:<port>`). Pro spusteni na vsech dostupnych IP adresach, staci nastavit `--bind` na format `0:<port>`.
 
 Doporucene spusteni: skriptem ./start.sh, zabiti serveru skriptem ./kill.sh.
-
-## Testovani auth
-
-* dojit na http://server:port/debug - dojde k vytvoreni uzivatele 'user' s heslem '1234'
-* http://server:port/profile - pri spravnem basic auth (base64 user:password v Authenticate headeru HTTP requestu) is_logged vraci true
 
 ## Mergovani vetve `dev` do vetve `master`
 

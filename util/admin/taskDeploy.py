@@ -2,19 +2,13 @@
 
 from db import session
 from lockfile import LockFile
-import model
-import json
-import time
-import pypandoc
-import re
-import os
-import shutil
-import util
+import model, json, time, pypandoc, re, os, shutil, util, git, sys, traceback, datetime
 import pyparsing as pp
 from sqlalchemy import and_
 
 # Deploy muze byt jen jediny na cely server -> pouzivame lockfile.
 LOCKFILE = '/var/lock/ksi-task-deploy'
+LOGFILE = 'data/deploy.log'
 
 # Deploy je spousten v samostatnem vlakne.
 
@@ -28,13 +22,50 @@ def deploy(task, deployLock):
 	# 5) task.git_commit = last_commit_hash
 
 	try:
-		# DEBUG:
-		#time.sleep(20)
-		process_task(task, "data/mooster-task")
-	except:
-		raise
+		# Create log file
+		create_log(task, "deploying")
+		task.deploy_status = 'deploying'
+		task.deploy_date = datetime.datetime.utcnow()
+		session.commit()
+
+		# Init repo object
+		repo = git.Repo(util.git.GIT_SEMINAR_PATH)
+		assert not repo.bare
+
+		# Check out task branch
+		log("Checking out ", task.git_branch)
+		log(repo.checkout("origin/"+task.git_branch, b=task.git_branch))
+
+		# Check if task path exists
+		if not os.path.isdir(util.git.GIT_SEMINAR_PATH + task.git_path):
+			log("Repo dir does not exist")
+			return
+
+		# Check if branch was succesfully checked out
+		if repo.active_branch.name != task.git_branch:
+			log("Cannot checkout branch")
+			return
+
+		# Parse task
+		log("Parsing", util.git.GIT_SEMINAR_PATH+task.git_path)
+		process_task(task, util.git.GIT_SEMINAR_PATH+task.git_path)
+
+		# Update git entries in db
+		task.git_commit = repo.head.commit.hexsha
+		task.deploy_status = 'done'
+		session.commit()
+	except Exception as e:
+		try:
+			task.deploy_status = 'error'
+			session.commit()
+		except:
+			session.rollback()
+		exc_type, exc_obj, exc_tb = sys.exc_info()
+		session.rollback()
+		log("Exception: " + traceback.format_exc())
 	finally:
 		deployLock.release()
+		log("Exiting thread")
 
 ###############################################################################
 # Parsovani dat z repozitare:
@@ -61,11 +92,11 @@ def process_task(task, path):
 		session.rollback()
 		raise
 	finally:
-		print "Exiting thread"
+		log("Exiting thread")
 		session.close()
 
 def process_meta(task, filename):
-	print "Processing meta " + filename
+	log("Processing meta " + filename)
 
 	with open(filename, 'r') as f:
 		data = json.loads(f.read())
@@ -117,7 +148,7 @@ def parse_prereq_text(text):
 # \logic je vysledek z parsovani parse_prereq_text
 # \prereq je aktualne zpracovana prerekvizita (model.Prerequisite)
 def parse_prereq_logic(logic, prereq):
-	print "Parsing", logic
+	log("Parsing", logic)
 
 	if isinstance(logic, (unicode)):
 		# ATOMIC
@@ -162,7 +193,7 @@ def parse_prereq_logic(logic, prereq):
 		parse_prereq_logic(logic[0], children[0])
 		parse_prereq_logic(logic[2], children[1])
 	else:
-		print "Neznamy typ promenne v prerekvizitach"
+		log("Neznamy typ promenne v prerekvizitach")
 
 # Vlozi zadani ulohy do databaze
 def process_assignment(task, filename):
@@ -239,7 +270,7 @@ def process_modules(task, git_path):
 			)
 			session.add(module)
 
-		print "Processing module" + str(i+1)
+		log("Processing module" + str(i+1))
 		process_module(module, git_path+"/module"+str(i+1))
 
 		try:
@@ -270,7 +301,7 @@ def process_module(module, module_path):
 
 # Zpracovani souboru module.json
 def process_module_json(module, filename):
-	print "Processing module json"
+	log("Processing module json")
 	with open(filename, 'r') as f:
 		data = json.loads(f.read())
 
@@ -289,7 +320,7 @@ def process_module_json(module, filename):
 # Zpracovani module.md
 # Pandoc spoustime az uplne nakonec, abychom mohli provest analyzu souboru.
 def process_module_md(module, filename):
-	print "Processing module md"
+	log("Processing module md")
 
 	with open(filename, 'r') as f:
 		data = f.readlines()
@@ -302,8 +333,6 @@ def process_module_md(module, filename):
 	else:
 		module.name = "Nazev modulu nenalezen"
 
-	print "Processing specific module"
-
 	# Ukolem nasledujicich metod je zpracovat logiku modulu a v \data zanechat uvodni text
 	if module.type == model.ModuleType.GENERAL: data = process_module_general(module, data)
 	elif module.type == model.ModuleType.PROGRAMMING: data = process_module_programming(module, data, os.path.dirname(filename))
@@ -312,7 +341,7 @@ def process_module_md(module, filename):
 	elif module.type == model.ModuleType.TEXT: data = process_module_text(module, data, os.path.dirname(filename))
 	else: module.description = "Neznamy typ modulu"
 
-	print "Processing body"
+	log("Processing body")
 
 	# Parsovani tela zadani
 	body = replace_h(parse_pandoc('\n'.join(data)))
@@ -320,10 +349,13 @@ def process_module_md(module, filename):
 
 # Tady opravdu nema nic byt, general module nema zadnou logiku
 def process_module_general(module, lines):
+	log("Processing general module")
 	module.data = '{}'
 	return lines
 
 def process_module_programming(module, lines, source_path):
+	log("Processing programming module")
+
 	# Hledame vzorovy kod v zadani
 	line = 0
 	while (line < len(lines)) and (not re.match(r"^```~python", lines[line])): line += 1
@@ -358,6 +390,8 @@ def process_module_programming(module, lines, source_path):
 	return lines[:line]
 
 def process_module_quiz(module, lines):
+	log("Processing quiz module")
+
 	# Hledame jednotlive otazky
 	quiz_data = []
 	line = 0
@@ -404,6 +438,8 @@ def process_module_quiz(module, lines):
 	return lines[:text_end]
 
 def process_module_sortable(module, lines):
+	log("Processing sortable module")
+
 	sort_data = {}
 	sort_data['fixed'] = []
 	sort_data['movable'] = []
@@ -448,6 +484,8 @@ def get_sortable_offset(text):
 	return 0
 
 def process_module_text(module, lines, path):
+	log("Processing text module")
+
 	text_data = { "inputs": 0 }
 
 	line = 0
@@ -537,3 +575,12 @@ def change_links(task, source):
 
 ###############################################################################
 
+def create_log(task, status):
+	with open(LOGFILE, 'w') as f:
+		f.write(str(task.id) + '\n')
+
+def log(text):
+	with open(LOGFILE, 'a') as f:
+		f.write(text+'\n')
+
+###############################################################################

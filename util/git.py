@@ -1,2 +1,2 @@
-GIT_SEMINAR_PATH = 'data/git-seminar/'
+GIT_SEMINAR_PATH = 'data/seminar/'
 

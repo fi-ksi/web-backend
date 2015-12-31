@@ -13,14 +13,6 @@ LOGFILE = 'data/deploy.log'
 # Deploy je spousten v samostatnem vlakne.
 
 def deploy(task, deployLock):
-	# TODO: magic
-	# 0) git check_if_exists task.git_branch
-	# 1) git checkout task.git_branch
-	# 2) git pull
-	# 3) git check_if_exists task.git_path
-	# 4) convert data to DB
-	# 5) task.git_commit = last_commit_hash
-
 	try:
 		# Create log file
 		create_log(task, "deploying")
@@ -32,22 +24,23 @@ def deploy(task, deployLock):
 		repo = git.Repo(util.git.GIT_SEMINAR_PATH)
 		assert not repo.bare
 
+		# Pull origin
+		log("Pulling origin...")
+		for fetch_info in repo.remotes.origin.pull():
+			if str(fetch_info.ref) == "origin/"+task.git_branch:
+				log("Updated " + str(fetch_info.ref) + " to " + str(fetch_info.commit))
+
 		# Check out task branch
-		log("Checking out ", task.git_branch)
-		log(repo.checkout("origin/"+task.git_branch, b=task.git_branch))
+		log("Checking out " + task.git_branch)
+		log(repo.git.checkout(task.git_branch))
 
 		# Check if task path exists
 		if not os.path.isdir(util.git.GIT_SEMINAR_PATH + task.git_path):
 			log("Repo dir does not exist")
 			return
 
-		# Check if branch was succesfully checked out
-		if repo.active_branch.name != task.git_branch:
-			log("Cannot checkout branch")
-			return
-
 		# Parse task
-		log("Parsing", util.git.GIT_SEMINAR_PATH+task.git_path)
+		log("Parsing " + util.git.GIT_SEMINAR_PATH+task.git_path)
 		process_task(task, util.git.GIT_SEMINAR_PATH+task.git_path)
 
 		# Update git entries in db
@@ -65,7 +58,8 @@ def deploy(task, deployLock):
 		log("Exception: " + traceback.format_exc())
 	finally:
 		deployLock.release()
-		log("Exiting thread")
+		log("Done")
+		session.close()
 
 ###############################################################################
 # Parsovani dat z repozitare:
@@ -77,23 +71,26 @@ def process_task(task, path):
 		process_meta(task, path+"/task.json")
 		session.commit()
 
+		log("Processing assignment")
 		process_assignment(task, path+"/assignment.md")
 		session.commit()
 
+		log("Processing solution")
 		process_solution(task, path+"/solution.md")
 		session.commit()
 
+		log("Processing icons")
 		process_icons(task, path+"/icons/")
 		process_data(task, path+"/data/")
 
+		log("Processing modules")
 		process_modules(task, path)
 		session.commit()
 	except:
 		session.rollback()
 		raise
 	finally:
-		log("Exiting thread")
-		session.close()
+		log("Task processing done")
 
 def process_meta(task, filename):
 	log("Processing meta " + filename)
@@ -148,7 +145,7 @@ def parse_prereq_text(text):
 # \logic je vysledek z parsovani parse_prereq_text
 # \prereq je aktualne zpracovana prerekvizita (model.Prerequisite)
 def parse_prereq_logic(logic, prereq):
-	log("Parsing", logic)
+	log("Parsing " + logic)
 
 	if isinstance(logic, (unicode)):
 		# ATOMIC
@@ -248,7 +245,8 @@ def process_data(task, source_path):
 	target_path = "data/task-content/" + str(task.id) + "/zadani/"
 	if not os.path.isdir(target_path): os.makedirs(target_path)
 	shutil.rmtree(target_path)
-	shutil.copytree(source_path, target_path)
+	if os.path.isdir(source_path):
+		shutil.copytree(source_path, target_path)
 
 def process_modules(task, git_path):
 	# Aktualni moduly v databazi
@@ -369,8 +367,8 @@ def process_module_programming(module, lines, source_path):
 
 	# Pridame vzorovy kod do \module.data
 	data = {}
-	old_data = json.loads(module.data)
-	data['programming'] = old_data['programming'] if 'programming' in old_data else {}
+	old_data = json.loads(module.data) if module.data else None
+	data['programming'] = old_data['programming'] if (old_data) and ('programming' in old_data) else {}
 	data['programming']['default_code'] = code
 
 	# Zkopirujeme skripty do prislusnych adresaru

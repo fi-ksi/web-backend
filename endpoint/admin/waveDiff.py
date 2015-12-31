@@ -1,4 +1,7 @@
+# -*- coding: utf-8 -*-
+
 from db import session
+from lockfile import LockFile
 import model, util, falcon, json, datetime, git, os
 
 class WaveDiff(object):
@@ -9,6 +12,16 @@ class WaveDiff(object):
 		if (not user.is_logged_in()) or (not user.is_org()):
 			resp.status = falcon.HTTP_400
 			return
+
+		# Kontrola zamku
+		lock = util.lock.git_locked()
+		if lock:
+			req.context['result'] = { 'result': 'error', 'error': u'GIT uzamčen zámkem '+lock }
+			resp.status = falcon.HTTP_400
+			return
+
+		pullLock = LockFile(util.admin.waveDiff.LOCKFILE)
+		pullLock.acquire(60) # Timeout zamku je 1 minuta
 
 		# Pull repozitare
 		repo = git.Repo(util.git.GIT_SEMINAR_PATH)
@@ -41,6 +54,6 @@ class WaveDiff(object):
 			session.rollback()
 			raise
 		finally:
+			pullLock.release()
 			session.close()
-
 

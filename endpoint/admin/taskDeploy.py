@@ -43,17 +43,20 @@ class TaskDeploy(object):
 			resp.status = falcon.HTTP_404
 			return
 
+		# Kontrola existence gitovske vetve a adresare v databazi
 		if (task.git_branch is None) or (task.git_path is None):
 			req.context['result'] = { 'result': 'error', 'error': u'Úloha nemá zadanou gitovskou větev nebo adresář' }
 			resp.status = falcon.HTTP_400
 			return
 
-		deployLock = LockFile(util.admin.taskDeploy.LOCKFILE)
-		if deployLock.is_locked():
-			req.context['result'] = { 'result': 'error', 'error': u'Deploy již probíhá' }
+		# Kontrola zamku
+		lock = util.lock.git_locked()
+		if lock:
+			req.context['result'] = { 'result': 'error', 'error': u'GIT uzamčen zámkem '+lock }
 			resp.status = falcon.HTTP_400
 			return
 
+		deployLock = LockFile(util.admin.taskDeploy.LOCKFILE)
 		deployLock.acquire(60) # Timeout zamku je 1 minuta
 		deployThread = threading.Thread(target=util.admin.taskDeploy.deploy, args=(task, deployLock), kwargs={})
 		deployThread.start()

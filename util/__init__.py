@@ -4,6 +4,8 @@ from auth import UserInfo
 from prerequisite import PrerequisitiesEvaluator
 from task import TaskStatus
 
+import admin
+
 import module
 import task
 import prerequisite
@@ -25,8 +27,8 @@ import submissions
 import year
 import content
 import git
+import lock
 
-import admin
 
 def decode_form_data(req):
 	ctype, pdict = cgi.parse_header(req.content_type)

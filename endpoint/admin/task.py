@@ -164,15 +164,26 @@ class Tasks(object):
 
 		# Vytvoreni adresare v repu je option
 		if req.get_param_as_bool('create_git'):
+			# Kontrola zamku
+			lock = util.lock.git_locked()
+			if lock:
+				resp.status = falcon.HTTP_409
+				return
+
+			newLock = LockFile(util.admin.task.LOCKFILE)
+			newLock.acquire(60) # Timeout zamku je 1 minuta
+
 			try:
 				# TODO: Jiri
 				# vytvorit vetev v repu, vytvorit adresar pro ulohu, zkopirovat do adresare mooster ulohu
 				# branch je data['git_branch'], adresar je data['git_path'], do git_commit ulozit ID commitu
-				git_commit = None
+				git_commit = util.admin.task.createGit(data['git_path'], data['git_branch'], author, title)
 			except:
 				raise
+			finally:
+				newLock.release()
 		else:
-			git_commit = data['git_commit']
+			git_commit = data['git_commit'] if 'git_commit' in data else None
 
 		try:
 			# Nejprve vytvorime nove diskuzni vlakno

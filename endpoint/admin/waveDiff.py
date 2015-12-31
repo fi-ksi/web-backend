@@ -17,7 +17,7 @@ class WaveDiff(object):
 		lock = util.lock.git_locked()
 		if lock:
 			req.context['result'] = { 'result': 'error', 'error': u'GIT uzamčen zámkem '+lock }
-			resp.status = falcon.HTTP_400
+			resp.status = falcon.HTTP_409
 			return
 
 		pullLock = LockFile(util.admin.waveDiff.LOCKFILE)

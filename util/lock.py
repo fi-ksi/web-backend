@@ -3,7 +3,9 @@ import util
 
 GIT_LOCKS = [
 	util.admin.taskDeploy.LOCKFILE,
-	util.admin.waveDiff.LOCKFILE
+	util.admin.waveDiff.LOCKFILE,
+	util.admin.taskMerge.LOCKFILE,
+	util.admin.task.LOCKFILE
 ]
 
 def git_locked():

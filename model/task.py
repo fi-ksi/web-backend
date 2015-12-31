@@ -33,7 +33,7 @@ class Task(Base):
 	git_branch = Column(String(255), nullable=True)
 	git_commit = Column(String(255), nullable=True)
 	deploy_date = Column(DateTime, default=datetime.datetime.utcnow)
-	deploy_status = Column(Enum('default', 'deploying', 'done', 'error'), nullable=False, default='default')
+	deploy_status = Column(Enum('default', 'deploying', 'done', 'error', 'diff'), nullable=False, default='default')
 
 class SolutionComment(Base):
 	__tablename__ = 'solution_comments'

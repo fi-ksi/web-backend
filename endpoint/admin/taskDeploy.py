@@ -68,8 +68,9 @@ class TaskDeploy(object):
 	Vraci JSON:
 	{
 		"id": task_id,
-		"status": String,
 		"log": String,
+		"deploy_date": Datetime,
+		"deploy_status": model.task.deploy_status
 	}
 	"""
 	def on_get(self, req, resp, id):

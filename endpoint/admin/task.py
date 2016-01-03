@@ -4,6 +4,7 @@ import util
 import falcon
 import json
 import datetime
+from lockfile import LockFile
 
 class Task(object):
 
@@ -163,7 +164,9 @@ class Tasks(object):
 			return
 
 		# Vytvoreni adresare v repu je option
+		print req.get_param_as_bool('create_git')
 		if req.get_param_as_bool('create_git'):
+			print "Creating git"
 			# Kontrola zamku
 			lock = util.lock.git_locked()
 			if lock:
@@ -174,10 +177,7 @@ class Tasks(object):
 			newLock.acquire(60) # Timeout zamku je 1 minuta
 
 			try:
-				# TODO: Jiri
-				# vytvorit vetev v repu, vytvorit adresar pro ulohu, zkopirovat do adresare mooster ulohu
-				# branch je data['git_branch'], adresar je data['git_path'], do git_commit ulozit ID commitu
-				git_commit = util.admin.task.createGit(data['git_path'], data['git_branch'], author, title)
+				git_commit = util.admin.task.createGit(data['git_path'], data['git_branch'], data['author'], data['title'])
 			except:
 				raise
 			finally:

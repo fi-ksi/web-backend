@@ -223,7 +223,12 @@ def best_score_to_json(best_score):
 		'score': format(best_score.sum, '.1f')
 	}
 
-def admin_to_json(task):
+def admin_to_json(task, user_info, wave):
+	authorized = \
+		(task.git_branch is not None) and (task.git_path is not None) and \
+			((user_info.is_admin()) or \
+			((datetime.datetime.utcnow() < wave.time_published) and ((user_info.id == task.author) or (user_info.id == wave.garant))))
+
 	return {
 		'id': task.id,
 		'title': task.title,
@@ -233,6 +238,9 @@ def admin_to_json(task):
 		'git_branch': task.git_branch,
 		'git_commit': task.git_commit,
 		'deploy_date': task.deploy_date.isoformat() if task.deploy_date else None,
-		'deploy_status': task.deploy_status
+		'deploy_status': task.deploy_status,
+		'can_deploy': authorized,
+		'can_merge': authorized and task.git_branch != 'master' and task.deploy_status == 'done',
+		'can_delete': user_info.is_admin()
 	}
 

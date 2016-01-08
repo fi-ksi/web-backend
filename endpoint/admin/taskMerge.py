@@ -1,11 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from db import session
-import model
-import util
-import falcon
-import json
-import datetime
+import model, util, falcon, json, datetime, git
+from lockfile import LockFile
 
 class TaskMerge(object):
 
@@ -26,14 +23,20 @@ class TaskMerge(object):
 			resp.status = falcon.HTTP_404
 			return
 
+		# Kontrola existence git_branch a git_path
+		if (task.git_path is None) or (task.git_branch is None):
+			req.context['result'] = { 'result': 'error', 'error': u'Úloha nemá zadanou gitovskou větev nebo adresář' }
+			resp.status = falcon.HTTP_400
+			return
+
 		if task.git_branch == "master":
 			req.context['result'] = { 'result': 'error', 'error': u'Úloha je již ve větvi master' }
-			resp.status = falcon.HTTP_404
+			resp.status = falcon.HTTP_400
 			return
 
 		wave = session.query(model.Wave).get(task.wave)
 
-		# Kontrola opravneni
+		# Merge mohou provadet pouze administratori a garant vlny
 		if (not user.is_logged_in()) or ((not user.is_admin()) and (user.id != wave.garant)):
 			req.context['result'] = { 'result': 'error', 'error': u'Nedostatečná oprávnění' }
 			resp.status = falcon.HTTP_400
@@ -50,7 +53,7 @@ class TaskMerge(object):
 		mergeLock.acquire(60) # Timeout zamku je 1 minuta
 
 		# TODO: magic
-		# 0) check if task.git_branch exists, check if task.git_path exists in the branch
+		# DONE 0) check if task.git_branch exists, check if task.git_path exists in the branch
 		# 1) git diff task.git_branch master <- modified files in task.git_branch must be only in task.git_path directory
 		# 2) git merge task.git_branch into "master"
 		# 3) git close task_git_branch (close on origin too)
@@ -59,8 +62,19 @@ class TaskMerge(object):
 		# 6) task.git_commit = last_commit_hash
 
 		try:
-			pass
+			# Pull repozitare
+			repo = git.Repo(util.git.GIT_SEMINAR_PATH)
+			repo.remotes.origin.pull()
+
+			if task.git_branch in repo.heads:
+				repo.git.branch('-D', task.git_branch)
+
+			task.git_branch = 'master'
+			task.git_commit = repo.heads['master'].commit.hexsha
+
+			session.commit()
 		except:
+			session.rollback()
 			raise
 		finally:
 			mergeLock.release()

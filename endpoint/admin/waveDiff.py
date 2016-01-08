@@ -23,11 +23,11 @@ class WaveDiff(object):
 		pullLock = LockFile(util.admin.waveDiff.LOCKFILE)
 		pullLock.acquire(60) # Timeout zamku je 1 minuta
 
-		# Pull repozitare
-		repo = git.Repo(util.git.GIT_SEMINAR_PATH)
-		repo.remotes.origin.pull()
-
 		try:
+			# Pull repozitare
+			repo = git.Repo(util.git.GIT_SEMINAR_PATH)
+			repo.remotes.origin.pull()
+
 			# Ulohy ve vlne
 			tasks = session.query(model.Task).\
 				filter(model.Task.wave == id).all()

@@ -64,6 +64,7 @@ class Year(object):
 		try:
 			session.delete(year)
 			session.commit()
+			req.context['result'] = {}
 		except:
 			session.rollback()
 			raise

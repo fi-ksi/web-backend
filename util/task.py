@@ -158,7 +158,7 @@ def status(task, user, adeadline=None, fsubmitted=None, wave=None, corr=None, ac
 	return TaskStatus.BASE if util.PrerequisitiesEvaluator(task.prerequisite_obj, currently_active).evaluate() or user.role in ('org', 'admin') else TaskStatus.LOCKED
 
 def solution_public(status, task, user):
-	return status == TaskStatus.DONE or task.time_deadline < datetime.datetime.utcnow() or user.role in ('org', 'admin')
+	return ((task.time_deadline) and (status == TaskStatus.DONE or task.time_deadline < datetime.datetime.utcnow())) or user.role in ('org', 'admin')
 
 def time_published(task_id):
 	return session.query(model.Wave.time_published).\
@@ -181,7 +181,7 @@ def to_json(task, user=None, adeadline=None, fsubmitted=None, wave=None, corr=No
 		'intro': task.intro,
 		'max_score': format(sum([ module.max_points for module in task.modules if not module.bonus ]), '.1f'),
 		'time_published': wave.time_published.isoformat(),
-		'time_deadline': task.time_deadline.isoformat(),
+		'time_deadline': task.time_deadline.isoformat() if task.time_deadline else None,
 		'state': tstatus,
 		'prerequisities': [] if not task.prerequisite_obj else util.prerequisite.to_json(task.prerequisite_obj),
 		'picture_base': pict_base,
@@ -223,12 +223,7 @@ def best_score_to_json(best_score):
 		'score': format(best_score.sum, '.1f')
 	}
 
-def admin_to_json(task, user_info, wave):
-	authorized = \
-		(task.git_branch is not None) and (task.git_path is not None) and \
-			((user_info.is_admin()) or \
-			((datetime.datetime.utcnow() < wave.time_published) and ((user_info.id == task.author) or (user_info.id == wave.garant))))
-
+def admin_to_json(task):
 	return {
 		'id': task.id,
 		'title': task.title,
@@ -238,9 +233,6 @@ def admin_to_json(task, user_info, wave):
 		'git_branch': task.git_branch,
 		'git_commit': task.git_commit,
 		'deploy_date': task.deploy_date.isoformat() if task.deploy_date else None,
-		'deploy_status': task.deploy_status,
-		'can_deploy': authorized,
-		'can_merge': authorized and task.git_branch != 'master' and task.deploy_status == 'done',
-		'can_delete': user_info.is_admin()
+		'deploy_status': task.deploy_status
 	}
 

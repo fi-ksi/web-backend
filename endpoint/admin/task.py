@@ -21,8 +21,7 @@ class Task(object):
 			resp.status = falcon.HTTP_404
 			return
 
-		wave = session.query(model.Wave).get(task.wave)
-		req.context['result'] = { 'atask': util.task.admin_to_json(task, user, wave) }
+		req.context['result'] = { 'atask': util.task.admin_to_json(task) }
 
 	# UPDATE ulohy
 	def on_put(self, req, resp, id):
@@ -101,6 +100,7 @@ class Task(object):
 
 			session.delete(task)
 			session.commit()
+			req.context['result'] = {}
 		except:
 			session.rollback()
 			raise
@@ -127,11 +127,11 @@ class Tasks(object):
 			tasks = tasks.filter(model.Wave.id == wave)
 		tasks = tasks.all()
 
-		req.context['result'] = { 'atasks': [ util.task.admin_to_json(task.Task, user, task.Wave) for task in tasks ] }
+		req.context['result'] = { 'atasks': [ util.task.admin_to_json(task.Task) for task in tasks ] }
 
 	# Vytvoreni nove ulohy
 	"""
-	Specifikace POST pozadavku: ?create_git=(true|false)
+	Specifikace POST pozadavku:
 	{
 		"task": {
 			"wave": Integer, <- id vlny
@@ -140,6 +140,7 @@ class Tasks(object):
 			"git_path": String, <- adresar ulohy v GITu vcetne cele cesty
 			"git_branch": String, <- nazev gitove vetve, ve ktere vytvorit ulohu / ze ktere cerpat data pro deploy
 			"git_commit" String <- hash posledniho commitu, pokud je ?create_git=true, nevyplnuje se
+			"git_create" Bool <- jestli ma dojit k vytvoreni gitovskeho adresare a vetve ulohy
 		}
 	}
 	"""
@@ -163,10 +164,9 @@ class Tasks(object):
 			resp.status = falcon.HTTP_403
 			return
 
-		# Vytvoreni adresare v repu je option
-		print req.get_param_as_bool('create_git')
-		if req.get_param_as_bool('create_git'):
-			print "Creating git"
+		# Vytvoreni adresare v repu je option:
+		print data
+		if ('git_create' in data) and (data['git_create']):
 			# Kontrola zamku
 			lock = util.lock.git_locked()
 			if lock:
@@ -212,7 +212,7 @@ class Tasks(object):
 			session.rollback()
 			raise
 
-		req.context['result'] = { 'atask': util.task.admin_to_json(task, user, wave) }
+		req.context['result'] = { 'atask': util.task.admin_to_json(task) }
 
 		session.close()
 

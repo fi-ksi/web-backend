@@ -50,8 +50,10 @@ class WaveDiff(object):
 					task.deploy_status = 'default'
 
 			session.commit()
+			req.context['result'] = { 'result': 'ok' }
 		except:
 			session.rollback()
+			req.context['result'] = { 'result': 'error', 'error': u'Nastala výjimka backendu' }
 			raise
 		finally:
 			pullLock.release()

@@ -83,6 +83,7 @@ class Article(object):
 
 			session.delete(article)
 			session.commit()
+			req.context['result'] = {}
 		except:
 			session.rollback()
 			raise

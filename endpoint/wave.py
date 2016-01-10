@@ -74,6 +74,7 @@ class Wave(object):
 
 			session.delete(wave)
 			session.commit()
+			req.context['result'] = {}
 		except:
 			session.rollback()
 			raise

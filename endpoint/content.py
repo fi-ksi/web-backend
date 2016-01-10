@@ -10,7 +10,7 @@ class Content(object):
 
 	# Smaze adresarovou strukturu rekurzivne od nejvic zanoreneho
 	#  dokud jsou adresare prazdne.
-	def _delete_tree(self, path):
+	def _elete_tree(self, path):
 		if os.listdir(path) != []: return
 		try:
 			os.rmdir(path)
@@ -101,7 +101,8 @@ class Content(object):
 			resp.status = falcon.HTTP_500
 			raise
 
-		resp.status = falcon.HTTP_200
+		rese.status = falcon.HTTP_200
+		req.context['result'] = {}
 
 
 class TaskContent(object):

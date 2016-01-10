@@ -88,12 +88,11 @@ class TaskDeploy(object):
 			resp.status = falcon.HTTP_404
 			return
 
+		log = None
 		if os.path.isfile(util.admin.taskDeploy.LOGFILE):
 			with open(util.admin.taskDeploy.LOGFILE, 'r') as f:
 				data = f.readlines()
 			if re.search(r"^(\d*)", data[0]).group(1) == str(id): log = ''.join(data[1:])
-		else:
-			log = None
 
 		status = {
 			'id': task.id,

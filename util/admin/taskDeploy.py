@@ -37,6 +37,8 @@ def deploy(task, deployLock):
 		# Check if task path exists
 		if not os.path.isdir(util.git.GIT_SEMINAR_PATH + task.git_path):
 			log("Repo dir does not exist")
+			task.deploy_status = 'error'
+			session.commit()
 			return
 
 		# Parse task
@@ -115,6 +117,7 @@ def process_meta(task, filename):
 			prq = model.Prerequisite(type=model.PrerequisiteType.ATOMIC, parent=None, task=None)
 			try:
 				session.add(prq)
+				session.commit()
 			except:
 				session.rollback()
 				raise
@@ -145,7 +148,8 @@ def parse_prereq_text(text):
 # \logic je vysledek z parsovani parse_prereq_text
 # \prereq je aktualne zpracovana prerekvizita (model.Prerequisite)
 def parse_prereq_logic(logic, prereq):
-	log("Parsing " + logic)
+	if logic:
+		log("Parsing " + str(logic))
 
 	if isinstance(logic, (unicode)):
 		# ATOMIC
@@ -164,7 +168,7 @@ def parse_prereq_logic(logic, prereq):
 
 		# Rekurzivne se zanorime
 		children = session.query(model.Prerequisite).\
-			filter(model.Prerequisite.parent == prereq.id).all()
+			filter(and_(model.Prerequisite.parent != None, model.Prerequisite.parent == prereq.id)).all()
 
 		# children musi byt prave dve
 		while len(children) < 2:

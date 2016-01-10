@@ -79,6 +79,7 @@ class Post(object):
 
 			session.delete(post)
 			session.commit()
+			req.context['result'] = {}
 		except:
 			session.rollback()
 			raise

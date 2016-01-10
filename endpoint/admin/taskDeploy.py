@@ -25,34 +25,34 @@ class TaskDeploy(object):
 
 		# Kontrola opravneni
 		if (not user.is_logged_in()) or (not user.is_org()):
-			req.context['result'] = { 'result': 'error', 'error': u'Nedostatečná oprávnění' }
+			req.context['result'] = 'Nedostatecna opravneni'
 			resp.status = falcon.HTTP_400
 			return
 
 		# Kontrola existence ulohy
 		task = session.query(model.Task).get(id)
 		if task is None:
-			req.context['result'] = { 'result': 'error', 'error': u'Neexistující úloha' }
+			req.context['result'] = 'Neexistujici uloha'
 			resp.status = falcon.HTTP_404
 			return
 
 		# Zverejnene ulohy mohou deployovat pouze admini
 		wave = session.query(model.Wave).get(task.wave)
 		if (datetime.datetime.utcnow() > wave.time_published) and (not user.is_admin()):
-			req.context['result'] = { 'result': 'error', 'error': u'Po zveřejnění úlohy může deploy provést pouze administrátor' }
+			req.context['result'] = 'Po zverejneni ulohy muze deploy provest pouze administrator'
 			resp.status = falcon.HTTP_404
 			return
 
 		# Kontrola existence gitovske vetve a adresare v databazi
 		if (task.git_branch is None) or (task.git_path is None):
-			req.context['result'] = { 'result': 'error', 'error': u'Úloha nemá zadanou gitovskou větev nebo adresář' }
+			req.context['result'] = 'Uloha nema zadanou gitovskou vetev nebo adresar'
 			resp.status = falcon.HTTP_400
 			return
 
 		# Kontrola zamku
 		lock = util.lock.git_locked()
 		if lock:
-			req.context['result'] = { 'result': 'error', 'error': u'GIT uzamčen zámkem '+lock }
+			req.context['result'] = 'GIT uzamcen zamkem ' + lock + "\nNekdo momentalne provadi akci s gitem, opakujte prosim akci za 20 sekund."
 			resp.status = falcon.HTTP_409
 			return
 
@@ -61,7 +61,6 @@ class TaskDeploy(object):
 		deployThread = threading.Thread(target=util.admin.taskDeploy.deploy, args=(task, deployLock), kwargs={})
 		deployThread.start()
 
-		req.context['result'] = { 'result': 'ok' }
 		resp.status = falcon.HTTP_200
 
 	"""

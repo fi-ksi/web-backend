@@ -16,7 +16,7 @@ class WaveDiff(object):
 		# Kontrola zamku
 		lock = util.lock.git_locked()
 		if lock:
-			req.context['result'] = { 'result': 'error', 'error': u'GIT uzamčen zámkem '+lock }
+			req.context['result'] = 'GIT uzamcen zamkem ' + lock + "\nNekdo momentalne provadi akci s gitem, opakujte prosim akci za 20 sekund."
 			resp.status = falcon.HTTP_409
 			return
 
@@ -50,10 +50,9 @@ class WaveDiff(object):
 					task.deploy_status = 'default'
 
 			session.commit()
-			req.context['result'] = { 'result': 'ok' }
 		except:
 			session.rollback()
-			req.context['result'] = { 'result': 'error', 'error': u'Nastala výjimka backendu' }
+			req.context['result'] = 'Nastala vyjimka backendu'
 			raise
 		finally:
 			pullLock.release()

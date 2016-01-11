@@ -98,7 +98,7 @@ def process_meta(task, filename):
 	log("Processing meta " + filename)
 
 	with open(filename, 'r') as f:
-		data = json.loads(f.read())
+		data = json.loads(f.read().decode('utf-8-sig'))
 
 	task.author = data['author']
 	task.time_deadline = data['time_deadline']
@@ -305,7 +305,7 @@ def process_module(module, module_path):
 def process_module_json(module, filename):
 	log("Processing module json")
 	with open(filename, 'r') as f:
-		data = json.loads(f.read())
+		data = json.loads(f.read().decode('utf-8-sig'))
 
 	if data['type'] == 'text': module.type = model.ModuleType.TEXT
 	elif data['type'] == 'general': module.type = model.ModuleType.GENERAL

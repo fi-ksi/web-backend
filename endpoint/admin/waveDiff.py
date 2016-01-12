@@ -26,7 +26,8 @@ class WaveDiff(object):
 		try:
 			# Pull repozitare
 			repo = git.Repo(util.git.GIT_SEMINAR_PATH)
-			repo.remotes.origin.pull()
+			g = git.Git(util.git.GIT_SEMINAR_PATH)
+			g.execute(["git", "pull", "--all"])
 
 			# Ulohy ve vlne
 			tasks = session.query(model.Task).\

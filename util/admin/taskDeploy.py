@@ -1,19 +1,41 @@
 # -*- coding: utf-8 -*-
 
-from db import session
+#from sqlalchemy.orm import sessionmaker
+from sqlalchemy import and_
+
+#from db import engine
 from lockfile import LockFile
 import model, json, time, pypandoc, re, os, shutil, util, git, sys, traceback, datetime
 import pyparsing as pp
-from sqlalchemy import and_
 
 # Deploy muze byt jen jediny na cely server -> pouzivame lockfile.
 LOCKFILE = '/var/lock/ksi-task-deploy'
 LOGFILE = 'data/deploy.log'
 
 # Deploy je spousten v samostatnem vlakne.
+session = None
 
-def deploy(task, deployLock):
+"""
+Tato funkce je spoustena v samostatnem vlakne.
+Je potreba vyuzit podpory vice vlaken v SQL alchemy:
+ * V ZADNEM PRIPADE se neodkazovat na db.py a zejmena na session !
+ * scoped vzniklo z scoped_session(...), vyuzit tuto scoped session
+ * ze scoped_session si vytvorime session, kterou dale pouzivame
+ * na konci projistotu scoped.remove(), ale podle dokumentace neni potreba
+Vyse zmimeny postup by mel byt v souladu s dokumentaci k sqlalchemy.
+ * !!! funkci nelze predavat model.Task, protoze tento objekt je vazany na session;
+   my si ale vytvarime vlasnti session ...
+Doporucuje se, ale uloha, se kterou je tato funkce volana uz mela nastaveno
+task.deploy_status = 'deploying', nebot nastaveni v tomto vlakne se muze
+projevit az za nejakou dobu, behem ktere by GET mohl vratit "done", coz nechceme.
+"""
+def deploy(task_id, deployLock, scoped):
 	try:
+		# Init session
+		global session
+		session = scoped()
+		task = session.query(model.Task).get(task_id)
+
 		# Create log file
 		create_log(task, "deploying")
 		task.deploy_status = 'deploying'
@@ -56,18 +78,19 @@ def deploy(task, deployLock):
 		task.deploy_status = 'done'
 		session.commit()
 	except Exception as e:
+		exc_type, exc_obj, exc_tb = sys.exc_info()
+		log("Exception: " + traceback.format_exc())
+		session.rollback()
 		try:
 			task.deploy_status = 'error'
 			session.commit()
 		except:
 			session.rollback()
-		exc_type, exc_obj, exc_tb = sys.exc_info()
-		session.rollback()
-		log("Exception: " + traceback.format_exc())
 	finally:
 		deployLock.release()
 		log("Done")
 		session.close()
+		scoped.remove()
 
 ###############################################################################
 # Parsovani dat z repozitare:
@@ -297,6 +320,7 @@ def process_modules(task, git_path):
 			session.commit()
 		except:
 			session.rollback()
+			raise
 
 		i += 1
 

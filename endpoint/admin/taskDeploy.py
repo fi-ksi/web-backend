@@ -1,15 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from db import session
+from db import session, _session
 from lockfile import LockFile
-import model
-import util
-import falcon
-import json
-import datetime
-import threading
-import os
-import re
+import model, util, falcon, json, datetime, threading, os, re
+from sqlalchemy.orm import scoped_session
 
 class TaskDeploy(object):
 
@@ -56,12 +50,17 @@ class TaskDeploy(object):
 			resp.status = falcon.HTTP_409
 			return
 
+		# Stav na deploying je potreba nastavit v tomto vlakne
+		task.deploy_status = 'deploying'
+		session.commit()
+
 		deployLock = LockFile(util.admin.taskDeploy.LOCKFILE)
 		deployLock.acquire(60) # Timeout zamku je 1 minuta
-		deployThread = threading.Thread(target=util.admin.taskDeploy.deploy, args=(task, deployLock), kwargs={})
+		deployThread = threading.Thread(target=util.admin.taskDeploy.deploy, args=(task.id, deployLock, scoped_session(_session)), kwargs={})
 		deployThread.start()
 
 		resp.status = falcon.HTTP_200
+		session.close()
 
 	"""
 	Vraci JSON:

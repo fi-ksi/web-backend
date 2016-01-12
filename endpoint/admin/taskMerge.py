@@ -79,6 +79,5 @@ class TaskMerge(object):
 		finally:
 			mergeLock.release()
 
-		req.context['result'] = { 'result': 'ok' }
 		resp.status = falcon.HTTP_200
 

@@ -178,6 +178,11 @@ class ModuleSubmit(object):
 
 		module = session.query(model.Module).get(id)
 
+		if not module:
+			resp.status = falcon.HTTP_404
+			req.context['result'] = { 'result': 'error', 'error': u'Neexistující modul' }
+			return
+
 		# Po deadlinu nelze POSTovat reseni
 		if session.query(model.Task).get(module.task).time_deadline < datetime.datetime.utcnow():
 			req.context['result'] = { 'result': 'error', 'error': u'Nelze odevzdat po termínu odevzdání úlohy' }

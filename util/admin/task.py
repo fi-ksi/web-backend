@@ -4,8 +4,8 @@ LOCKFILE = '/var/lock/ksi-task-new'
 
 def createGit(git_path, git_branch, author_id, title):
 	repo = git.Repo(util.git.GIT_SEMINAR_PATH)
-	repo.remotes.origin.pull()
 	repo.git.checkout("master")
+	repo.remotes.origin.pull()
 
 	# Vytvorime novou gitovskou vetev
 	repo.git.checkout("HEAD", b=git_branch)

@@ -24,10 +24,9 @@ class WaveDiff(object):
 		pullLock.acquire(60) # Timeout zamku je 1 minuta
 
 		try:
-			# Pull repozitare
+			# Fetch
 			repo = git.Repo(util.git.GIT_SEMINAR_PATH)
-			g = git.Git(util.git.GIT_SEMINAR_PATH)
-			g.execute(["git", "pull", "--all"])
+			repo.remotes.origin.fetch()
 
 			# Ulohy ve vlne
 			tasks = session.query(model.Task).\
@@ -39,8 +38,9 @@ class WaveDiff(object):
 					task.deploy_status = 'default'
 					continue
 
-				# Checkout vetve ve ktere je uloha
+				# Checkout && pull vetve ve ktere je uloha
 				repo.git.checkout(task.git_branch)
+				repo.remotes.origin.pull()
 
 				# Kontrola existence adresare ulohy
 				if os.path.isdir(util.git.GIT_SEMINAR_PATH+task.git_path):

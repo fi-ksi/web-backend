@@ -20,14 +20,14 @@ def _to_json2(prereq):
 
 # Smaze vsechny deti \root, \root zachova pri delete_root
 # Po zavolani funkce je nutne volat session.commit()
-def remove_tree(root, delete_root=False):
+def remove_tree(root, delete_root=False, my_session=session):
 	if root is None: return
-	for child in root.children: remove_tree(child, True)
+	for child in root.children: remove_tree(child, True, my_session)
 	if delete_root:
 		try:
-			session.delete(root)
+			my_session.delete(root)
 		except:
-			session.rollback()
+			my_session.rollback()
 			raise
 
 class PrerequisitiesEvaluator:

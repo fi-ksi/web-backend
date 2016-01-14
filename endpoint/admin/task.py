@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from db import session
 import model
 import util
@@ -118,6 +120,7 @@ class Tasks(object):
 		# Zobrazovat task_admin mohou jen orgove
 		if (not user.is_logged_in()) or (not user.is_org()):
 			resp.status = falcon.HTTP_400
+			req.context['result'] = { "errors": [ { "title": "Insufficient privileges", "detail": u"K tomuto zdroji nemáte právo přistoupit" } ], 'atasks': None }
 			return
 
 		tasks = session.query(model.Task, model.Wave).join(model.Wave, model.Task.wave == model.Wave.id)

@@ -29,7 +29,7 @@ class User(object):
 			resp.status = falcon.HTTP_404
 			return
 
-		req.context['result'] = { 'user': util.user.to_json(user, req.context['year']) }
+		req.context['result'] = { 'user': util.user.to_json(user, req.context['year'], admin_data=req.context['user'].is_org()) }
 
 
 class Users(object):
@@ -108,7 +108,7 @@ class Users(object):
 				join(model.Task, model.User.id == model.Task.author).\
 				group_by(model.User, model.Task).all()
 		else:
-			users_tasks = []
+			users_tasks = None
 
 		# Uzivatele s nedefinovanymi tasks_cnt v tomto rocniku  neodevzdali zadnou ulohu
 		# -> nastavime jim natvrdo 'tasks_cnt' = 0 a total_score = 0, abychom omezili
@@ -119,7 +119,8 @@ class Users(object):
 			user.Profile, \
 			[ item.a_id for item in achievements if item.user_id == user.User.id ], \
 			[ item.year_id for item in seasons if item.user_id == user.User.id ], \
-			[ task for (_, task) in filter(lambda (usr,task): usr.id == user.User.id, users_tasks) ]) for user in users ]
+			[ task for (_, task) in filter(lambda (usr,task): usr.id == user.User.id, users_tasks) ] if users_tasks else None, \
+			admin_data=req.context['user'].is_org() ) for user in users ]
 
 		req.context['result'] = { "users": users_json }
 

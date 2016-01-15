@@ -21,6 +21,9 @@ class UserInfo:
 	def is_org(self):
 		return self.role == 'org' or self.role == 'admin'
 
+	def is_tester(self):
+		return self.role == 'tester'
+
 
 def update_tokens():
 	try:

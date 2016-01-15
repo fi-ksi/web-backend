@@ -24,7 +24,7 @@ class User(Base):
 	password = Column(String(255), nullable=False)
 	short_info = Column(Text, nullable=False)
 	profile_picture = Column(String(255))
-	role = Column(Enum('admin', 'org', 'participant', 'participant_hidden'), nullable=False, default='participant', server_default='participant')
+	role = Column(Enum('admin', 'org', 'participant', 'participant_hidden', 'tester'), nullable=False, default='participant', server_default='participant')
 	enabled = Column(Integer, nullable=False, default=1, server_default='1')
 	registered = Column(TIMESTAMP, nullable=False, default=datetime.datetime.utcnow, server_default=text('CURRENT_TIMESTAMP'))
 

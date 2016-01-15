@@ -33,7 +33,7 @@ class Tasks(object):
 
 		tasks = session.query(model.Task, model.Wave).\
 		join(model.Wave, model.Task.wave == model.Wave.id)
-		if (not user.is_logged_in()) or (not user.is_org()):
+		if (not user.is_logged_in()) or ((not user.is_org()) and not user.is_tester()):
 			tasks = tasks.filter(model.Wave.public)
 		tasks = tasks.filter(model.Wave.year == req.context['year']).all()
 

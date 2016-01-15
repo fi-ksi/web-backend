@@ -127,7 +127,7 @@ def status(task, user, adeadline=None, fsubmitted=None, wave=None, corr=None, ac
 
 	# pokud uloha neni v otevrene vlne, je LOCKED
 	# vyjimkou jsou uzivatele s rolemi 'org' a 'admin', tem se zobrazuji vsechny ulohu
-	if not wave.public and not user.role in ('org', 'admin'):
+	if not wave.public and not user.role in ('org', 'admin', 'tester'):
 		return TaskStatus.LOCKED
 
 	if corr is None: corr = task.id in corrected(user.id)
@@ -155,10 +155,10 @@ def status(task, user, adeadline=None, fsubmitted=None, wave=None, corr=None, ac
 
 	# Pokud nenastal ani jeden z vyse zminenych pripadu, otevreme ulohu, pokud
 	# jsou splneny prerekvizity
-	return TaskStatus.BASE if util.PrerequisitiesEvaluator(task.prerequisite_obj, currently_active).evaluate() or user.role in ('org', 'admin') else TaskStatus.LOCKED
+	return TaskStatus.BASE if util.PrerequisitiesEvaluator(task.prerequisite_obj, currently_active).evaluate() or user.role in ('org', 'admin', 'tester') else TaskStatus.LOCKED
 
 def solution_public(status, task, user):
-	return ((task.time_deadline) and (status == TaskStatus.DONE or task.time_deadline < datetime.datetime.utcnow())) or user.role in ('org', 'admin')
+	return ((task.time_deadline) and (status == TaskStatus.DONE or task.time_deadline < datetime.datetime.utcnow())) or user.role in ('org', 'admin', 'tester')
 
 def time_published(task_id):
 	return session.query(model.Wave.time_published).\

@@ -70,12 +70,12 @@ def any_task_submitted(user_id, year_id):
 		filter(model.Wave.year == year_id).count() > 0
 
 def points_per_task(user_id):
-        tasks = session.query(model.Task)
+	tasks = session.query(model.Task)
 
-        return { task: util.task.points(task.id, user_id) for task in tasks }
+	return { task: util.task.points(task.id, user_id) for task in tasks }
 
 def sum_points(user_id, year_id):
-        points = session.query(model.Evaluation.module, func.max(model.Evaluation.points).label('points')).\
+	points = session.query(model.Evaluation.module, func.max(model.Evaluation.points).label('points')).\
 		filter(model.Evaluation.user == user_id).\
 		join(model.Module, model.Evaluation.module == model.Module.id).\
 		join(model.Task, model.Task.id == model.Module.task).\
@@ -84,54 +84,57 @@ def sum_points(user_id, year_id):
 		filter(model.Wave.year == year_id).\
 		group_by(model.Evaluation.module).all()
 
-        return sum([ item.points for item in points if item.points is not None ])
+	return sum([ item.points for item in points if item.points is not None ])
 
 def percentile(user_id, year_id):
-        query = session.query(model.User).filter(model.User.role == 'participant')
-        count = query.count()
-        user_points = { user.id: sum_points(user.id, year_id) for user in query.all() }
-        points_order = sorted(user_points.values(), reverse=True)
+	query = session.query(model.User).filter(model.User.role == 'participant')
+	count = query.count()
+	user_points = { user.id: sum_points(user.id, year_id) for user in query.all() }
+	points_order = sorted(user_points.values(), reverse=True)
 
-        if user_id not in user_points:
-                return 0
+	if user_id not in user_points:
+		return 0
 
-        rank = 0.0
-        for points in points_order:
-                if points == user_points[user_id]:
-                        return round((1 - (rank / count)) * 100)
-                rank += 1
+	rank = 0.0
+	for points in points_order:
+		if points == user_points[user_id]:
+				return round((1 - (rank / count)) * 100)
+		rank += 1
 
-        return 0
+	return 0
 
 def get_profile_picture(user):
-        return PROFILE_PICTURE_URL % user.id if user.profile_picture and os.path.isfile(user.profile_picture) else None
+	return PROFILE_PICTURE_URL % user.id if user.profile_picture and os.path.isfile(user.profile_picture) else None
 
 # Spoustu atributu pro serializaci lze teto funkci predat za ucelem
 # minimalizace SQL dotazu. Toho se vyuziva napriklad pri vypisovani vysledkovky.
 # Pokud jsou tyto atributy None, provedou se klasicke dotazy.
 # \users_tasks je [model.Task]
 def to_json(user, year_id, total_score=None, tasks_cnt=None, profile=None, achs=None, seasons=None, users_tasks=None):
-        data = { 'id': user.id, 'first_name': user.first_name, 'last_name': user.last_name, 'profile_picture': get_profile_picture(user), 'gender': user.sex }
+	data = { 'id': user.id, 'first_name': user.first_name, 'last_name': user.last_name, 'profile_picture': get_profile_picture(user), 'gender': user.sex }
 
-        # skryty resitel je pro potreby frontendu normalni resitel
-        if user.role == 'participant_hidden':
-            data['role'] = 'participant'
-        else:
-            data['role'] = user.role
+	# skryty resitel je pro potreby frontendu normalni resitel
+	if user.role == 'participant_hidden':
+		data['role'] = 'participant'
+	else:
+		data['role'] = user.role
 
-        data['score'] = format(total_score, '.1f') if total_score is not None else format(sum_points(user.id, year_id), '.1f')
-        data['tasks_num'] = tasks_cnt if tasks_cnt is not None else len(util.task.fully_submitted(user.id, year_id))
-        data['achievements'] = achs if achs is not None else list(util.achievement.ids_set(achievements(user.id, year_id)))
+	data['score'] = format(total_score, '.1f') if total_score is not None else format(sum_points(user.id, year_id), '.1f')
+	data['tasks_num'] = tasks_cnt if tasks_cnt is not None else len(util.task.fully_submitted(user.id, year_id))
+	data['achievements'] = achs if achs is not None else list(util.achievement.ids_set(achievements(user.id, year_id)))
 
-        if user.role == 'participant' or user.role == 'participant_hidden':
-                if profile is None: profile = session.query(model.Profile).get(user.id)
-                data['addr_country'] = profile.addr_country
-                data['school_name'] = profile.school_name
-                data['seasons'] = seasons if seasons is not None else active_years(user.id)
-        else:
-                if users_tasks is None: users_tasks = user.tasks
-                data['nick_name'] = user.nick_name
-                data['tasks'] = [ task.id for task in users_tasks ]
-                data['short_info'] = user.short_info
+	if user.role == 'participant' or user.role == 'participant_hidden':
+		if profile is None: profile = session.query(model.Profile).get(user.id)
+		data['addr_country'] = profile.addr_country
+		data['school_name'] = profile.school_name
+		data['seasons'] = seasons if seasons is not None else active_years(user.id)
+	elif user.role == 'org' or user.role == 'admin':
+		if users_tasks is None: users_tasks = user.tasks
+		data['nick_name'] = user.nick_name
+		data['tasks'] = [ task.id for task in users_tasks ]
+		data['short_info'] = user.short_info
+	elif user.role == 'tester':
+		data['nick_name'] = user.nick_name
+		data['short_info'] = user.short_info
 
-        return data
+	return data

@@ -35,6 +35,7 @@ class AchievementGrant(object):
 					session.add(ua)
 
 			session.commit()
+			req.context['result'] = '{}'
 		except:
 			session.rollback()
 			raise

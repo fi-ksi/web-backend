@@ -31,6 +31,32 @@ class User(object):
 
 		req.context['result'] = { 'user': util.user.to_json(user, req.context['year'], admin_data=req.context['user'].is_org()) }
 
+	def on_delete(self, req, resp, id):
+		user = req.context['user']
+		user_db = session.query(model.User).get(id)
+
+		if (not user.is_logged_in()) or (not user.is_admin()):
+			resp.status = falcon.HTTP_400
+			return
+
+		if not user_db:
+			resp.status = falcon.HTTP_404
+			return
+
+		profile = session.query(model.Profile).get(id)
+
+		try:
+			if profile: session.delete(profile)
+			session.delete(user_db)
+			session.commit()
+		except:
+			session.rollback()
+			raise
+		finally:
+			session.close()
+
+		req.context['result'] = {}
+
 
 class Users(object):
 	def on_get(self, req, resp):

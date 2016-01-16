@@ -10,4 +10,5 @@ from endpoint.admin.task import Tasks
 from endpoint.admin.taskDeploy import TaskDeploy
 from endpoint.admin.taskMerge import TaskMerge
 from endpoint.admin.waveDiff import WaveDiff
+from endpoint.admin.achievementGrant import AchievementGrant
 

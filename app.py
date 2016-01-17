@@ -31,17 +31,21 @@ class Authorizer(object):
 	def process_request(self, req, resp):
 		if req.auth:
 			token_str = req.auth.split(' ')[-1]
-			token = session.query(model.Token).get(token_str)
+			try:
+				token = session.query(model.Token).get(token_str)
 
-			if token is not None:
-				if req.relative_uri != '/auth' and token.granted + token.expire < datetime.utcnow():
-					raise falcon.HTTPError(falcon.HTTP_401)
+				if token is not None:
+					if req.relative_uri != '/auth' and token.granted + token.expire < datetime.utcnow():
+						raise falcon.HTTPError(falcon.HTTP_401)
 
-				try:
-					req.context['user'] = UserInfo(session.query(model.User).get(token.user), token_str)
-					return
-				except AttributeError:
-					pass
+					try:
+						req.context['user'] = UserInfo(session.query(model.User).get(token.user), token_str)
+						return
+					except AttributeError:
+						pass
+			except:
+				session.rollback()
+				raise
 
 		req.context['user'] = UserInfo()
 
@@ -119,8 +123,9 @@ api.add_route('/threads/{id}', endpoint.Thread())
 api.add_route('/threadDetails/{id}', endpoint.ThreadDetails())
 api.add_route('/users', endpoint.Users())
 api.add_route('/users/{id}', endpoint.User())
-api.add_route('/profile', endpoint.Profile())
 api.add_route('/profile/picture', endpoint.PictureUploader())
+api.add_route('/profile/{id}', endpoint.OrgProfile())
+api.add_route('/profile/', endpoint.Profile())
 api.add_route('/images/{context}/{id}', endpoint.Image())
 api.add_route('/content', endpoint.Content())
 api.add_route('/taskContent/{id}', endpoint.TaskContent())

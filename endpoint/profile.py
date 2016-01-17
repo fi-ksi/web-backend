@@ -64,6 +64,25 @@ class Profile(object):
 
 		req.context['result'] = util.profile.to_json(user, profile, req.context['year'])
 
+# Profily lidi vydavame jen adminum.
+class OrgProfile(object):
+	def on_get(self, req, resp, id):
+		userinfo = req.context['user']
+
+		if (not userinfo.is_logged_in()) or (not userinfo.is_admin()):
+			resp.status = falcon.HTTP_400
+			return
+
+		user = session.query(model.User).get(id)
+		profile = session.query(model.Profile).get(id)
+
+		if (not user) or (not profile):
+			resp.status = falcon.HTTP_404
+			return
+
+		req.context['result'] = util.profile.to_json(user, profile, req.context['year'])
+
+
 class PictureUploader(object):
 
 	def _crop(self, src, dest):

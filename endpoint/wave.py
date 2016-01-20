@@ -39,7 +39,7 @@ class Wave(object):
 
 			wave.index = data['index']
 			wave.caption = data['caption']
-			wave.time_published = data['time']
+			wave.time_published = data['time_published']
 			wave.garant = data['garant']
 
 			session.commit()
@@ -118,8 +118,8 @@ class Waves(object):
 		except:
 			session.rollback()
 			raise
-		finally:
-			session.close()
 
 		req.context['result'] = { 'wave': util.wave.to_json(wave) }
+
+		session.close()
 

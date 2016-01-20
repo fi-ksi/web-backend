@@ -1,6 +1,7 @@
 from db import session
 import model
 import util
+import json
 
 class Year(object):
 
@@ -29,7 +30,7 @@ class Year(object):
 			resp.status = falcon.HTTP_404
 			return
 
-		year.id = data['id']
+		year.id = data['index']
 		year.year = data['year']
 
 		try:
@@ -40,7 +41,7 @@ class Year(object):
 		finally:
 			session.close()
 
-		self.on_get(self, req, resp, id)
+		self.on_get(req, resp, id)
 
 	# Smazani rocniku
 	def on_delete(self, req, resp, id):
@@ -91,8 +92,8 @@ class Years(object):
 
 		data = json.loads(req.stream.read())['year']
 
-		year = model.year(
-			id = data['id'],
+		year = model.Year(
+			id = data['index'],
 			year = data['year']
 		)
 
@@ -102,8 +103,8 @@ class Years(object):
 		except:
 			session.rollback()
 			raise
-		finally:
-			session.close()
 
 		req.context['result'] = { 'year': util.year.to_json(year) }
+
+		session.close()
 

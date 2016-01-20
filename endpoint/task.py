@@ -16,7 +16,7 @@ class Task(object):
 			resp.status = falcon.HTTP_404
 			return
 
-		if (not user.is_logged_in()) or (not user.is_org()):
+		if (not user.is_logged_in()) or ((not user.is_org()) and (not user.is_tester())):
 			if not task in session.query(model.Task).\
 					join(model.Wave, model.Task.wave == model.Wave.id).\
 					filter(model.Wave.public).all():

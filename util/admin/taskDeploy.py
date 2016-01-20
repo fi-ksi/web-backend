@@ -81,6 +81,11 @@ def deploy(task_id, deployLock, scoped):
 		task.evaluation_public = eval_public
 		task.git_commit = repo.head.commit.hexsha
 		task.deploy_status = 'done'
+
+		# Update thread name
+		thread = session.query(model.Thread).get(task.thread)
+		if thread: thread.title = task.title
+
 		session.commit()
 	except Exception as e:
 		exc_type, exc_obj, exc_tb = sys.exc_info()

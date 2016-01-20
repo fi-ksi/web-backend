@@ -39,7 +39,7 @@ class Wave(object):
 
 			wave.index = data['index']
 			wave.caption = data['caption']
-			wave.time_published = data['time_published']
+			if data['time_published']: wave.time_published = data['time_published']
 			wave.garant = data['garant']
 
 			session.commit()

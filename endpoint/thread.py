@@ -71,21 +71,24 @@ class Threads(object):
 		req.context['result'] = { 'thread': util.thread.to_json(thread, user.id) }
 		session.close()
 
+	"""
+		Parametry: ?wave=integer filtruje vlakna k urcite vlne
+	"""
 	def on_get(self, req, resp):
 		user_id = req.context['user'].id if req.context['user'].is_logged_in() else None
 		show_all = (not (user_id is None)) and (req.context['user'].role == 'admin' or req.context['user'].role == 'org')
 
-		# Hacky, nasty, whatever...
-		task_threads = session.query(model.Task).options(load_only("thread")).all()
-		task_threads = map(lambda x: x.thread, task_threads)
+		wave = req.get_param_as_int('wave')
 
-		threads = session.query(model.Thread).filter(model.Thread.public == True).\
-			filter(model.Thread.year == req.context['year'])
-		if not show_all:
-			threads = threads.filter(not_(model.Thread.id.in_(task_threads)))
+		threads = session.query(model.Thread, model.Task).\
+			outerjoin(model.Task, model.Task.thread == model.Thread.id).\
+			filter(model.Thread.public, model.Thread.year == req.context['year'])
+		if wave: threads = threads.filter(model.Task.wave == wave)
 		threads = threads.order_by(desc(model.Thread.id)).all()
 
-		req.context['result'] = { 'threads': [ util.thread.to_json(thread, user_id) for thread in threads] }
+		if not wave: threads = filter(lambda (thr,tsk): tsk == None, threads)
+
+		req.context['result'] = { 'threads': [ util.thread.to_json(thread, user_id) for thread, task in threads] }
 		session.close()
 
 

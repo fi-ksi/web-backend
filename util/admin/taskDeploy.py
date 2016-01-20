@@ -132,7 +132,12 @@ def process_meta(task, filename):
 	task.author = data['author']
 	task.time_deadline = data['time_deadline']
 	if ('icon_ref' in data) and (data['icon_ref'] is not None):
-		task.picture_base = 'data/task-content/' + str(task.id) + '/icon/'
+		# Osetreni reference pres 2 ulohy
+		tmp_task = session.query(model.Task).get(data['icon_ref'])
+		if tmp_task.picture_base:
+			task.picture_base = tmp_task.picture_base
+		else:
+			task.picture_base = 'data/task-content/' + str(data['icon_ref']) + '/icon/'
 	else:
 		task.picture_base = None
 

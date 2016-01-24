@@ -3,6 +3,7 @@ pidfile='gunicorn_pid'
 daemon=True
 errorlog='gunicorn_error.log'
 workers=4
+timeout=60
 
 def pre_request(worker, req):
 	if req.path.startswith('/content/'):

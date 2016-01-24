@@ -124,15 +124,24 @@ def run(module, user_id, data):
 	success, report, sandbox_stdout, sandbox_stderr = _exec(dir, sandbox_dir, 'code.py', programming['args'], programming['stdin'], programming['timeout'], report)
 
 	trigger_data = None
-	if success and programming['post_trigger_script']:
-		success, report, trigger_stdout = _post_trigger(dir, programming['post_trigger_script'], sandbox_dir, report)
-		if not success:
+	if ('post_trigger_script' in programming) and (programming['post_trigger_script']):
+		post_success, report, trigger_stdout = _post_trigger(dir, programming['post_trigger_script'], sandbox_dir, report)
+		if not post_success:
 			return { 'output': 'Selhalo spusteni kodu (kod chyby: 3). Prosim kontaktujte organizatora' }
 
 		trigger_data = json.loads(open(trigger_stdout).read())
+		if success:
+			output = trigger_data['stdout']
+		else:
+			output = trigger_data['stdout'] + open(sandbox_stderr).read()
+	else:
+		if success:
+			output = open(sandbox_dir+"/stdout").read()
+		else:
+			output = open(sandbox_dir+"/stdout").read() + open(sandbox_stderr).read()
 
 	return {
-		'output': trigger_data['stdout'] if success else open(sandbox_stderr).read(),
+		'output': output,
 		'image_output': '/images/codeExecution/%d?file=%s' % (log.id, trigger_data['attachments'][0]) if trigger_data and 'attachments' in trigger_data else None
 	}
 
@@ -196,34 +205,33 @@ def _exec(wd, sandbox_dir, script_name, args, stdin, timeout, report):
 		stdout.close()
 		stderr.close()
 
-		if retcode != 0:
-			status = 'n'
-		else: 
-			# Post process stdout
-			stdout = open(stdout_path, 'r')
-			lines = stdout.readlines()
-			stdout.close()
+		if retcode != 0: status = 'n'
 
-			out = []
-			data = []
+		# Post process stdout
+		stdout = open(stdout_path, 'r')
+		lines = stdout.readlines()
+		stdout.close()
 
-			found = False
-			for line in lines:
-				if found:
-					data.append(line)
+		out = []
+		data = []
+
+		found = False
+		for line in lines:
+			if found:
+				data.append(line)
+			else:
+				if '#KSI_META_OUTPUT_0a859a#' in line:
+					found = True
 				else:
-					if '#KSI_META_OUTPUT_0a859a#' in line:
-						found = True
-					else:
-						out.append(line)
+					out.append(line)
 
-			stdout = open(soutput_path, 'w')
-			stdout.write(''.join(out))
-			stdout.close()
+		stdout = open(soutput_path, 'w')
+		stdout.write(''.join(out))
+		stdout.close()
 
-			meta = open(output_path, 'w')
-			meta.write(''.join(data))
-			meta.close()
+		meta = open(output_path, 'w')
+		meta.write(''.join(data))
+		meta.close()
 
 	except BaseException:
 		exception = traceback.format_exc()

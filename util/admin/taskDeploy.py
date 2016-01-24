@@ -432,8 +432,11 @@ def process_module_programming(module, lines, source_path):
 			shutil.copy2(source_path+"/"+f, target_path+f)
 
 	data['programming']['merge_script'] = target_path + "merge.py"
-	data['programming']['stdin'] = target_path + "stdin.txt"
-	data['programming']['post_trigger_script'] = target_path + "post.py"
+	if os.path.isfile(source_path+"/stdin.txt"):
+		data['programming']['stdin'] = target_path + "stdin.txt"
+	else:
+		open(target_path + "stdin.txt", "a").close() # create empty stdin
+	if os.path.isfile(source_path+"/post.py"): data['programming']['post_trigger_script'] = target_path + "post.py"
 	data['programming']['check_script'] = target_path + "eval.py"
 
 	module.data = json.dumps(data, indent=2)

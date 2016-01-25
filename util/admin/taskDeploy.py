@@ -147,10 +147,7 @@ def process_meta(task, filename):
 	task.author = data['author']
 
 	if 'date_deadline' in data:
-		tmpdt = local2UTC(dateutil.parser.parse(data['date_deadline']))
-		tmpdt.hour = 23
-		tmpdt.minute = 59
-		tmpdt.second = 59
+		task.time_deadline = local2UTC(dateutil.parser.parse(data['date_deadline']).replace(hour=23, minute=59, second=59))
 	else:
 		task.time_deadline = data['time_deadline']
 

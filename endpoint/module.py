@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import json, falcon, os, magic, multipart
-from sqlalchemy import func
+from sqlalchemy import func, exc
 
 import datetime
 from db import session
@@ -262,6 +262,7 @@ class ModuleSubmittedFile(object):
 		submittedFile = self._get_submitted_file(req, resp, id)
 		if submittedFile:
 			# Kontrola casu (soubory lze mazat jen pred deadline)
+			eval_id = submittedFile.evaluation
 			task = session.query(model.Task).\
 				join(model.Module, model.Module.task == model.Task.id).\
 				join(model.Evaluation, model.Evaluation.module == model.Module.id).\
@@ -274,7 +275,7 @@ class ModuleSubmittedFile(object):
 			try:
 				os.remove(submittedFile.path)
 
-				evaluation = session.query(model.Evaluation).get(submittedFile.evaluation)
+				evaluation = session.query(model.Evaluation).get(eval_id)
 				if evaluation:
 					evaluation.full_report += str(datetime.datetime.now()) + " : removed file " + submittedFile.path + '\n'
 
@@ -284,12 +285,24 @@ class ModuleSubmittedFile(object):
 				except:
 					session.rollback()
 					raise
+
+				# Pokud resitel odstranil vsechny soubory, odstranime evaluation
+				if evaluation:
+					files_cnt = session.query(model.SubmittedFile).filter(model.SubmittedFile.evaluation == eval_id).count()
+					if files_cnt == 0:
+						try:
+							session.delete(evaluation)
+							session.commit()
+						except:
+							session.rollback()
+							raise
+
 				req.context['result'] = { 'status': 'ok' }
 
 			except OSError:
 				req.context['result'] = { 'status': 'error', 'error': u'Soubor se nepodařilo odstranit z filesystému' }
 				return
-			except SQLAlchemyError:
+			except exc.SQLAlchemyError:
 				req.context['result'] = { 'status': 'error', 'error': u'Záznam o souboru se nepodařilo odstranit z databáze' }
 				return
 		else:

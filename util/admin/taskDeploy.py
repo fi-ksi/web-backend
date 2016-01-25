@@ -7,6 +7,7 @@ from sqlalchemy import and_
 from lockfile import LockFile
 import model, json, time, pypandoc, re, os, shutil, util, git, sys, traceback, datetime
 import pyparsing as pp
+import dateutil.parser
 
 # Deploy muze byt jen jediny na cely server -> pouzivame lockfile.
 LOCKFILE = '/var/lock/ksi-task-deploy'
@@ -134,13 +135,25 @@ def process_task(task, path):
 		log("Task processing done")
 
 def process_meta(task, filename):
+	def local2UTC(LocalTime):
+		EpochSecond = time.mktime(LocalTime.timetuple())
+		return datetime.datetime.utcfromtimestamp(EpochSecond)
+
 	log("Processing meta " + filename)
 
 	with open(filename, 'r') as f:
 		data = json.loads(f.read().decode('utf-8-sig'))
 
 	task.author = data['author']
-	task.time_deadline = data['time_deadline']
+
+	if 'date_deadline' in data:
+		tmpdt = local2UTC(dateutil.parser.parse(data['date_deadline']))
+		tmpdt.hour = 23
+		tmpdt.minute = 59
+		tmpdt.second = 59
+	else:
+		task.time_deadline = data['time_deadline']
+
 	if ('icon_ref' in data) and (data['icon_ref'] is not None):
 		# Osetreni reference pres 2 ulohy
 		tmp_task = session.query(model.Task).get(data['icon_ref'])

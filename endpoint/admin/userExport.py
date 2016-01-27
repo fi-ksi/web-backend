@@ -54,6 +54,7 @@ class UserExport(object):
 		sum_points_bonus = util.task.sum_points(req.context['year'], bonus=True)
 		inMemoryOutputFile.write(u"Celkem bodů: " + str(sum_points) + u", včetně bonusových úloh: " + str(sum_points_bonus) + '\n')
 		inMemoryOutputFile.write(\
+			u"Pořadí;" +\
 			u"Příjmení;" +\
 			u"Jméno;" +\
 			u"Body;"+\
@@ -71,12 +72,23 @@ class UserExport(object):
 			u'Rok maturity\n'\
 		)
 
-		for user, profile, points, tasks_cnt in users:
+		order = 0
+		last_points = -1
+		for i in range(0, len(users)):
+			user      = users[i][0]
+			profile   = users[i][1]
+			points    = users[i][2]
+			tasks_cnt = users[i][3]
+			if points != last_points:
+				order = i+1
+				last_points = points
+
 			inMemoryOutputFile.write(\
+				str(order)+";"+\
 				user.last_name+";" +\
 				user.first_name+";" +\
 				str(points)+";"+\
-				('A' if points > 0.6*sum_points else 'N')+";"+\
+				('A' if points >= 0.6*sum_points else 'N')+";"+\
 				user.email+";" +\
 				profile.addr_street+";" +\
 				profile.addr_city+";" +\

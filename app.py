@@ -160,5 +160,6 @@ api.add_route('/admin/atasks/{id}/deploy', endpoint.admin.TaskDeploy())
 api.add_route('/admin/atasks/{id}/merge', endpoint.admin.TaskMerge())
 api.add_route('/admin/waves/{id}/diff', endpoint.admin.WaveDiff())
 api.add_route('/admin/achievements/grant', endpoint.admin.AchievementGrant())
+api.add_route('/admin/user-export', endpoint.admin.UserExport())
 
 api.add_sink(log_sink)

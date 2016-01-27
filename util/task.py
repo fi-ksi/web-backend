@@ -81,6 +81,13 @@ def points(task_id, user_id):
 
 	return sum(module.points for module in ppm if module.points is not None)
 
+# Vraci sumu bodu za vsechny moduly v danem rocniku
+# Pokud je vyplneno \bonus, vraci i bonusove
+def sum_points(year_id, bonus):
+	q = session.query(func.sum(model.Module.max_points))
+	if not bonus: q = q.filter(model.Module.bonus == False)
+	return q.scalar()
+
 # vraci seznam id vsech opravenych uloh daneho uzivatele
 # tzn. u uloh, ktere jsou odevzdavany opakovane (automaticky vyhodnocovane)
 # vraci ulohu, pokud resitel udelal submit alespon jednoho (teoreticky spatneho) reseni

@@ -55,14 +55,13 @@ class TaskMerge(object):
 		try:
 			# Fetch repozitare
 			repo = git.Repo(util.git.GIT_SEMINAR_PATH)
-			repo.remotes.origin.fetch() # Kdyby nahodou vetev uz neexistovala, nemazeme ji
-			repo.git.checkout("master")
 
 			if task.git_branch in repo.heads:
+				# Cannot delete branch we are on
+				repo.git.checkout("master")
 				repo.git.branch('-D', task.git_branch)
 
 			task.git_branch = 'master'
-			task.git_commit = repo.heads['master'].commit.hexsha
 
 			session.commit()
 		except:

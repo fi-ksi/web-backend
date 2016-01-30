@@ -52,19 +52,11 @@ class TaskMerge(object):
 		mergeLock = LockFile(util.admin.taskMerge.LOCKFILE)
 		mergeLock.acquire(60) # Timeout zamku je 1 minuta
 
-		# TODO: magic
-		# DONE 0) check if task.git_branch exists, check if task.git_path exists in the branch
-		# 1) git diff task.git_branch master <- modified files in task.git_branch must be only in task.git_path directory
-		# 2) git merge task.git_branch into "master"
-		# 3) git close task_git_branch (close on origin too)
-		# 4) git push
-		# 5) task.git_branch = "master"
-		# 6) task.git_commit = last_commit_hash
-
 		try:
-			# Pull repozitare
+			# Fetch repozitare
 			repo = git.Repo(util.git.GIT_SEMINAR_PATH)
-			repo.remotes.origin.pull()
+			repo.remotes.origin.fetch() # Kdyby nahodou vetev uz neexistovala, nemazeme ji
+			repo.git.checkout("master")
 
 			if task.git_branch in repo.heads:
 				repo.git.branch('-D', task.git_branch)

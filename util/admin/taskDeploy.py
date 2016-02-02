@@ -404,7 +404,7 @@ def process_module_md(module, filename):
 	log("Processing body")
 
 	# Parsovani tela zadani
-	body = replace_h(parse_pandoc('\n'.join(data)))
+	body = replace_h(parse_pandoc(''.join(data)))
 	module.description = body
 
 # Tady opravdu nema nic byt, general module nema zadnou logiku

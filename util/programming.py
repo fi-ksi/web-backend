@@ -66,7 +66,7 @@ def evaluate(task, module, user_id, data):
 
 	(success, report, sandbox_stdout, sandbox_stderr) = _exec(dir, sandbox_dir, 'code.py', programming['args'], programming['stdin'], programming['timeout'], report)
 	if not success:
-		return ( 'exec-error', report, open(sandbox_stderr).read())
+		return ( 'exec-error', report, open(sandbox_stderr).read().decode('utf-8'))
 
 	#if programming.post_trigger_script:
 	#	success, report, trigger_stdout = _post_trigger(dir, programming.post_trigger_script, sandbox_dir, report)
@@ -133,12 +133,12 @@ def run(module, user_id, data):
 		if success:
 			output = trigger_data['stdout']
 		else:
-			output = trigger_data['stdout'] + open(sandbox_stderr).read()
+			output = trigger_data['stdout'] + open(sandbox_stderr).read().decode('utf-8')
 	else:
 		if success:
-			output = open(sandbox_dir+"/stdout").read()
+			output = open(sandbox_dir+"/stdout").read().decode('utf-8')
 		else:
-			output = open(sandbox_dir+"/stdout").read() + open(sandbox_stderr).read()
+			output = open(sandbox_dir+"/stdout").read().decode('utf-8') + open(sandbox_stderr).read().decode('utf-8')
 
 	return {
 		'output': output,

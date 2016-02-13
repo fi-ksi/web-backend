@@ -16,7 +16,7 @@ class Authorize(object):
 		password = req.get_param('password')
 
 		challenge = session.query(model.User).filter(
-			model.User.email == username).first()
+			model.User.email == username, model.User.enabled).first()
 
 		if username and password and challenge and auth.check_password(password, challenge.password):
 			req.context['result'] = auth.OAuth2Token(challenge.id).data
@@ -28,7 +28,7 @@ class Authorize(object):
 		refresh_token = req.get_param('refresh_token')
 
 		token = session.query(model.Token).filter(
-			model.Token.refresh_token == refresh_token).first()
+			model.Token.refresh_token == refresh_token, model.User.enabled).first()
 
 		if token:
 			session.delete(token)

@@ -62,6 +62,7 @@ class Users(object):
 	def on_get(self, req, resp):
 		filt = req.get_param('filter')
 		sort = req.get_param('sort')
+		usr = req.context['user']
 
 		# Tady se dela spoustu magie kvuli tomu, aby se usetrily SQL dotazy
 		# Snazime se minimalizovat pocet dotazu, ktere musi byt provedeny pro kadeho uzivatele
@@ -95,6 +96,8 @@ class Users(object):
 			join(model.Profile, model.User.id == model.Profile.user_id).\
 			group_by(model.User)
 
+		if not usr.is_org(): users = users.filter(model.User.enabled)
+
 		# Filtrovani skupin uzivatelu
 		if filt == 'organisators':
 			users = users.filter(or_(model.User.role == 'org', model.User.role == 'admin'))
@@ -105,7 +108,7 @@ class Users(object):
 
 		# Razeni uzivatelu
 		if sort == 'score':
-			users = users.order_by(desc("total_score"))
+			users = users.filter(model.User.enabled).order_by(desc("total_score"))
 
 		# Polozime SQL dotaz a ziskame vsechny relevantni uzivatele
 		users = users.all()

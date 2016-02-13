@@ -25,7 +25,7 @@ class User(Base):
 	short_info = Column(Text, nullable=False)
 	profile_picture = Column(String(255))
 	role = Column(Enum('admin', 'org', 'participant', 'participant_hidden', 'tester'), nullable=False, default='participant', server_default='participant')
-	enabled = Column(Integer, nullable=False, default=1, server_default='1')
+	enabled = Column(Boolean, nullable=False, default=True, server_default='1')
 	registered = Column(TIMESTAMP, nullable=False, default=datetime.datetime.utcnow, server_default=text('CURRENT_TIMESTAMP'))
 
 	tasks = relationship("Task", primaryjoin='User.id == Task.author')

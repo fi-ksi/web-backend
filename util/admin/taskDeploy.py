@@ -8,6 +8,7 @@ from lockfile import LockFile
 import model, json, time, pypandoc, re, os, shutil, util, git, sys, traceback, datetime
 import pyparsing as pp
 import dateutil.parser
+from humanfriendly import parse_size
 
 # Deploy muze byt jen jediny na cely server -> pouzivame lockfile.
 LOCKFILE = '/var/lock/ksi-task-deploy'
@@ -353,8 +354,8 @@ def process_modules(task, git_path):
 # \module je vzdy inicializovany
 # \module_path muze byt bez lomitka na konci
 def process_module(module, module_path):
-	process_module_json(module, module_path+"/module.json")
-	process_module_md(module, module_path+"/module.md")
+	specific = process_module_json(module, module_path+"/module.json")
+	process_module_md(module, module_path+"/module.md", specific)
 
 # Zpracovani souboru module.json
 def process_module_json(module, filename):
@@ -369,6 +370,9 @@ def process_module_json(module, filename):
 	elif data['type'] == 'sortable': module.type = model.ModuleType.SORTABLE
 	else: module.type = model.ModuleType.GENERAL
 
+	# JSON parametry pro specificky typ modulu
+	specific = data[data['type']] if data['type'] in data else {}
+
 	module.max_points = data['max_points']
 	module.autocorrect = data['autocorrect']
 	module.bonus = data['bonus'] if 'bonus' in data else False
@@ -377,9 +381,11 @@ def process_module_json(module, filename):
 	global eval_public
 	if not module.autocorrect: eval_public = False
 
+	return specific
+
 # Zpracovani module.md
 # Pandoc spoustime az uplne nakonec, abychom mohli provest analyzu souboru.
-def process_module_md(module, filename):
+def process_module_md(module, filename, specific):
 	log("Processing module md")
 
 	with open(filename, 'r') as f:
@@ -394,11 +400,11 @@ def process_module_md(module, filename):
 		module.name = "Nazev modulu nenalezen"
 
 	# Ukolem nasledujicich metod je zpracovat logiku modulu a v \data zanechat uvodni text
-	if module.type == model.ModuleType.GENERAL: data = process_module_general(module, data)
-	elif module.type == model.ModuleType.PROGRAMMING: data = process_module_programming(module, data, os.path.dirname(filename))
-	elif module.type == model.ModuleType.QUIZ: data = process_module_quiz(module, data)
-	elif module.type == model.ModuleType.SORTABLE: data = process_module_sortable(module, data)
-	elif module.type == model.ModuleType.TEXT: data = process_module_text(module, data, os.path.dirname(filename))
+	if module.type == model.ModuleType.GENERAL: data = process_module_general(module, data, specific)
+	elif module.type == model.ModuleType.PROGRAMMING: data = process_module_programming(module, data, specific, os.path.dirname(filename))
+	elif module.type == model.ModuleType.QUIZ: data = process_module_quiz(module, data, specific)
+	elif module.type == model.ModuleType.SORTABLE: data = process_module_sortable(module, data, specific)
+	elif module.type == model.ModuleType.TEXT: data = process_module_text(module, data, specific, os.path.dirname(filename))
 	else: module.description = "Neznamy typ modulu"
 
 	log("Processing body")
@@ -408,12 +414,12 @@ def process_module_md(module, filename):
 	module.description = body
 
 # Tady opravdu nema nic byt, general module nema zadnou logiku
-def process_module_general(module, lines):
+def process_module_general(module, lines, specific):
 	log("Processing general module")
 	module.data = '{}'
 	return lines
 
-def process_module_programming(module, lines, source_path):
+def process_module_programming(module, lines, specific, source_path):
 	log("Processing programming module")
 
 	# Hledame vzorovy kod v zadani
@@ -429,8 +435,9 @@ def process_module_programming(module, lines, source_path):
 
 	# Pridame vzorovy kod do \module.data
 	data = {}
-	old_data = json.loads(module.data) if module.data else None
-	data['programming'] = old_data['programming'] if (old_data) and ('programming' in old_data) else {}
+	#old_data = json.loads(module.data) if module.data else None
+	#data['programming'] = old_data['programming'] if (old_data) and ('programming' in old_data) else {}
+	data['programming'] = {}
 	data['programming']['default_code'] = code
 
 	# Zkopirujeme skripty do prislusnych adresaru
@@ -449,10 +456,17 @@ def process_module_programming(module, lines, source_path):
 	if os.path.isfile(source_path+"/post.py"): data['programming']['post_trigger_script'] = target_path + "post.py"
 	data['programming']['check_script'] = target_path + "eval.py"
 
+	# direktivy z module.json
+	if 'timeout' in specific: data['programming']['timeout'] = specific['timeout']
+	if 'args' in specific: data['programming']['args'] = specific['args']
+	if 'heaplimit' in specific:
+		data['programming']['heaplimit'] = parse_size(specific['heaplimit'])
+		log("Heaplimit parsed as " + str(data['programming']['heaplimit']) + " bytes")
+
 	module.data = json.dumps(data, indent=2)
 	return lines[:line]
 
-def process_module_quiz(module, lines):
+def process_module_quiz(module, lines, specific):
 	log("Processing quiz module")
 
 	# Hledame jednotlive otazky
@@ -500,7 +514,7 @@ def process_module_quiz(module, lines):
 	module.data = json.dumps({ 'quiz': quiz_data }, indent=2)
 	return lines[:text_end]
 
-def process_module_sortable(module, lines):
+def process_module_sortable(module, lines, specific):
 	log("Processing sortable module")
 
 	sort_data = {}
@@ -546,7 +560,7 @@ def get_sortable_offset(text):
 	elif re.match(r"^fi$", text) or re.match(r"^return ", text) or re.match(r"^fi$", text): return -1
 	return 0
 
-def process_module_text(module, lines, path):
+def process_module_text(module, lines, specific, path):
 	log("Processing text module")
 
 	text_data = { "inputs": 0 }

@@ -2,7 +2,7 @@
 
 ## Potrebny software
 
-* Python 3.5 (3.4 pravdepodobne postaci)
+* Python 2.7
 
 ### Python balicky
 
@@ -20,6 +20,7 @@ Je vhodne vyuzit virtualenv - pip install virtualenv, virtualenv env, source env
 * pypandoc
 * pyparsing
 * gitpython
+* humanfriendly
 
 ## Spusteni
 
@@ -45,7 +46,7 @@ You can put lines 3 & 4 in a for loop if you have a list of files to skip.
 Pokud naleznete hezci reseni, budu rad...
 
 ## `config.py`
-Pro funnkcnost backendu musi byt v korenove slozece repozitare souboor `config.py` s heslem k databazi ve formatu:
+Pro funnkcnost backendu musi byt v korenove slozce repozitare souboor `config.py` s heslem k databazi ve formatu:
 
-	SQL_ALCHEMY_URI = 'mysql://ksi:4R98HgIufjDnC9wnn89@127.0.0.1/ksi_prod?charset=utf8'
+	SQL_ALCHEMY_URI = 'mysql://username:password@server/db_name?charset=utf8'
 

@@ -1,11 +1,8 @@
-import subprocess
-import traceback
-import os
-import shutil
-import json
-import ast
-import codecs
+# -*- coding: utf-8 -*-
+
+import subprocess, traceback, os, shutil, json, ast, codecs, re, datetime
 from pypy_interact import PyPySandboxedProc
+from humanfriendly import format_size
 
 from db import session
 import model
@@ -19,11 +16,10 @@ Specifikace \data v databazi modulu pro "programming":
 			"stdin": Text,
 			"args": "[]", <- tento argument je nepovinny
 			"timeout": Integer, <- tento argument je nepovinny
-			"post_trigger_script": Text, (path/to/post-triggger-script.py),
+			"post_trigger_script": Text, (path/to/post-triggger-script.py), <- tento argument je nepovinny
 			"check_script": Text (path/to/check/script)
 		}
 """
-
 
 def to_json(db_dict, user_id):
 	return { 'default_code': db_dict['programming']['default_code'] }
@@ -61,10 +57,11 @@ def evaluate(task, module, user_id, data):
 	script = os.path.join(sandbox_dir, 'code.py')
 	shutil.copyfile(merged_code, script)
 
-	if not 'args' in programming: programming['args'] = "[]"
+	if not 'args' in programming: programming['args'] = []
 	if not 'timeout' in programming: programming['timeout'] = 5
+	if not 'heaplimit' in programming: programming['heaplimit'] = None
 
-	(success, report, sandbox_stdout, sandbox_stderr) = _exec(dir, sandbox_dir, 'code.py', programming['args'], programming['stdin'], programming['timeout'], report)
+	(success, report, sandbox_stdout, sandbox_stderr) = _exec(dir, sandbox_dir, 'code.py', programming['args'], programming['stdin'], programming['timeout'], programming['heaplimit'], report)
 	if not success:
 		return ( 'exec-error', report, open(sandbox_stderr).read().decode('utf-8'))
 
@@ -118,10 +115,11 @@ def run(module, user_id, data):
 	script = os.path.join(sandbox_dir, 'code.py')
 	shutil.copyfile(merged_code, script)
 
-	if not 'args' in programming: programming['args'] = "[]"
+	if not 'args' in programming: programming['args'] = []
 	if not 'timeout' in programming: programming['timeout'] = 5
+	if not 'heaplimit' in programming: programming['heaplimit'] = None
 
-	success, report, sandbox_stdout, sandbox_stderr = _exec(dir, sandbox_dir, 'code.py', programming['args'], programming['stdin'], programming['timeout'], report)
+	success, report, sandbox_stdout, sandbox_stderr = _exec(dir, sandbox_dir, 'code.py', programming['args'], programming['stdin'], programming['timeout'], programming['heaplimit'], report)
 
 	trigger_data = None
 	if ('post_trigger_script' in programming) and (programming['post_trigger_script']):
@@ -185,20 +183,25 @@ def _merge(wd, merge_script, code, code_merged, report):
 
 	return (status == 'y', report)
 
-def _exec(wd, sandbox_dir, script_name, args, stdin, timeout, report):
+def _exec(wd, sandbox_dir, script_name, args, stdin, timeout, heaplimit, report):
 	status = 'y'
 	exception = None
 	stdout_path = os.path.join(wd, 'sandbox.stdout')
 	stderr_path = os.path.join(wd, 'sandbox.stderr')
 	output_path = os.path.join(sandbox_dir, 'output')
 	soutput_path = os.path.join(sandbox_dir, 'stdout')
-	args = [ '/tmp/' + script_name ] + ast.literal_eval(args) if args else []
+
+	margs = []
+	if heaplimit: margs += [ "--heapsize", str(heaplimit) ]
+	margs += [ '/tmp/' + script_name ]
+	if args: margs += args
 
 	try:
+		start_time = datetime.datetime.now()
 		stdout = open(stdout_path, 'w')
 		stderr = open(stderr_path, 'w')
 		stdin = open(stdin) if stdin else sys.stdin
-		sandproc = PyPySandboxedProc(os.path.join(os.path.expanduser('~'), 'pypy', 'pypy', 'goal', 'pypy-c'), args, tmpdir=sandbox_dir, debug=False)
+		sandproc = PyPySandboxedProc(os.path.join(os.path.expanduser('~'), 'pypy', 'pypy', 'goal', 'pypy-c'), margs, tmpdir=sandbox_dir, debug=False)
 		sandproc.settimeout(timeout, interrupt_main=True)
 
 		retcode = sandproc.interact(stdin=stdin, stdout=stdout, stderr=stderr)
@@ -233,6 +236,9 @@ def _exec(wd, sandbox_dir, script_name, args, stdin, timeout, report):
 		meta.write(''.join(data))
 		meta.close()
 
+		# Post process stderr
+		_parse_stderr(stderr_path, timeout, datetime.datetime.now()-start_time, heaplimit)
+
 	except BaseException:
 		exception = traceback.format_exc()
 		status = 'n'
@@ -245,6 +251,17 @@ def _exec(wd, sandbox_dir, script_name, args, stdin, timeout, report):
 		report += '\n __ Error report: __\n%s\n' % exception
 
 	return (status == 'y', report, stdout_path, stderr_path)
+
+def _parse_stderr(filename, timeout, elapsed, heaplimit):
+	with open(filename, "r") as f: content = f.read()
+
+	killed = re.search(r"\[Subprocess killed by SIGTERM\]", content)
+	memory = re.search(r"MemoryError", content)
+	if killed or memory:
+		report = u"Program byl ukončen z důvodu vyčerpání přidělených prostředků.\n"
+		report += u"Časový limit: %d s, limit paměti: %s, čas běhu programu: %.2f s\n" % (timeout, format_size(heaplimit) if heaplimit else "-", elapsed.total_seconds())
+		if elapsed.total_seconds() >= timeout: report += u"Program překročil maximální čas běhu.\n"
+		with codecs.open(filename, "a", "utf-8") as f: f.write(report)
 
 def _post_trigger(wd, trigger_script, sandbox_dir, report):
 	cmd = [ 'xvfb-run', '-a', '/usr/bin/python', os.path.abspath(trigger_script), sandbox_dir ]

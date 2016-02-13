@@ -3,7 +3,14 @@ import model
 from util import config
 
 def to_json(achievement):
-	return { 'id': achievement.id, 'title': achievement.title, 'active': True, 'picture': '/content/achievements/' + achievement.code + '.svg', 'description': achievement.description }
+	return {
+		'id': achievement.id,
+		'title': achievement.title,
+		'active': True,
+		'picture': achievement.picture,
+		'description': achievement.description,
+		"persistent": (achievement.year == None)
+	}
 
 def ids_set(achievements):
 	return set([ achievement.id for achievement in achievements ])

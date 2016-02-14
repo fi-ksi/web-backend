@@ -449,9 +449,8 @@ def process_module_programming(module, lines, specific, source_path):
 			shutil.copy2(source_path+"/"+f, target_path+f)
 
 	data['programming']['merge_script'] = target_path + "merge.py"
-	if os.path.isfile(source_path+"/stdin.txt"):
-		data['programming']['stdin'] = target_path + "stdin.txt"
-	else:
+	data['programming']['stdin'] = target_path + "stdin.txt"
+	if not os.path.isfile(source_path+"/stdin.txt"):
 		open(target_path + "stdin.txt", "a").close() # create empty stdin
 	if os.path.isfile(source_path+"/post.py"): data['programming']['post_trigger_script'] = target_path + "post.py"
 	data['programming']['check_script'] = target_path + "eval.py"

@@ -120,7 +120,7 @@ def to_json(user, year_id, total_score=None, tasks_cnt=None, profile=None, achs=
 	else:
 		data['role'] = user.role
 
-	data['score'] = format(total_score, '.1f') if total_score is not None else format(sum_points(user.id, year_id), '.1f')
+	data['score'] = float(format(total_score, '.1f')) if total_score is not None else float(format(sum_points(user.id, year_id), '.1f'))
 	data['tasks_num'] = tasks_cnt if tasks_cnt is not None else len(util.task.fully_submitted(user.id, year_id))
 	data['achievements'] = achs if achs is not None else list(util.achievement.ids_set(achievements(user.id, year_id)))
 	data['enabled'] = user.enabled

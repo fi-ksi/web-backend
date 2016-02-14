@@ -78,7 +78,7 @@ def score_to_json(module_score):
 	return {
 		'id': module_score.Module.id,
 		'is_corrected': module_score.points is not None,
-		'score': format(module_score.points, '.1f'),
+		'score': float(format(module_score.points, '.1f')),
 		'reviewed_by': module_score.evaluator
 	}
 

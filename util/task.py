@@ -186,7 +186,7 @@ def to_json(task, user=None, adeadline=None, fsubmitted=None, wave=None, corr=No
 		'author': task.author,
 		'details': task.id,
 		'intro': task.intro,
-		'max_score': format(sum([ module.max_points for module in task.modules if not module.bonus ]), '.1f'),
+		'max_score': float(format(sum([ module.max_points for module in task.modules if not module.bonus ]), '.1f')),
 		'time_published': wave.time_published.isoformat(),
 		'time_deadline': task.time_deadline.isoformat() if task.time_deadline else None,
 		'state': tstatus,
@@ -227,7 +227,7 @@ def best_score_to_json(best_score):
 		'id': best_score.User.id,
 		'user': best_score.User.id,
 		'achievements': [ achievement.achievement_id for achievement in achievements ],
-		'score': format(best_score.sum, '.1f')
+		'score': float(format(best_score.sum, '.1f'))
 	}
 
 def admin_to_json(task):

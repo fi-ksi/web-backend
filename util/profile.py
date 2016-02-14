@@ -55,7 +55,7 @@ def _profile_to_json(user, profile, task_scores, year_id):
 			'tshirt_size': profile.tshirt_size,
 			'achievements': list(util.achievement.ids_set(util.user.achievements(user.id, year_id))),
 			'percentile': util.user.percentile(user.id, year_id),
-			'score': format(points, '.1f'),
+			'score': float(format(points, '.1f')),
 			'seasons': util.user.active_years(user.id),
 			'successful': int(successful),
 			'results': [ task.id for task in task_scores.keys() ],
@@ -72,5 +72,5 @@ def task_score_to_json(task, points, user, achievements=None):
 			'id': task.id,
 			'task': task.id,
 			'achievements': achievements,
-			'score': format(points, '.1f') if task.evaluation_public else None
+			'score': float(format(points, '.1f')) if task.evaluation_public else None
 	}

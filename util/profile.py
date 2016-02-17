@@ -12,6 +12,7 @@ def to_json(user, profile, year_id):
 	fsubmitted = util.task.fully_submitted(user.id, year_id)
 	corrected = util.task.corrected(user.id)
 	autocorrected_full = util.task.autocorrected_full(user.id)
+	task_max_points_dict = util.task.max_points_dict()
 
 	# task_achievements je seznam [(Task,Achievement)] pro vsechny achievementy uzivatele user v uloze Task
 	task_achievements = session.query(model.Task, model.Achievement).\
@@ -22,7 +23,7 @@ def to_json(user, profile, year_id):
 
 	return {
 			'profile': [ _profile_to_json(user, profile, task_scores, year_id) ],
-			'tasks': [ util.task.to_json(task, user, adeadline, fsubmitted, None, task.id in corrected, task.id in autocorrected_full) for task in task_scores.keys() ],
+			'tasks': [ util.task.to_json(task, user, adeadline, fsubmitted, None, task.id in corrected, task.id in autocorrected_full, task_max_points=task_max_points_dict[task.id]) for task in task_scores.keys() ],
 			'taskScores': [ task_score_to_json(task, points, user, \
 					[ ach.id for (_, ach) in filter(lambda (tsk, ach): tsk.id == task.id, task_achievements) ]) \
 				for task, points in task_scores.items() ]

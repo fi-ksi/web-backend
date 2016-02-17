@@ -52,17 +52,50 @@ def any_submitted(user_id, year_id):
 def after_deadline():
 	return { int(task.id) for task in session.query(model.Task).filter(model.Task.time_deadline < datetime.datetime.utcnow() ).all() }
 
-def max_points(task_id):
-	points = session.query(func.sum(model.Module.max_points).label('points')).\
-		filter(model.Module.task == task_id).first().points
+def max_points(task_id, bonus=False):
+	points = session.query(func.sum(model.Module.max_points).label('points'))
+	if not bonus: points = points.filter(model.Module.bonus == False)
+	points = points.filter(model.Module.task == task_id).first().points
 
-	return int(points) if points else 0
+	return float(points) if points else 0
 
-def max_points_dict():
-	points_per_task = session.query(model.Module.task.label('id'), func.sum(model.Module.max_points).label('points')).\
-		group_by(model.Module.task).all()
+# Vraci seznam svojic (task_id, max_points)
+def max_points_dict(bonus=False):
+	# Musime si davat pozor na to, ze uloha muze byt bez modulu
+	# points_per_task musi vratit i ulohy bez modulu (v tom pripade vrati points jako Null)
+	points_per_task = session.query(model.Task.id.label('id'), func.sum(model.Module.max_points).label('points')).\
+		outerjoin(model.Module, model.Module.task == model.Task.id)
+	if not bonus: points_per_task = points_per_task.filter(or_(model.Module.id == None, model.Module.bonus == False))
+	points_per_task = points_per_task.group_by(model.Task).all()
 
-	return { task.id: int(task.points) for task in points_per_task }
+	return { task.id: task.points if task.points else 0.0 for task in points_per_task }
+
+# Interni funkce pro minimalizaci poctu radku
+def _max_points_per_wave(bonus=False):
+	# Nevadi nam, kdyz points_per_task nektere ulohy nevrati (to budou ty, ktere nemaji modul)
+	points_per_task = session.query(model.Module.task.label('id'), func.sum(model.Module.max_points).label('points'))
+	if not bonus: points_per_task = points_per_task.filter(model.Module.bonus == False)
+	points_per_task = points_per_task.group_by(model.Module.task).subquery()
+
+	# points_per_wave
+	return session.query(model.Wave.id.label('id'), func.sum(points_per_task.c.points).label('points')).\
+		outerjoin(model.Task, model.Task.wave == model.Wave.id).\
+		outerjoin(points_per_task, points_per_task.c.id == model.Task.id).\
+		group_by(model.Wave)
+
+# Vraci seznam dvojic (wave_id, max_points)
+def max_points_wave_dict(bonus=False):
+	return { wave.id: wave.points if wave.points else 0.0 for wave in _max_points_per_wave(bonus).all() }
+
+# Vraci seznam dvojic (year_id, max_points)
+def max_points_year_dict(bonus=False):
+	points_per_wave = _max_points_per_wave(bonus).subquery()
+	points_per_year = session.query(model.Year.id.label('id'), func.sum(points_per_wave.c.points).label('points')).\
+		outerjoin(model.Wave, model.Wave.year == model.Year.id).\
+		outerjoin(points_per_wave, points_per_wave.c.id == model.Wave.id).\
+		group_by(model.Year).all()
+
+	return { year.id: year.points if year.points else 0.0 for year in points_per_year }
 
 def points_per_module(task_id, user_id):
 	return session.query(model.Module, \
@@ -172,8 +205,8 @@ def time_published(task_id):
 		join(model.Task, model.Task.wave == model.Wave.id).\
 		filter(model.Task.id == task_id).scalar()
 
-def to_json(task, user=None, adeadline=None, fsubmitted=None, wave=None, corr=None, acfull=None):
-	max_points = sum([ module.max_points for module in task.modules ])
+def to_json(task, user=None, adeadline=None, fsubmitted=None, wave=None, corr=None, acfull=None, task_max_points=None):
+	if not task_max_points: task_max_points = max_points(task.id)
 	tstatus = status(task, user, adeadline, fsubmitted, wave, corr, acfull)
 	pict_base = task.picture_base if task.picture_base is not None else "/taskContent/" + str(task.id) + "/icon/"
 
@@ -186,7 +219,7 @@ def to_json(task, user=None, adeadline=None, fsubmitted=None, wave=None, corr=No
 		'author': task.author,
 		'details': task.id,
 		'intro': task.intro,
-		'max_score': float(format(sum([ module.max_points for module in task.modules if not module.bonus ]), '.1f')),
+		'max_score': float(format(task_max_points, '.1f')),
 		'time_published': wave.time_published.isoformat(),
 		'time_deadline': task.time_deadline.isoformat() if task.time_deadline else None,
 		'state': tstatus,
@@ -230,7 +263,9 @@ def best_score_to_json(best_score):
 		'score': float(format(best_score.sum, '.1f'))
 	}
 
-def admin_to_json(task):
+def admin_to_json(task, amax_points=None):
+	if not amax_points: amax_points = max_points(task.id)
+
 	return {
 		'id': task.id,
 		'title': task.title,
@@ -240,6 +275,7 @@ def admin_to_json(task):
 		'git_branch': task.git_branch,
 		'git_commit': task.git_commit,
 		'deploy_date': task.deploy_date.isoformat() if task.deploy_date else None,
-		'deploy_status': task.deploy_status
+		'deploy_status': task.deploy_status,
+		'max_score': float(format(amax_points, '.1f')),
 	}
 

@@ -29,6 +29,7 @@ class CorrectionsPublish(object):
 				return
 			task.evaluation_public = public
 			session.commit()
+			req.context['result'] = "{}"
 		except:
 			session.rollback()
 			raise

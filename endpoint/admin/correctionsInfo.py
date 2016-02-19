@@ -5,6 +5,26 @@ from db import session
 import model
 import util
 
+class CorrectionInfo(object):
+
+	def on_get(self, req, resp, id):
+		user = req.context['user']
+		year = req.context['year']
+
+		if (not user.is_logged_in()) or (not user.is_org()):
+			resp.status = falcon.HTTP_400
+			return
+
+		task = session.query(model.Task).get(id)
+		if not task:
+			resp.status = falcon.HTTP_404
+			return
+
+		req.context['result'] = {
+			'correctionsInfo': util.correctionInfo.task_to_json(task)
+		}
+
+
 class CorrectionsInfo(object):
 
 	"""

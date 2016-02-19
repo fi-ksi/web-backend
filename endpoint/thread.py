@@ -30,6 +30,7 @@ class Thread(object):
 				session.add(visit)
 
 			session.commit()
+			req.context['result'] = "{}"
 		except:
 			session.rollback()
 			raise

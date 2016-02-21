@@ -51,6 +51,14 @@ def corr_eval_to_json(module, evaluation, files=None):
 
 	if module.type == model.module.ModuleType.GENERAL:
 		res['general'] = _corr_general_to_json(module, evaluation, files)
+	elif module.type == model.module.ModuleType.PROGRAMMING:
+		res['programming'] = {}
+	elif module.type == model.module.ModuleType.QUIZ:
+		res['quiz'] = {}
+	elif module.type == model.module.ModuleType.SORTABLE:
+		res['sortable'] = {}
+	elif module.type == model.module.ModuleType.TEXT:
+		res['text'] = {}
 
 	return res
 

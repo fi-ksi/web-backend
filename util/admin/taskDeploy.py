@@ -497,7 +497,7 @@ def process_module_quiz(module, lines, specific):
 		options = []
 		correct = []
 		while line < len(lines):
-			match = re.match(r"^~\s*(.*?)\s*(\*|-)", lines[line]+" -")
+			match = re.match(r"^~\s*(.*?)\s*(\*|-)(\s|-)*$", lines[line]+" -")
 			if not match: break
 			options.append(parse_pandoc(match.group(1)).replace("<p>", "").replace("</p>", "").replace('\n', ''))
 			if match.group(2) == '*': correct.append(len(options)-1)

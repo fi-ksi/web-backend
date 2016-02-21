@@ -1,3 +1,4 @@
+from endpoint.admin.evaluations import Evaluation
 from endpoint.admin.corrections import Corrections
 from endpoint.admin.corrections import Correction
 from endpoint.admin.correctionsInfo import CorrectionsInfo

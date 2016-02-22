@@ -40,7 +40,7 @@ def _corr_general_to_json(module, evaluation, files=None):
 	}
 
 # \files je seznam souboru pro souborovy modul
-def _corr_eval_to_json(module, evaluation, files=None):
+def corr_eval_to_json(module, evaluation, files=None):
 	res = {
 		'eval_id': evaluation.id,
 		'points': evaluation.points,
@@ -51,6 +51,14 @@ def _corr_eval_to_json(module, evaluation, files=None):
 
 	if module.type == model.module.ModuleType.GENERAL:
 		res['general'] = _corr_general_to_json(module, evaluation, files)
+	elif module.type == model.module.ModuleType.PROGRAMMING:
+		res['programming'] = {}
+	elif module.type == model.module.ModuleType.QUIZ:
+		res['quiz'] = {}
+	elif module.type == model.module.ModuleType.SORTABLE:
+		res['sortable'] = {}
+	elif module.type == model.module.ModuleType.TEXT:
+		res['text'] = {}
 
 	return res
 
@@ -66,7 +74,7 @@ def _corr_module_to_json(evals, module, evl=None, files=None):
 	return {
 		'module_id': module.id,
 		'evaluations_list': [ evaluation.id for evaluation in evals ],
-		'evaluation': _corr_eval_to_json(module, evl, files)
+		'evaluation': corr_eval_to_json(module, evl, files)
 	}
 
 # \modules je [(Evaluation, Module, specific_eval)] a je seskupeno podle modulu

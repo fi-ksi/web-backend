@@ -79,7 +79,9 @@ class Years(object):
 	def on_get(self, req, resp):
 		years = session.query(model.Year).all()
 
-		req.context['result'] = { 'years': [ util.year.to_json(year) for year in years ] }
+		sum_points = util.task.max_points_year_dict()
+
+		req.context['result'] = { 'years': [ util.year.to_json(year, sum_points[year.id]) for year in years ] }
 
 	# Vytvoreni noveho rocniku
 	def on_post(self, req, resp):

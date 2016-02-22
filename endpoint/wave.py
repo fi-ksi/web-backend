@@ -90,7 +90,9 @@ class Waves(object):
 		waves = session.query(model.Wave).\
 			filter(model.Wave.year == req.context['year']).all()
 
-		req.context['result'] = { 'waves': [ util.wave.to_json(wave) for wave in waves ] }
+		max_points = util.task.max_points_wave_dict()
+
+		req.context['result'] = { 'waves': [ util.wave.to_json(wave, max_points[wave.id]) for wave in waves ] }
 
 	# Vytvoreni nove vlny
 	def on_post(self, req, resp):

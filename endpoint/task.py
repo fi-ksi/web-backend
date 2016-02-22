@@ -41,8 +41,9 @@ class Tasks(object):
 		fsubmitted = util.task.fully_submitted(user.id, req.context['year'])
 		corrected = util.task.corrected(user.id)
 		autocorrected_full = util.task.autocorrected_full(user.id)
+		task_max_points_dict = util.task.max_points_dict()
 
-		req.context['result'] = { 'tasks': [ util.task.to_json(task.Task, user, adeadline, fsubmitted, task.Wave, task.Task.id in corrected, task.Task.id in autocorrected_full) for task in tasks ] }
+		req.context['result'] = { 'tasks': [ util.task.to_json(task.Task, user, adeadline, fsubmitted, task.Wave, task.Task.id in corrected, task.Task.id in autocorrected_full, task_max_points=task_max_points_dict[task.Task.id]) for task in tasks ] }
 
 
 class TaskDetails(object):

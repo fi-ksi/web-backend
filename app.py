@@ -147,9 +147,11 @@ api.add_route('/years', endpoint.Years())
 api.add_route('/years/{id}', endpoint.Year())
 
 
+api.add_route('/admin/evaluations/{id}', endpoint.admin.Evaluation())
 api.add_route('/admin/corrections', endpoint.admin.Corrections())
 api.add_route('/admin/corrections/{id}', endpoint.admin.Correction())
 api.add_route('/admin/correctionsInfos', endpoint.admin.CorrectionsInfo())
+api.add_route('/admin/correctionsInfos/{id}', endpoint.admin.CorrectionInfo())
 api.add_route('/admin/corrections/{id}/publish', endpoint.admin.CorrectionsPublish())
 api.add_route('/admin/subm/eval/{eval_id}/', endpoint.admin.SubmFilesEval())
 api.add_route('/admin/subm/task/{task_id}/', endpoint.admin.SubmFilesTask())

@@ -130,7 +130,9 @@ class Tasks(object):
 			tasks = tasks.filter(model.Wave.id == wave)
 		tasks = tasks.all()
 
-		req.context['result'] = { 'atasks': [ util.task.admin_to_json(task.Task) for task in tasks ] }
+		max_points = util.task.max_points_dict()
+
+		req.context['result'] = { 'atasks': [ util.task.admin_to_json(task.Task, max_points[task.Task.id]) for task in tasks ] }
 
 	# Vytvoreni nove ulohy
 	"""

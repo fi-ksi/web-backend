@@ -1,5 +1,5 @@
 from db import session
-import model, os
+import model, os, falcon
 
 class EvalCode(object):
 
@@ -14,11 +14,14 @@ class EvalCode(object):
 			filter(model.SubmittedCode.evaluation == id).first()
 
 		if not code:
-			req.context['result'] = { 'errors': [ { 'id': 5, 'title': "Evaluation not found" } ] }
-			resp.status = falcon.HTTP_404
+			req.context['result'] = { 'errors': [ { 'id': 5, 'title': "Code not found in db" } ] }
 			return
 
 		evaluation = session.query(model.Evaluation).get(code.evaluation)
+		if not evaluation:
+			req.context['result'] = { 'errors': [ { 'id': 5, 'title': "Evaluation not found in db" } ] }
+			return
+
 		eval_dir = 'data/submissions/module_' + str(evaluation.module) + '/' + 'user_' + str(evaluation.user) + '/'
 
 		try:
@@ -34,5 +37,5 @@ class EvalCode(object):
 				}
 			}
 		except Exception as e:
-			req.context['result'] = { 'errors': [ 'id': 6, 'title': str(e) ] }
+			req.context['result'] = { 'errors': [ { 'id': 10, 'title': str(e) } ] }
 

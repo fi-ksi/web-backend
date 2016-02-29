@@ -1,22 +1,44 @@
 from model import PrerequisiteType
 from db import session
 
+# Prerekvizity uloh maji omezeni:
+# OR nemuze byt vnitrni po AND
+# (13 && 12) || (15 && 16) validni
+# (13 || 12) || (15 && 16) validni
+# (13 || 12) && (15 && 16) NEvalidni
+
 def to_json(prereq):
 	if(prereq.type == PrerequisiteType.ATOMIC):
 		return [ [ prereq.task ] ]
 
 	if(prereq.type == PrerequisiteType.AND):
-		return [ [ child.task for child in prereq.children ] ]
+		return [ _to_json2(prereq) ]
 
 	if(prereq.type == PrerequisiteType.OR):
-		return [ _to_json2(child) for child in prereq.children ]
+		return _to_json2(prereq)
 
 def _to_json2(prereq):
 	if(prereq.type == PrerequisiteType.ATOMIC):
 		return [ prereq.task ]
 
-	if(prereq.type == PrerequisiteType.AND):
-		return [ child.task for child in prereq.children ]
+	elif(prereq.type == PrerequisiteType.AND):
+		l = []
+		for child in prereq.children: l.extend(_to_json2(child))
+		return l
+
+	elif(prereq.type == PrerequisiteType.OR):
+		# Propagujeme ORy nahoru
+		l = []
+		for child in prereq.children:
+			l_in = _to_json2(child)
+			if isinstance(l_in[0], list):
+				l.extend(l_in)
+			else:
+				l.append(l_in)
+		return l
+
+	else:
+		return []
 
 # Smaze vsechny deti \root, \root zachova pri delete_root
 # Po zavolani funkce je nutne volat session.commit()

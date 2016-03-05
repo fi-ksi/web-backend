@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 import os
 import falcon
 import json
@@ -26,6 +27,7 @@ class User(object):
 		user = session.query(model.User).get(id)
 
 		if user is None:
+			req.context['result'] = { 'errors': [ { 'status': '404', 'title': 'Not found', 'detail': u'Uživatel s tímto ID neexistuje.' } ] }
 			resp.status = falcon.HTTP_404
 			return
 

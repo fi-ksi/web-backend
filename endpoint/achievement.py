@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from db import session
 import model, util, falcon, json
 from sqlalchemy import or_
@@ -8,6 +10,7 @@ class Achievement(object):
 		achievement = session.query(model.Achievement).get(id)
 
 		if achievement is None:
+			req.context['result'] = { 'errors': [ { 'status': '404', 'title': 'Not found', 'detail': u'Trofej s tímto ID neexistuje.' } ] }
 			resp.status = falcon.HTTP_404
 			return
 
@@ -18,10 +21,12 @@ class Achievement(object):
 		achievement = session.query(model.Achievement).get(id)
 
 		if (not user.is_logged_in()) or (not user.is_admin()):
+			req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized', 'detail': u'Smazání trofeje může provést pouze administrátor.' } ] }
 			resp.status = falcon.HTTP_400
 			return
 
 		if not achievement:
+			req.context['result'] = { 'errors': [ { 'status': '404', 'title': 'Not Found', 'detail': u'Trofej s tímto ID neexsituje.' } ] }
 			resp.status = falcon.HTTP_404
 			return
 
@@ -48,13 +53,15 @@ class Achievement(object):
 
 		# Upravovat trofeje mohou jen orgove
 		if (not user.is_logged_in()) or (not user.is_org()):
-				resp.status = falcon.HTTP_400
-				return
+			req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized', 'detail': u'Úpravu trofeje může provést pouze organizátor.' } ] }
+			resp.status = falcon.HTTP_400
+			return
 
 		data = json.loads(req.stream.read())['achievement']
 
 		achievement = session.query(model.Achievement).get(id)
 		if achievement is None:
+			req.context['result'] = { 'errors': [ { 'status': '404', 'title': 'Not Found', 'detail': u'Trofej s tímto ID neexistuje.' } ] }
 			resp.status = falcon.HTTP_404
 			return
 
@@ -74,29 +81,6 @@ class Achievement(object):
 
 		self.on_get(req, resp, id)
 
-	# Smazani trofeje
-	def on_delete(self, req, resp, id):
-		user = req.context['user']
-
-		if (not user.is_logged_in()) or (not user.is_org()):
-			resp.status = falcon.HTTP_400
-			return
-
-		achievement = session.query(model.Achievement).get(id)
-		if achievement is None:
-			resp.status = falcon.HTTP_404
-			return
-
-		try:
-			session.delete(achievement)
-			session.commit()
-			req.context['result'] = {}
-		except:
-			session.rollback()
-			raise
-		finally:
-			session.close()
-
 
 class Achievements(object):
 
@@ -112,6 +96,7 @@ class Achievements(object):
 
 		# Vytvoret novou trofej mohou jen orgove
 		if (not user.is_logged_in()) or (not user.is_org()):
+			req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized', 'detail': u'Přidání trofeje může provést pouze organizátor.' } ] }
 			resp.status = falcon.HTTP_400
 			return
 

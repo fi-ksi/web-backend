@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from model import PrerequisiteType
 from db import session
 

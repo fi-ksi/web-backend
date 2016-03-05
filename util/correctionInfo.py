@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import datetime
 from sqlalchemy import func, distinct, or_, and_, not_, desc
 from sqlalchemy.dialects import mysql

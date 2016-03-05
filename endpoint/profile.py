@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import json, falcon, magic, tempfile, shutil, os
 from sqlalchemy import func
 from PIL import Image
@@ -70,6 +72,7 @@ class OrgProfile(object):
 		userinfo = req.context['user']
 
 		if (not userinfo.is_logged_in()) or (not userinfo.is_admin()):
+			req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized', 'detail': u'Prohlížet cizí profily může pouze administrátor.' } ] }
 			resp.status = falcon.HTTP_400
 			return
 
@@ -77,6 +80,7 @@ class OrgProfile(object):
 		profile = session.query(model.Profile).get(id)
 
 		if (not user) or (not profile):
+			req.context['result'] = { 'errors': [ { 'status': '404', 'title': 'Not Found', 'detail': u'Uživatel nebo profil s tímto ID neexistuje.' } ] }
 			resp.status = falcon.HTTP_404
 			return
 

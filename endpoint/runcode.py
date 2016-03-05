@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import falcon
 import json
 from datetime import datetime

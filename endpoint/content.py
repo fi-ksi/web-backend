@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import os, time, uuid, magic
 
 import falcon
@@ -33,6 +35,7 @@ class Content(object):
 			return
 
 		if not os.path.isfile(filePath):
+			req.context['result'] = { 'errors': [ { 'status': '404', 'title': 'Not Found', 'detail': u'Tento adresář neexistuje.' } ] }
 			resp.status = falcon.HTTP_404
 			return
 
@@ -44,6 +47,7 @@ class Content(object):
 		user = req.context['user']
 
 		if (not user.is_logged_in()) or (not user.is_org()):
+			req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized', 'detail': u'Upravovat content může pouze organizátor.' } ] }
 			resp.status = falcon.HTTP_400
 			return
 

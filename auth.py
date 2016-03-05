@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import string, random, urllib, falcon, bcrypt
 
 from db import session

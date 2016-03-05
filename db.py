@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import sqlalchemy
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import DisconnectionError

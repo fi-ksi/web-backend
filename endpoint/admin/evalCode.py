@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from db import session
 import model, os, falcon
 

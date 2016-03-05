@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import falcon
 import json
 from sqlalchemy import and_, text, not_, desc, func
@@ -42,7 +44,13 @@ class Thread(object):
 		user_id = req.context['user'].id if req.context['user'].is_logged_in() else None
 		thread = session.query(model.Thread).get(id)
 
+		if not thread:
+			req.context['result'] = { 'errors': [ { 'status': '404', 'title': 'Not Found', 'detail': u'Toto vlákno neexistuje.' } ] }
+			resp.status = falcon.HTTP_404
+			return
+
 		if (not thread) or (not thread.public and not (user.is_org() or util.thread.is_eval_thread(user.id, thread.id))):
+			req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized', 'detail': u'Přístup k vláknu odepřen.' } ] }
 			resp.status = falcon.HTTP_400
 			return
 

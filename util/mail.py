@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from email.mime.text import MIMEText
 from email import Charset
 import sys, copy, threading, random, model, smtplib, Queue

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 import json, falcon, os, magic, multipart
 from sqlalchemy import func, exc
 
@@ -15,6 +16,7 @@ class Module(object):
 		user = req.context['user']
 
 		if not user.is_logged_in():
+			req.context['result'] = { 'errors': [ { 'status': '404', 'title': 'Not Found', 'detail': u'Modul s tímto ID neexistuje.' } ] }
 			resp.status = falcon.HTTP_400
 			return
 

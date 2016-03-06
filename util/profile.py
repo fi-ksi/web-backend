@@ -63,7 +63,10 @@ def _profile_to_json(user, profile, task_scores, year_id):
 			'successful': int(successful),
 			'results': [ task.id for task in task_scores.keys() ],
 			'role': user.role,
-			'tasks_num': len(util.task.fully_submitted(user.id, year_id))
+			'tasks_num': len(util.task.fully_submitted(user.id, year_id)),
+
+			'notify_eval': profile.notify_eval,
+			'notify_response': profile.notify_response,
 	}
 
 # \achievements ocekava seznam ID achievementu nebo None

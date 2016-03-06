@@ -15,7 +15,6 @@ THUMB_SIZE = 263, 263
 
 class Profile(object):
 
-	#TODO: Realne ukladani dat
 	def on_put(self, req, resp):
 		userinfo = req.context['user']
 
@@ -42,6 +41,9 @@ class Profile(object):
 		profile.school_country = data['school_country']
 		profile.school_finish = data['school_finish']
 		profile.tshirt_size = data['tshirt_size']
+
+		profile.notify_eval = data['notify_eval']
+		profile.notify_response = data['notify_response']
 
 		try:
 			session.add(user)

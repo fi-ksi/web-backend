@@ -62,6 +62,8 @@ class CorrectionsEmail(object):
 					body += u"<p>Můžeš si prohlédnout <a href=\"%s\">výsledkovku</a>, podívat se na <a href=\"%s\">vzorové řešení úlohy</a>, nebo <a href=\"%s\">odpovědět na komentář opravujícího</a>.</p>" % (util.config.ksi_web()+"/vysledky", util.config.ksi_web()+"/ulohy/"+str(id)+"/reseni", util.config.ksi_web()+"/ulohy/"+str(id)+"/hodnoceni")
 					body += util.config.karlik_img()
 
+					body += u"<hr><p>Tuto zprávu dostáváš, protože máš v nastavení na <a href=\"%s\">KSI webu</a> aktivované zasílání notifikací. Pokud nechceš dostávat notifikace, změň si nastavení na webu.</p>" % (util.config.ksi_web())
+
 					util.mail.send(to[0].email, u"[KSI] Úloha %s opravena" % task.title, body)
 				except Exception as e:
 					errors.append( str(e) )

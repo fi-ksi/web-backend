@@ -209,6 +209,8 @@ class Posts(object):
 					body += util.post.to_html(parent, parent_user)
 					body += u"<div style='margin-left: 50px;'>%s</div>" % (util.post.to_html(post))
 					body += util.config.karlik_img()
+					body += u"<hr><p>Tuto zprávu dostáváš, protože máš v nastavení na <a href=\"%s\">KSI webu</a> aktivované zasílání notifikací. Pokud nechceš dostávat notifikace, změň si nastavení na webu.</p>" % (util.config.ksi_web())
+
 
 					util.mail.send(parent_user.email, u'[KSI-WEB] Nový příspěvek v diskuzi %s' % (thread.title), body)
 				except:

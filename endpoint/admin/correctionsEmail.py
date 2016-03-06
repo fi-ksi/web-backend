@@ -66,7 +66,7 @@ class CorrectionsEmail(object):
 
 					body += u"<hr><p>Tuto zprávu dostáváš, protože máš v nastavení na <a href=\"%s\">KSI webu</a> aktivované zasílání notifikací. Pokud nechceš dostávat notifikace, změň si nastavení na webu.</p>" % (util.config.ksi_web())
 
-					util.mail.send(to[0].email, u"[KSI] Úloha %s opravena" % task.title, body)
+					util.mail.send(to[0].email, u"[KSI-WEB] Úloha %s opravena" % task.title, body)
 				except Exception as e:
 					errors.append( str(e) )
 					#raise

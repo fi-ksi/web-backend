@@ -17,7 +17,8 @@ class Post(object):
 		user = req.context['user']
 
 		if (not user.is_logged_in()) or (not user.is_org()):
-			resp.status = falcon.HTTP_400
+			# Toto tady musi byt -- jinak nefunguje frontend.
+			self.on_get(req, resp, id)
 			return
 
 		data = json.loads(req.stream.read())['post']
@@ -121,11 +122,23 @@ class Posts(object):
 
 		user_class = session.query(model.User).get(user.id)
 
-		#posilani mailu
+		# Kontrola existence rodicovskeho vlakna
+		parent = session.query(model.Post).filter(model.Post.id == data['parent'], model.Post.thread == thread_id).first()
+		if data['parent'] and not parent:
+			resp.status = falcon.HTTP_400
+			return
+
+		# Tady si pamatujeme, komu jsme email jiz odeslali
+		sent_emails = []
+
+		# ------------------------------------------
+		# Odesilani emailu orgum
 		if user.role == 'participant' or user.role == 'participant_hidden':
-			
+
 			if task_thread:
+				# Vlakno k uloze -> posilame email autoru ulohy
 				task_author = session.query(model.User).filter(model.User.id == task_thread.author).first()
+				sent_emails.append(task_author.email)
 				try:
 					util.mail.send(task_author.email, u'[KSI-WEB] Nový příspěvek k úloze ' + task_thread.title, 
 						u'<p>Ahoj,<br/>k tvé úloze <a href="' + config.ksi_web() + u'/ulohy/' + str(task_thread.id) + u'">' +\
@@ -138,11 +151,14 @@ class Posts(object):
 					print str(e)
 
 			elif solution_thread:
+				# Vlakno k oprave -> posilame email autoru opravy
 				correctors = [ r for r, in session.query(model.User.email).\
 					join(model.Evaluation, model.Evaluation.evaluator == model.User.id).\
 					join(model.Module, model.Evaluation.module == model.Module.id).\
 					join(model.Task, model.Task.id == model.Module.task).\
 					filter(model.Task.id == solution_thread.task).all() ]
+
+				for corr_email in correctors: sent_emails.append(corr_email)
 
 				if correctors:
 					task = session.query(model.Task).get(solution_thread.task)
@@ -157,7 +173,9 @@ class Posts(object):
 						e = sys.exc_info()[0]
 						print str(e)
 			else:
+				# Obecna diskuze -> email na ksi@fi.muni.cz
 				try:
+					sent_emails.append(config.ksi_conf())
 					util.mail.send(config.ksi_conf(), '[KSI-WEB] Nový příspěvek v obecné diskuzi',
 						u'<p>Ahoj,<br/>do obecné diskuze na <a href="'+ config.ksi_web() + '/">' + config.ksi_web() +u'</a> byl přidán nový příspěvek:</p><p><i>' +\
 						user_class.first_name + u' ' + user_class.last_name + u':</i></p>' + data['body'] +\
@@ -167,18 +185,35 @@ class Posts(object):
 					e = sys.exc_info()[0]
 					print str(e)
 
-		parent = data['parent']
-		if parent and not session.query(model.Post).filter(model.Post.id == parent, model.Post.thread == thread_id).first():
-			resp.status = falcon.HTTP_400
-			return
-
+		# ------------------------------------------
+		# Pridani prispevku
 		try:
-			post = model.Post(thread=thread_id, author=user.id, body=data['body'], parent=parent)
+			post = model.Post(thread=thread_id, author=user.id, body=data['body'], parent=data['parent'])
 			session.add(post)
 			session.commit()
 		except:
 			session.rollback()
 			raise
+
+		# ------------------------------------------
+		# Odesilani emailu v reakci na muj prispevek:
+
+		if parent:
+			parent_user = session.query(model.User).get(parent.author)
+			parent_profile = session.query(model.Profile).get(parent.author)
+			if (parent_user.email not in sent_emails) and (parent_profile.notify_response):
+				try:
+					sent_emails.append(parent_user.email)
+
+					body = u"<p>Ahoj,<br>do diskuze <a href=\"%s\">%s</a> byl přidán nový příspěvek.</p>" % (util.config.ksi_web() + "/forum/" + str(thread.id), thread.title)
+					body += util.post.to_html(parent, parent_user)
+					body += u"<div style='margin-left: 50px;'>%s</div>" % (util.post.to_html(post))
+					body += util.config.karlik_img()
+
+					util.mail.send(parent_user.email, u'[KSI-WEB] Nový příspěvek v diskuzi %s' % (thread.title), body)
+				except:
+					e = sys.exc_info()[0]
+					print str(e)
 
 		req.context['result'] = { 'post': util.post.to_json(post, user.id) }
 

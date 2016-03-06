@@ -2,6 +2,7 @@
 
 from db import session
 import model
+import util
 
 def to_json(post, user_id, last_visit=None, last_visit_filled=False):
 	if user_id:
@@ -21,3 +22,7 @@ def to_json(post, user_id, last_visit=None, last_visit_filled=False):
 		'reaction': [ reaction.id for reaction in post.reactions ],
 		'is_new': is_new
 	}
+
+def to_html(post, author=None):
+	if not author: author = session.query(model.User).get(post.author)
+	return "<p><i><a href=\"%s\">%s</a></i>:</p>%s" % (util.config.ksi_web() + "/profil/" +str(author.id), author.first_name + " " + author.last_name, post.body)

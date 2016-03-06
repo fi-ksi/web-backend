@@ -47,8 +47,10 @@ class CorrectionsEmail(object):
 
 			for to in tos:
 				try:
+
 					body = u"<p>Ahoj,<br>opravili jsme tvé řešení úlohy " + task.title + u".</p>"
 
+					print to[0].sex
 					if to[0].sex == 'female':
 						body += u"<a>Získala jsi <strong>%.1f bodů</strong>.</p>" % to.Evaluation.points
 					else:

@@ -44,10 +44,10 @@ class CorrectionsInfo(object):
 
 		tasks = session.query(model.Task).\
 			join(model.Wave, model.Wave.id == model.Task.wave).\
-			filter(model.Wave.public, model.Wave.year == year).all()
+			filter(model.Wave.year == year).all()
 
 		waves = session.query(model.Wave).\
-			filter(model.Wave.year == year, model.Wave.public).\
+			filter(model.Wave.year == year).\
 			join(model.Task, model.Task.wave == model.Wave.id).all()
 
 		users = session.query(model.User)

@@ -14,6 +14,7 @@ def to_json(wave, sum_points=None):
 		'garant': wave.garant,
 		'time_published': wave.time_published.isoformat(),
 		'public': wave.public,
-		'sum_points': sum_points
+		'sum_points': sum_points[0],
+		'tasks_cnt': sum_points[1]
 	}
 

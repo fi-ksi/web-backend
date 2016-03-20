@@ -80,24 +80,25 @@ def _max_points_per_wave(bonus=False):
 	points_per_task = points_per_task.group_by(model.Module.task).subquery()
 
 	# points_per_wave
-	return session.query(model.Wave.id.label('id'), func.sum(points_per_task.c.points).label('points')).\
+	return session.query(model.Wave.id.label('id'), func.sum(points_per_task.c.points).label('points'), func.count(model.Task).label('tasks_count')).\
 		outerjoin(model.Task, model.Task.wave == model.Wave.id).\
 		outerjoin(points_per_task, points_per_task.c.id == model.Task.id).\
 		group_by(model.Wave)
 
-# Vraci seznam dvojic (wave_id, max_points)
+# Vraci slovnik s klicem id vlny a hodnotami (max_points, task_count)
 def max_points_wave_dict(bonus=False):
-	return { wave.id: wave.points if wave.points else 0.0 for wave in _max_points_per_wave(bonus).all() }
+	print _max_points_per_wave(bonus).all()
+	return { wave.id: (wave.points if wave.points else 0.0, wave.tasks_count if wave.tasks_count else 0) for wave in _max_points_per_wave(bonus).all() }
 
-# Vraci seznam dvojic (year_id, max_points)
+# Vraci slovnik s klicem year.id a hodnotami (year_max_points, year_tasks_count)
 def max_points_year_dict(bonus=False):
 	points_per_wave = _max_points_per_wave(bonus).subquery()
-	points_per_year = session.query(model.Year.id.label('id'), func.sum(points_per_wave.c.points).label('points')).\
+	points_per_year = session.query(model.Year.id.label('id'), func.sum(points_per_wave.c.points).label('points'), func.sum(points_per_wave.c.tasks_count).label('tasks_count')).\
 		outerjoin(model.Wave, model.Wave.year == model.Year.id).\
 		outerjoin(points_per_wave, points_per_wave.c.id == model.Wave.id).\
 		group_by(model.Year).all()
 
-	return { year.id: year.points if year.points else 0.0 for year in points_per_year }
+	return { year.id: (year.points if year.points else 0.0, year.tasks_count if year.tasks_count else 0) for year in points_per_year }
 
 def points_per_module(task_id, user_id):
 	return session.query(model.Module, \

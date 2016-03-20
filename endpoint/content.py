@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import os, time, uuid, magic
+import os, time, uuid, magic, multipart
 
 import falcon
 
@@ -12,7 +12,7 @@ class Content(object):
 
 	# Smaze adresarovou strukturu rekurzivne od nejvic zanoreneho
 	#  dokud jsou adresare prazdne.
-	def _elete_tree(self, path):
+	def _delete_tree(self, path):
 		if os.listdir(path) != []: return
 		try:
 			os.rmdir(path)
@@ -31,12 +31,11 @@ class Content(object):
 		filePath = 'data/content/' + shortPath
 
 		if os.path.isdir(filePath):
-			req.context['result'] = util.content.dir_to_json(shortPath)
+			req.context['result'] = { 'content': util.content.dir_to_json(shortPath) }
 			return
 
 		if not os.path.isfile(filePath):
-			req.context['result'] = { 'errors': [ { 'status': '404', 'title': 'Not Found', 'detail': u'Tento adresář neexistuje.' } ] }
-			resp.status = falcon.HTTP_404
+			req.context['result'] = { 'content': util.content.empty_content(shortPath) }
 			return
 
 		resp.content_type = magic.Magic(mime=True).from_file(filePath)
@@ -55,7 +54,7 @@ class Content(object):
 			shortPath = req.get_param('path').replace('..', '')
 		else:
 			shortPath = "."
-		filePath = 'data/content/' + shortPath
+		dirPath = 'data/content/' + shortPath
 
 		if not req.content_length:
 			resp.status = falcon.HTTP_411
@@ -65,20 +64,24 @@ class Content(object):
 			resp.status = falcon.HTTP_413
 			return
 
-		if os.path.isdir(filePath):
-			resp.status = falcon.HTTP_409
-			return
+		files = multipart.MultiDict()
+		content_type, options = multipart.parse_options_header(req.content_type)
+		boundary = options.get('boundary', '')
+
+		if not boundary:
+			raise multipart.MultipartError("No boundary for multipart/form-data.")
 
 		try:
-			if not os.path.isdir(os.path.dirname(filePath)):
-				os.makedirs(os.path.dirname(filePath))
+			if not os.path.isdir(dirPath): os.makedirs(dirPath)
 
-			with open(filePath, 'w') as f:
-				f.write(req.stream.read())
+			for part in multipart.MultipartParser(req.stream, boundary, req.content_length, 2**30, 2**20, 2**18, 2**16, 'utf-8'):
+				path = '%s/%s' % (dirPath, part.filename)
+				part.save_as(path)
 		except:
 			resp.status = falcon.HTTP_500
 			raise
 
+		req.context['result'] = {}
 		resp.status = falcon.HTTP_200
 
 	def on_delete(self, req, resp):
@@ -105,7 +108,7 @@ class Content(object):
 			resp.status = falcon.HTTP_500
 			raise
 
-		rese.status = falcon.HTTP_200
+		resp.status = falcon.HTTP_200
 		req.context['result'] = {}
 
 

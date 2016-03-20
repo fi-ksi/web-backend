@@ -2,6 +2,9 @@
 
 import os
 
+def empty_content(path):
+	return { 'id': path, 'files': [], 'dirs': [] }
+
 def dir_to_json(path):
 	path_full = 'data/content/'+path
 
@@ -12,9 +15,5 @@ def dir_to_json(path):
 			'dirs':  [ f for f in os.listdir(path_full) if os.path.isdir(path_full+'/'+f) ]
 		}
 	else:
-		return {
-			id: path,
-			files: [],
-			dirs: []
-		}
+		return empty_content(path)
 

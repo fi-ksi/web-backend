@@ -37,7 +37,7 @@ class Article(object):
 
 		req.context['result'] = {
 			'article': _artice_to_json(data),
-			'contents': util.content.dir_to_json(data.resource) if data.resource and user.is_org() else []
+			'contents': [ util.content.dir_to_json(data.resource) ] if data.resource and user.is_org() else []
 		}
 
 	# aktualizace existujiciho clanku
@@ -146,6 +146,9 @@ class Articles(object):
 			)
 
 			session.add(article)
+			session.commit()
+
+			article.resource = 'articles/' + str(article.id)
 			session.commit()
 		except:
 			session.rollback()

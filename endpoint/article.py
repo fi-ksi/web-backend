@@ -61,7 +61,6 @@ class Article(object):
 			article.body = data['body']
 			article.published = data['published']
 			article.time_created = data['time_published']
-			article.resource = data['resource']
 			article.picture = data['picture']
 
 			session.commit()

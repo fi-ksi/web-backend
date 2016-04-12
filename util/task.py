@@ -252,6 +252,7 @@ def best_scores(task_id):
 			join(model.Module, model.Evaluation.module == model.Module.id).\
 			join(model.Task, model.Task.id == model.Module.task).\
 			filter(model.Task.evaluation_public).\
+			order_by(model.Evaluation.time).\
 			group_by(model.Evaluation.module, model.User).subquery()
 
 	return session.query(model.User, func.sum(per_modules.c.points).label('sum')).join(per_modules, per_modules.c.user_id == model.User.id).filter(model.User.role == 'participant').group_by(per_modules.c.user_id).order_by(desc('sum')).slice(0, 5).all()

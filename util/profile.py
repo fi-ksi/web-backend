@@ -3,6 +3,7 @@
 from db import session
 import model
 import util
+from math import floor
 
 def fake_profile():
 	return { 'profile': { 'id': 0, 'signed_in': False } }
@@ -34,7 +35,7 @@ def to_json(user, profile, year_id):
 def _profile_to_json(user, profile, task_scores, year_id):
 	points = util.user.sum_points(user.id, year_id)
 	summary = sum(util.task.max_points_dict().values())
-	successful = round((float(points)/summary) * 100) if summary != 0 else 0
+	successful = format(floor((float(points)/summary)*1000)/10, '.1f') if summary != 0 else 0
 
 	return {
 			'id': user.id,
@@ -60,7 +61,7 @@ def _profile_to_json(user, profile, task_scores, year_id):
 			'percentile': util.user.percentile(user.id, year_id),
 			'score': float(format(points, '.1f')),
 			'seasons': util.user.active_years(user.id),
-			'successful': int(successful),
+			'successful': successful,
 			'results': [ task.id for task in task_scores.keys() ],
 			'role': user.role,
 			'tasks_num': len(util.task.fully_submitted(user.id, year_id)),

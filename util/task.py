@@ -163,13 +163,17 @@ def status(task, user, adeadline=None, fsubmitted=None, wave=None, corr=None, ac
 	if not wave:
 		wave = session.query(model.Wave).get(task.wave)
 
+	# Zjistime, ktere ulohy jsou po deadline
+	if not adeadline:
+		adeadline = after_deadline()
+
 	# pokud neni prihlasen zadny uzivatel, otevreme jen ulohu bez prerekvizit
 	# = prvvni uloha
 	if user is None or user.id is None:
-		return TaskStatus.BASE if task.prerequisite is None and wave.public else TaskStatus.LOCKED
+		return TaskStatus.BASE if ((task.prerequisite is None) or (task.id in adeadline)) and wave.public else TaskStatus.LOCKED
 
 	# pokud uloha neni v otevrene vlne, je LOCKED
-	# vyjimkou jsou uzivatele s rolemi 'org' a 'admin', tem se zobrazuji vsechny ulohu
+	# vyjimkou jsou uzivatele s rolemi 'org' a 'admin', tem se zobrazuji vsechny ulohy
 	if not wave.public and not user.role in ('org', 'admin', 'tester'):
 		return TaskStatus.LOCKED
 
@@ -187,9 +191,6 @@ def status(task, user, adeadline=None, fsubmitted=None, wave=None, corr=None, ac
 	# Pokud je uloha odevzdana a jeste neopravena, je CORRECTING
 	if task.id in fsubmitted:
 		return TaskStatus.CORRECTING
-
-	if not adeadline:
-		adeadline = after_deadline()
 
 	# pokud je po deadline, zadani ulohy se otevira vsem
 	currently_active = adeadline | set(fully_submitted(user.id).keys())

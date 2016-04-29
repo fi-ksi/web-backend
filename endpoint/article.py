@@ -35,6 +35,12 @@ class Article(object):
 			resp.status = falcon.HTTP_404
 			return
 
+		# nezverejneny clanek mohou ziskat jen orgove
+		if (not data.published) and ((not user.is_logged_in()) or (not user.is_org())):
+			req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized', 'detail': u'Přístup odepřen.' } ] }
+			resp.status = falcon.HTTP_400
+			return
+
 		req.context['result'] = {
 			'article': _artice_to_json(data),
 			'contents': [ util.content.dir_to_json(data.resource) ] if data.resource and user.is_org() else []

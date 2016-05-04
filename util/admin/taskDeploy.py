@@ -609,7 +609,8 @@ def parse_pandoc(source):
 def replace_h(source):
 	return source.replace("<h4", "<h5").replace("</h4>", "</h5>"). \
 		replace("<h3", "<h4").replace("</h3>", "</h4>"). \
-		replace("<h2", "<h3").replace("</h2>", "</h3>")
+		replace("<h2", "<h3").replace("</h2>", "</h3>"). \
+		replace("<h1", "<h3").replace("</h1>", "</h3>")
 
 # Stara se o vnitrek jednoho pseudokodu
 # na vstup dostane \match, \match.group() obsahuje "<ksi-pseudocode>TEXT</ksi-pseudocode>"

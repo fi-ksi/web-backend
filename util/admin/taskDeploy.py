@@ -80,7 +80,7 @@ def deploy(task_id, deployLock, scoped):
 		process_task(task, util.git.GIT_SEMINAR_PATH+task.git_path)
 
 		# Update git entries in db
-		task.evaluation_public = eval_public
+		task.evaluation_public |= eval_public
 		task.git_commit = repo.head.commit.hexsha
 		task.deploy_status = 'done'
 

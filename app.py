@@ -108,6 +108,7 @@ api = falcon.API(before=[ cors_middleware ], after=[ log_middleware ],
 
 model.Base.metadata.create_all(engine)
 
+api.add_route('/robots.txt', endpoint.Robots())
 api.add_route('/articles', endpoint.Articles())
 api.add_route('/articles/{id}', endpoint.Article())
 api.add_route('/achievements', endpoint.Achievements())

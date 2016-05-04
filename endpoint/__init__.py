@@ -14,6 +14,7 @@ from endpoint.runcode import RunCode
 from endpoint.feedback import Feedback
 from endpoint.wave import Wave, Waves
 from endpoint.year import Year, Years
+from endpoint.robots import Robots
 
 import admin
 

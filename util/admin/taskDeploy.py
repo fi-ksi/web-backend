@@ -158,7 +158,7 @@ def process_meta(task, filename):
 		if tmp_task.picture_base:
 			task.picture_base = tmp_task.picture_base
 		else:
-			task.picture_base = 'data/task-content/' + str(data['icon_ref']) + '/icon/'
+			task.picture_base = '/taskContent/' + str(data['icon_ref']) + '/icon/'
 	else:
 		task.picture_base = None
 
@@ -284,9 +284,7 @@ def process_assignment(task, filename):
 def process_solution(task, filename):
 	if os.path.isfile(filename):
 		with open(filename, 'r') as f: data = f.read()
-		data = ksi_pseudocode(data)
-		data = ksi_collapse(data)
-		task.solution = change_links(task, replace_h(parse_pandoc(data)))
+		task.solution = parse_simple_text(task, data)
 	else:
 		task.solution = None
 
@@ -328,7 +326,7 @@ def process_modules(task, git_path):
 			session.add(module)
 
 		log("Processing module" + str(i+1))
-		process_module(module, git_path+"/module"+str(i+1))
+		process_module(module, git_path+"/module"+str(i+1), task)
 
 		try:
 			session.commit()
@@ -353,9 +351,9 @@ def process_modules(task, git_path):
 # Zpracovani modulu
 # \module je vzdy inicializovany
 # \module_path muze byt bez lomitka na konci
-def process_module(module, module_path):
+def process_module(module, module_path, task):
 	specific = process_module_json(module, module_path+"/module.json")
-	process_module_md(module, module_path+"/module.md", specific)
+	process_module_md(module, module_path+"/module.md", specific, task)
 
 # Zpracovani souboru module.json
 def process_module_json(module, filename):
@@ -385,7 +383,7 @@ def process_module_json(module, filename):
 
 # Zpracovani module.md
 # Pandoc spoustime az uplne nakonec, abychom mohli provest analyzu souboru.
-def process_module_md(module, filename, specific):
+def process_module_md(module, filename, specific, task):
 	log("Processing module md")
 
 	with open(filename, 'r') as f:
@@ -402,7 +400,7 @@ def process_module_md(module, filename, specific):
 	# Ukolem nasledujicich metod je zpracovat logiku modulu a v \data zanechat uvodni text
 	if module.type == model.ModuleType.GENERAL: data = process_module_general(module, data, specific)
 	elif module.type == model.ModuleType.PROGRAMMING: data = process_module_programming(module, data, specific, os.path.dirname(filename))
-	elif module.type == model.ModuleType.QUIZ: data = process_module_quiz(module, data, specific)
+	elif module.type == model.ModuleType.QUIZ: data = process_module_quiz(module, data, specific, task)
 	elif module.type == model.ModuleType.SORTABLE: data = process_module_sortable(module, data, specific)
 	elif module.type == model.ModuleType.TEXT: data = process_module_text(module, data, specific, os.path.dirname(filename))
 	else: module.description = "Neznamy typ modulu"
@@ -410,8 +408,7 @@ def process_module_md(module, filename, specific):
 	log("Processing body")
 
 	# Parsovani tela zadani
-	body = replace_h(parse_pandoc(''.join(data)))
-	module.description = body
+	module.description = parse_simple_text(task, ''.join(data))
 
 # Tady opravdu nema nic byt, general module nema zadnou logiku
 def process_module_general(module, lines, specific):
@@ -465,7 +462,7 @@ def process_module_programming(module, lines, specific, source_path):
 	module.data = json.dumps(data, indent=2)
 	return lines[:line]
 
-def process_module_quiz(module, lines, specific):
+def process_module_quiz(module, lines, specific, task):
 	log("Processing quiz module")
 
 	# Hledame jednotlive otazky
@@ -490,7 +487,7 @@ def process_module_quiz(module, lines, specific):
 		line += 1
 		end = line
 		while (end < len(lines)) and (not re.match(r"^~", lines[end])): end += 1
-		question['text'] = parse_pandoc(''.join(lines[line:end]))
+		question['text'] = parse_simple_text(task, ''.join(lines[line:end]))
 
 		# Parsujeme mozne odpovedi
 		line = end
@@ -556,7 +553,7 @@ def process_module_sortable(module, lines, specific):
 
 def get_sortable_offset(text):
 	if re.match(r"^if ", text) or re.match(r"^Vstup: ", text) or re.match(r"^while", text) or re.match(r"^for", text): return 1
-	elif re.match(r"^fi$", text) or re.match(r"^return ", text) or re.match(r"^fi$", text): return -1
+	elif re.match(r"^fi$", text) or re.match(r"^return ", text) or re.match(r"^od$", text): return -1
 	return 0
 
 def process_module_text(module, lines, specific, path):
@@ -616,7 +613,10 @@ def replace_h(source):
 # na vstup dostane \match, \match.group() obsahuje "<ksi-pseudocode>TEXT</ksi-pseudocode>"
 def one_ksi_pseudocode(match):
 	source = match.group()
-	source = re.sub(ur"(function|funkce|procedure|Vstup|Výstup|if|then|return|else|fi|while|for)", r"**\1**", source)
+	source = re.sub(ur"(function|funkce|procedure|Vstup|Výstup|then|return|else)", r"**\1**", source)
+	source = re.sub(ur"(if|while|for) ", r"**\1** ", source) # Za klicovymslovem musi nasledovat mezera
+	source = re.sub(ur" (do)", r" **\1**", source) # Pred klicovymslovem musi nasledovat mezera
+	source = re.sub(ur"\n(\s*)(od|fi)\s*(\\?)\n", r"\n\1**\2**\3\n", source) # Klicove slovo musi byt na samostatnem radku
 	source = re.sub(r"<ksi-pseudocode>", r"<div style='padding-left:20px'>\n", source)
 	source = re.sub(r"</ksi-pseudocode>", r"</div>", source)
 	source = re.sub(r"\n", r"\n\n", source) # Takto donutime pandoc davat kazdy radek do samostateho odstavce
@@ -649,6 +649,9 @@ def ksi_collapse(source):
 # Nahrazuje odkazy do data/ za odkazy do backendu
 def change_links(task, source):
 	return re.sub(r"data/", util.config.ksi_web()+":3000/taskContent/"+str(task.id)+"/zadani/", source)
+
+def parse_simple_text(task, text):
+	return change_links(task, replace_h(parse_pandoc(ksi_collapse(ksi_pseudocode(text)))))
 
 ###############################################################################
 

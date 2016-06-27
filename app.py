@@ -81,29 +81,31 @@ def log(req, resp):
 
 	print '[%s] [%s] [%s] [%s] %s' % (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), ip, req.method, resp.status, req.relative_uri)
 
-def log_middleware(req, resp, params):
-	log(req, resp)
+class Logger(object):
+
+	def process_request(self, req, resp):
+		log(req, resp)
 
 def log_sink(req, resp):
 	resp.status = falcon.HTTP_404
 
 	log(req, resp)
 
-def cors_middleware(request, response, params):
-	origin = request.get_header('Origin')
+class Corser(object):
 
-	if origin in (	'http://localhost:4200',
-			'http://ksi.fi.muni.cz',
-			'https://ksi.fi.muni.cz',
-			'https://kyzikos.fi.muni.cz'):
-						response.set_header('Access-Control-Allow-Origin', origin)
+	def process_response(self, request, response, resource):
+		origin = request.get_header('Origin')
 
-	response.set_header('Access-Control-Allow-Headers', 'authorization,content-type')
-	response.set_header('Access-Control-Allow-Methods', 'OPTIONS,PUT,POST,GET,DELETE')
+		if origin in (	'http://localhost:4200',
+				'https://ksi.fi.muni.cz',
+				'https://kyzikos.fi.muni.cz'):
+			response.set_header('Access-Control-Allow-Origin', origin)
+
+		response.set_header('Access-Control-Allow-Headers', 'authorization,content-type')
+		response.set_header('Access-Control-Allow-Methods', 'OPTIONS,PUT,POST,GET,DELETE')
 
 
-api = falcon.API(before=[ cors_middleware ], after=[ log_middleware ],
-				 middleware=[JSONTranslator(), Authorizer(), Year_fill()])
+api = falcon.API(middleware=[Logger(), JSONTranslator(), Authorizer(), Year_fill(), Corser()])
 
 
 model.Base.metadata.create_all(engine)

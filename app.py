@@ -101,7 +101,7 @@ class Corser(object):
 				'https://kyzikos.fi.muni.cz'):
 			response.set_header('Access-Control-Allow-Origin', origin)
 
-		response.set_header('Access-Control-Allow-Headers', 'authorization,content-type')
+		response.set_header('Access-Control-Allow-Headers', 'authorization,content-type,year')
 		response.set_header('Access-Control-Allow-Methods', 'OPTIONS,PUT,POST,GET,DELETE')
 
 

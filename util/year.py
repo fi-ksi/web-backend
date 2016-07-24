@@ -17,3 +17,5 @@ def to_json(year, sum_points=None):
 		'tasks_cnt': int(sum_points[1])
 	}
 
+def year_end(year):
+	return int(year.year.split(" ")[0]) + 1

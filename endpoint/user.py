@@ -65,6 +65,7 @@ class Users(object):
 		filt = req.get_param('filter')
 		sort = req.get_param('sort')
 		usr = req.context['user']
+		year = session.query(model.Year).get(req.context['year'])
 
 		# Tady se dela spoustu magie kvuli tomu, aby se usetrily SQL dotazy
 		# Snazime se minimalizovat pocet dotazu, ktere musi byt provedeny pro kadeho uzivatele
@@ -106,11 +107,12 @@ class Users(object):
 		elif filt == 'part-hs':
 			# Resitele zobrazujeme jen v aktualnim rocniku (pro jine neni tasks_cnt definovano)
 			users = users.filter(model.User.role == 'participant').\
-				filter(text("tasks_cnt"), text("tasks_cnt") > 0, model.Profile.is_hs)
+				filter(text("tasks_cnt"), text("tasks_cnt") > 0)
+			if year: users = users.filter(model.Profile.school_finish >= util.year.year_end(year))
 		elif filt == 'part-other':
 			users = users.filter(model.User.role == 'participant').\
-				filter(text("tasks_cnt"), text("tasks_cnt") > 0, not model.Profile.is_hs)
-
+				filter(text("tasks_cnt"), text("tasks_cnt") > 0)
+			if year: users = users.filter(model.Profile.school_finish < util.year.year_end(year))
 		# Razeni uzivatelu
 		if sort == 'score':
 			users = users.filter(model.User.enabled).order_by(desc("total_score"))

@@ -31,6 +31,3 @@ class Profile(Base):
 	notify_eval = Column(Boolean, nullable=False, default=True)
 	notify_response = Column(Boolean, nullable=False, default=True)
 
-	@hybrid_property
-	def is_hs(self):
-		return datetime.datetime(self.school_finish, 7, 1) < datetime.datetime.utcnow()

@@ -132,7 +132,6 @@ def to_json(user, year_id, total_score=None, tasks_cnt=None, profile=None, achs=
 		data['addr_country'] = profile.addr_country
 		data['school_name'] = profile.school_name
 		data['seasons'] = seasons if seasons is not None else active_years(user.id)
-		if user.role = 'participant': data['is_hs'] = profile.is_hs()
 	elif user.role == 'org' or user.role == 'admin':
 		if users_tasks is None: users_tasks = user.tasks
 		data['nick_name'] = user.nick_name

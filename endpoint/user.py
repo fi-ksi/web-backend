@@ -103,10 +103,13 @@ class Users(object):
 		# Filtrovani skupin uzivatelu
 		if filt == 'organisators':
 			users = users.filter(or_(model.User.role == 'org', model.User.role == 'admin'))
-		elif filt == 'participants':
+		elif filt == 'part-hs':
 			# Resitele zobrazujeme jen v aktualnim rocniku (pro jine neni tasks_cnt definovano)
 			users = users.filter(model.User.role == 'participant').\
-				filter(text("tasks_cnt"), text("tasks_cnt") > 0)
+				filter(text("tasks_cnt"), text("tasks_cnt") > 0, model.Profile.is_hs)
+		elif filt == 'part-other':
+			users = users.filter(model.User.role == 'participant').\
+				filter(text("tasks_cnt"), text("tasks_cnt") > 0, not model.Profile.is_hs)
 
 		# Razeni uzivatelu
 		if sort == 'score':

@@ -5,6 +5,8 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.types import TIMESTAMP
 
 from . import Base
+from year import Year
+from user import User
 
 class Thread(Base):
 	__tablename__ = 'threads'
@@ -16,9 +18,9 @@ class Thread(Base):
 	id = Column(Integer, primary_key=True)
 	title = Column(String(1000))
 	public = Column(Boolean, nullable=False, default=True, server_default=text('TRUE'))
-	year = Column(Integer, ForeignKey('years.id'), nullable=False)
+	year = Column(Integer, ForeignKey(Year.id), nullable=False)
 
-	posts = relationship('Post', primaryjoin='Thread.id==Post.thread')
+	posts = relationship('Post', backref="Thread", primaryjoin="Post.thread==Thread.id")
 
 
 class ThreadVisit(Base):
@@ -28,8 +30,8 @@ class ThreadVisit(Base):
 		'mysql_charset': 'utf8'
 	}
 
-	thread = Column(Integer, ForeignKey('threads.id'), primary_key=True)
-	user = Column(Integer, ForeignKey('users.id'), primary_key=True)
+	thread = Column(Integer, ForeignKey(Thread.id, ondelete='CASCADE'), primary_key=True)
+	user = Column(Integer, ForeignKey(User.id, ondelete='CASCADE'), primary_key=True)
 	last_visit = Column(TIMESTAMP, nullable=False, default=datetime.datetime.utcnow, server_default=text('CURRENT_TIMESTAMP'))
 	last_last_visit = Column(TIMESTAMP, nullable=True)
 

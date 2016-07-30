@@ -89,7 +89,9 @@ class Correction(object):
 			# achievementy se nerovnaji -> proste smazeme vsechny dosavadni a pridame do db ty, ktere nam prisly
 			for a_id in a_old:
 				try:
-					session.delete(session.query(model.UserAchievement).get((corr['user'], a_id, corr['task_id'])))
+					ach = session.query(model.UserAchievement).get((corr['user'], a_id))
+					if ach.task_id == corr['task_id']:
+						session.delete(ach)
 					session.commit()
 				except:
 					session.rollback()

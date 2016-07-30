@@ -88,22 +88,20 @@ class Task(object):
 				resp.status = falcon.HTTP_403
 				return
 
-			# Nejprve odstranime diskuzni vlakno
 			thread = session.query(model.Thread).get(task.thread)
+			prer = task.prerequisite_obj
+
+			session.delete(task)
+			session.commit()
+
+			# Odstranime diskuzni vlakno
 			if thread is not None:
 				session.delete(thread)
 				session.commit()
 
-			# Pak odstranime vsechny moduly
-			for module in task.modules:
-				print module
-				util.module.delete_module(module)
+			if prer:
+				session.delete(task.prerequisite_obj)
 
-			if task.prerequisite_obj:
-				util.prerequisite.remove_tree(task.prerequisite_obj, True)
-
-			session.delete(task)
-			session.commit()
 			req.context['result'] = {}
 		except:
 			session.rollback()

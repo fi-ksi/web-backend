@@ -3,6 +3,8 @@ from sqlalchemy.types import TIMESTAMP
 import datetime
 
 from . import Base
+from module import Module
+from user import User
 
 class CodeExecution(Base):
 	__tablename__ = 'code_executions'
@@ -12,7 +14,7 @@ class CodeExecution(Base):
 	}
 
 	id = Column(Integer, primary_key=True)
-	module = Column(Integer, ForeignKey('modules.id'), nullable=False)
-	user = Column(Integer, ForeignKey('users.id'), nullable=False)
+	module = Column(Integer, ForeignKey(Module.id), nullable=False)
+	user = Column(Integer, ForeignKey(User.id), nullable=False)
 	code = Column(Text)
 	time = Column(TIMESTAMP, default=datetime.datetime.utcnow(), server_default=text('CURRENT_TIMESTAMP'))

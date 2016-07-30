@@ -212,7 +212,8 @@ def parse_prereq_logic(logic, prereq):
 		prereq.task = int(logic)
 
 		# Smazeme potencialni strom deti
-		util.prerequisite.remove_tree(prereq, False, session)
+		for child in prereq.children:
+			session.delete(child)
 		session.commit()
 
 	elif isinstance(logic, (pp.ParseResults)):
@@ -236,14 +237,14 @@ def parse_prereq_logic(logic, prereq):
 				raise
 			children.append(new_child)
 
-		while len(children) > 2:
-			util.prerequisite.remove_tree(children[2], True, session)
-			try:
+		try:
+			while len(children) > 2:
+				session.delete(children[2])
 				session.commit()
 				children.remove(children[2])
-			except:
-				session.rollback()
-				raise
+		except:
+			session.rollback()
+			raise
 
 		# Rekurzivne se zanorime
 		parse_prereq_logic(logic[0], children[0])

@@ -113,6 +113,9 @@ class Users(object):
 			users = users.filter(model.User.role == 'participant').\
 				filter(text("tasks_cnt"), text("tasks_cnt") > 0)
 			if year: users = users.filter(model.Profile.school_finish < util.year.year_end(year))
+		elif filt == 'part' or filt == 'participants':
+			users = users.filter(model.User.role == 'participant').\
+				filter(text("tasks_cnt"), text("tasks_cnt") > 0)
 		# Razeni uzivatelu
 		if sort == 'score':
 			users = users.filter(model.User.enabled).order_by(desc("total_score"))

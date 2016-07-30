@@ -37,7 +37,7 @@ class Authorizer(object):
 				token = session.query(model.Token).get(token_str)
 
 				if token is not None:
-					if req.relative_uri != '/auth' and token.granted + token.expire < datetime.utcnow():
+					if req.relative_uri != '/auth' and token.expire < datetime.utcnow():
 						raise falcon.HTTPError(falcon.HTTP_401)
 
 					try:
@@ -108,7 +108,8 @@ class Corser(object):
 api = falcon.API(middleware=[Logger(), JSONTranslator(), Authorizer(), Year_fill(), Corser()])
 
 
-model.Base.metadata.create_all(engine)
+# Odkomentovat pro vytvoreni tabulek v databazi
+#model.Base.metadata.create_all(engine)
 
 api.add_route('/robots.txt', endpoint.Robots())
 api.add_route('/articles', endpoint.Articles())

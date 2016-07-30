@@ -36,3 +36,8 @@ Pro funnkcnost backendu musi byt v korenove slozce repozitare souboor `config.py
 
 	SQL_ALCHEMY_URI = 'mysql://username:password@server/db_name?charset=utf8'
 
+## Prvni spusteni
+
+Pro vytvoreni tabulek spustit pouze s jednim workerem a odkomentovat prislusny
+kud kodu v `app.py`.
+

@@ -4,6 +4,8 @@ from sqlalchemy import Column, Integer, String, Text, ForeignKey, Boolean, DateT
 from sqlalchemy.ext.hybrid import hybrid_property, hybrid_method
 
 from . import Base
+from year import Year
+from user import User
 
 class Wave(Base):
 	__tablename__ = 'waves'
@@ -13,10 +15,10 @@ class Wave(Base):
 	}
 
 	id = Column(Integer, primary_key=True, nullable=False)
-	year = Column(Integer, ForeignKey('years.id'), nullable=False)
+	year = Column(Integer, ForeignKey(Year.id), nullable=False)
 	index = Column(Integer, nullable=False)
 	caption = Column(String(100), nullable=True)
-	garant = Column(Integer, ForeignKey('users.id'), nullable=False)
+	garant = Column(Integer, ForeignKey(User.id), nullable=False)
 	time_published = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
 	
 	@hybrid_property

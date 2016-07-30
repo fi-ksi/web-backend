@@ -30,13 +30,7 @@ class Achievement(object):
 			resp.status = falcon.HTTP_404
 			return
 
-		# Ziskame vsechna prideleni daneho achievementu
-		user_achs = session.query(model.UserAchievement).\
-			filter(model.UserAchievement.achievement_id == id).all()
-
 		try:
-				for user_ach in user_achs:
-					session.delete(user_ach)
 				session.delete(achievement)
 				session.commit()
 		except:

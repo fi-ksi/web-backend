@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, ForeignKey
 
 from . import Base
+from year import Year
 
 class Achievement(Base):
 	__tablename__ = 'achievements'
@@ -13,5 +14,5 @@ class Achievement(Base):
 	title = Column(String(255), nullable=False)
 	picture = Column(String(128), nullable=False, unique=True)
 	description = Column(String(200), nullable=True)
-	year = Column(Integer, nullable=True)
+	year = Column(Integer, ForeignKey(Year.id), nullable=True)
 

@@ -4,6 +4,7 @@ from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Interval, 
 from sqlalchemy.ext.hybrid import hybrid_property, hybrid_method
 
 from . import Base
+from user import User
 
 class Token(Base):
 	__tablename__ = 'oauth2_tokens'
@@ -13,7 +14,7 @@ class Token(Base):
 	}
 
 	access_token = Column(String(255), primary_key=True)
-	user = Column(Integer, ForeignKey('users.id'))
+	user = Column(Integer, ForeignKey(User.id))
 	expire = Column(DateTime, default=datetime.timedelta(hours=1))
 	refresh_token = Column(String(255))
 	granted = Column(DateTime, default=datetime.datetime.utcnow)

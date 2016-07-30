@@ -5,7 +5,6 @@ from sqlalchemy.types import TIMESTAMP
 from sqlalchemy.orm import relationship
 
 from . import Base
-from user_achievement import UserAchievement
 
 class User(Base):
 	__tablename__ = 'users'

@@ -30,7 +30,7 @@ def check_password(plain_text_password, hashed_password):
 class OAuth2Token(object):
 	def __init__(self, client_id):
 		self.value = _generate_token()
-		self.expire = datetime.timedelta(hours=1)
+		self.expire = datetime.datetime.utcnow() + datetime.timedelta(hours=1)
 		self.kind = 'Bearer'
 		self.refresh = _generate_token()
 
@@ -52,6 +52,6 @@ class OAuth2Token(object):
 		return {
 			'access_token': self.value,
 			'token_type': self.kind,
-			'expires_in': int(self.expire.total_seconds()),
+			'expires_in': int((self.expire-datetime.datetime.utcnow()).total_seconds()),
 			'refresh_token': self.refresh
 		}

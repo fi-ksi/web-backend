@@ -102,8 +102,13 @@ class Users(object):
 		if not usr.is_org(): users = users.filter(model.User.enabled)
 
 		# Filtrovani skupin uzivatelu
-		if filt == 'organisators':
+		if filt == 'organisators' or filt == 'orgs':
+			users = users.filter(or_(model.User.role == 'org', model.User.role == 'admin')).\
+				join(model.ActiveOrg, model.ActiveOrg.org == model.User.id).\
+				filter(model.ActiveOrg.year == year.id)
+		elif filt == 'orgs-all':
 			users = users.filter(or_(model.User.role == 'org', model.User.role == 'admin'))
+
 		elif filt == 'part-hs':
 			# Resitele zobrazujeme jen v aktualnim rocniku (pro jine neni tasks_cnt definovano)
 			users = users.filter(model.User.role == 'participant').\
@@ -141,6 +146,11 @@ class Users(object):
 			join(model.User, model.Evaluation.user == model.User.id).\
 			group_by(model.User, model.Year).all()
 
+		# Aktivni roky orgu:
+		org_seasons = session.query(model.Year.id.label('year_id'), model.User.id.label('user_id')).\
+			join(model.ActiveOrg, model.ActiveOrg.year == model.Year.id).\
+			join(model.User, model.User.id == model.ActiveOrg.org).all()
+
 		# Ziskani seznamu uloh vsech orgu na jeden dotaz
 		if filt == 'organisators':
 			users_tasks = session.query(model.User, model.Task).\
@@ -156,10 +166,12 @@ class Users(object):
 			user.total_score if user.total_score else 0, \
 			user.tasks_cnt if user.tasks_cnt else 0, \
 			user.Profile, \
-			[ item.a_id for item in achievements if item.user_id == user.User.id ], \
-			[ item.year_id for item in seasons if item.user_id == user.User.id ], \
-			[ task for (_, task) in filter(lambda (usr,task): usr.id == user.User.id, users_tasks) ] if users_tasks else None, \
-			admin_data=req.context['user'].is_org() ) for user in users ]
+			achs=[ item.a_id for item in achievements if item.user_id == user.User.id ], \
+			seasons=[ item.year_id for item in seasons if item.user_id == user.User.id ], \
+			users_tasks=[ task for (_, task) in filter(lambda (usr,task): usr.id == user.User.id, users_tasks) ] if users_tasks else None, \
+			admin_data=req.context['user'].is_org(), \
+			org_seasons=[ item.year_id for item in org_seasons if item.user_id == user.User.id ] ) \
+			for user in users ]
 
 		req.context['result'] = { "users": users_json }
 

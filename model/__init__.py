@@ -21,3 +21,4 @@ from model.feedback_recipients import FeedbackRecipient
 from model.programming import CodeExecution
 from model.evaluation import Evaluation
 from model.submitted import SubmittedFile, SubmittedCode
+from model.active_orgs import ActiveOrg

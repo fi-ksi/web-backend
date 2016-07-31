@@ -37,6 +37,28 @@ class Year(object):
 		year.sealed = data['sealed']
 		year.point_pad = data['point_pad']
 
+		# Aktualizace aktivnich orgu
+		try:
+			orgs = session.query(model.ActiveOrg).\
+				filter(model.ActiveOrg.year == year.id).all()
+
+			for i in range(len(orgs)-1, -1, -1):
+				if str(orgs[i].org) in data['active_orgs']:
+					data['active_orgs'].remove(str(orgs[i].org))
+					del orgs[i]
+
+			for org in orgs: session.delete(org)
+			session.commit()
+
+			for user_id in data['active_orgs']:
+				org = model.ActiveOrg(org=user_id, year=year.id)
+				session.add(org)
+			session.commit()
+		except:
+			session.rollback()
+			raise
+
+
 		try:
 			session.commit()
 		except:
@@ -107,6 +129,13 @@ class Years(object):
 
 		try:
 			session.add(year)
+			session.commit()
+
+			if 'active_orgs' in data:
+				for user_id in data['active_orgs']:
+					org = model.ActiveOrg(org=user_id, year=year.id)
+					session.add(org)
+
 			session.commit()
 		except:
 			session.rollback()

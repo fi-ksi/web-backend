@@ -41,6 +41,17 @@ def active_years(user_id):
 		group_by(model.Year).all()
 	return a
 
+def active_years_org(user_id):
+	if user_id is None:
+		return []
+
+	a = session.query(model.Year.id). \
+		join(model.ActiveOrg, model.ActiveOrg.year == model.Year.id).\
+		filter(model.ActiveOrg.org == user_id).\
+		group_by(model.Year).all()
+	return a
+
+
 # Vraci [(user,year)] pro vsechny roky v nichz je aktivni uzivatel user
 def active_years_all():
 	return session.query(model.User, model.Year).\
@@ -112,7 +123,7 @@ def get_profile_picture(user):
 # minimalizace SQL dotazu. Toho se vyuziva napriklad pri vypisovani vysledkovky.
 # Pokud jsou tyto atributy None, provedou se klasicke dotazy.
 # \users_tasks je [model.Task]
-def to_json(user, year_id, total_score=None, tasks_cnt=None, profile=None, achs=None, seasons=None, users_tasks=None, admin_data=False):
+def to_json(user, year_id, total_score=None, tasks_cnt=None, profile=None, achs=None, seasons=None, users_tasks=None, admin_data=False, org_seasons=None):
 	data = { 'id': user.id, 'first_name': user.first_name, 'last_name': user.last_name, 'profile_picture': get_profile_picture(user), 'gender': user.sex }
 	if admin_data: data['email'] = user.email
 
@@ -137,6 +148,7 @@ def to_json(user, year_id, total_score=None, tasks_cnt=None, profile=None, achs=
 		data['nick_name'] = user.nick_name
 		data['tasks'] = [ task.id for task in users_tasks ]
 		data['short_info'] = user.short_info
+		data['seasons'] = org_seasons if org_seasons is not None else [ key for (key,) in active_years_org(user.id) ]
 	elif user.role == 'tester':
 		data['nick_name'] = user.nick_name
 		data['short_info'] = user.short_info

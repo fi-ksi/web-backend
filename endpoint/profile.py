@@ -54,7 +54,7 @@ class Profile(object):
 			session.rollback()
 			raise
 
-		req.context['result'] = util.profile.to_json(user, profile, req.context['year'])
+		req.context['result'] = util.profile.to_json(user, profile, session.query(model.Year).get(req.context['year']))
 		session.close()
 
 
@@ -67,7 +67,7 @@ class Profile(object):
 
 		user, profile = session.query(model.User).filter(model.User.id == userinfo.get_id()).outerjoin(model.Profile, model.User.id == model.Profile.user_id).add_entity(model.Profile).first()
 
-		req.context['result'] = util.profile.to_json(user, profile, req.context['year'])
+		req.context['result'] = util.profile.to_json(user, profile, session.query(model.Year).get(req.context['year']))
 
 # Profily lidi vydavame jen adminum.
 class OrgProfile(object):
@@ -87,7 +87,7 @@ class OrgProfile(object):
 			resp.status = falcon.HTTP_404
 			return
 
-		req.context['result'] = util.profile.to_json(user, profile, req.context['year'])
+		req.context['result'] = util.profile.to_json(user, profile, session.query(model.Year).get(req.context['year']))
 
 
 class PictureUploader(object):

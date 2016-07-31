@@ -35,6 +35,7 @@ class Year(object):
 		year.id = data['index']
 		year.year = data['year']
 		year.sealed = data['sealed']
+		year.point_pad = data['point_pad']
 
 		try:
 			session.commit()
@@ -100,7 +101,8 @@ class Years(object):
 		year = model.Year(
 			id = data['index'],
 			year = data['year'],
-			sealed = data['sealed'] if data['sealed'] else False
+			sealed = data['sealed'] if data['sealed'] else False,
+			point_pad = data['point_pad']
 		)
 
 		try:

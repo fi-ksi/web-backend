@@ -131,7 +131,7 @@ def to_json(user, year_id, total_score=None, tasks_cnt=None, profile=None, achs=
 		if profile is None: profile = session.query(model.Profile).get(user.id)
 		data['addr_country'] = profile.addr_country
 		data['school_name'] = profile.school_name
-		data['seasons'] = seasons if seasons is not None else active_years(user.id)
+		data['seasons'] = seasons if seasons is not None else [ key for (key,) in active_years(user.id) ]
 	elif user.role == 'org' or user.role == 'admin':
 		if users_tasks is None: users_tasks = user.tasks
 		data['nick_name'] = user.nick_name

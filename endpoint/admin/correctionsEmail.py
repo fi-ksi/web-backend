@@ -10,12 +10,14 @@ import model, util
 class CorrectionsEmail(object):
 
 	"""
-		Odeslani informacniho emailu resitelum, ve kterem se pise
-		komentar opravujiciho a kolik ziskal resitel bodu.
+		1) Odeslani informacniho emailu resitelum, ve kterem se pise
+			komentar opravujiciho a kolik ziskal resitel bodu.
+		2) Odeslani informacniho emailu do ksi konference.
 		ID je id ulohy
 	"""
 	def on_put(self, req, resp, id):
 		user = req.context['user']
+		user_obj = user.user
 
 		if (not user.is_logged_in()) or (not user.is_org()):
 			req.context['result'] = { 'errors': [ { 'status': '403', 'title': 'Forbidden', 'detail': u'Informační e-mail může odeslat pouze organizátor.' } ] }
@@ -70,6 +72,19 @@ class CorrectionsEmail(object):
 				except Exception as e:
 					errors.append( str(e) )
 					#raise
+
+			# Odeslani informacniho emailu do konference
+			try:
+				body = u"<p>Úloha <a href=\"%s\">%s</a> je opravena. \
+					%s právě odeslal" \
+					% (util.config.ksi_web()+"/ulohy/"+str(task.id), task.title, user_obj.first_name+" "+user_obj.last_name)
+				if user_obj.sex == "female": body += "a"
+				body +=  u" informační e-mail %s řešitelům.</p>" % len(tos)
+				util.mail.send(util.config.ksi_conf(), u"[KSI-WEB] Úloha %s opravena" % task.title, body)
+			except Exception as e:
+				errors.append( str(e) )
+				#raise
+
 
 			req.context['result'] = { 'count': len(tos) }
 			if len(errors) > 0: req.context['result']['errors'] = errors

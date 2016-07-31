@@ -10,6 +10,7 @@ class UserInfo:
 		self.id = user.id if user else None
 		self.role = user.role if user else None
 		self.token = token
+		self.user = user
 
 	def is_logged_in(self):
 		return self.id is not None

@@ -11,6 +11,7 @@ class UserExport(object):
 	# Vraci csv vsech resitelu vybraneho rocniku.
 	def on_get(self, req, resp):
 		user = req.context['user']
+		year_obj = session.query(model.Year).get(req.context['year'])
 
 		if (not user.is_logged_in()) or (not user.is_org()):
 			resp.status = falcon.HTTP_400
@@ -51,9 +52,9 @@ class UserExport(object):
 			filter(text("tasks_cnt"), text("tasks_cnt") > 0).\
 			group_by(model.User).order_by(desc("total_score"), model.User.last_name, model.User.first_name).all()
 
-		sum_points = util.task.sum_points(req.context['year'], bonus=False)
-		sum_points_bonus = util.task.sum_points(req.context['year'], bonus=True)
-		inMemoryOutputFile.write(u"Celkem bodů: " + str(sum_points) + u", včetně bonusových úloh: " + str(sum_points_bonus) + '\n')
+		sum_points = util.task.sum_points(req.context['year'], bonus=False) + year_obj.point_pad
+		sum_points_bonus = util.task.sum_points(req.context['year'], bonus=True) + year_obj.point_pad
+		inMemoryOutputFile.write(u"Celkem bodů: " + str(sum_points) + u", včetně bonusových úloh: " + str(sum_points_bonus) + u", bodová vycpávka: " + str(year_obj.point_pad) + '\n')
 		inMemoryOutputFile.write(\
 			u"Pořadí;" +\
 			u"Příjmení;" +\

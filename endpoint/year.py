@@ -34,6 +34,7 @@ class Year(object):
 
 		year.id = data['index']
 		year.year = data['year']
+		year.sealed = data['sealed']
 
 		try:
 			session.commit()
@@ -98,7 +99,8 @@ class Years(object):
 
 		year = model.Year(
 			id = data['index'],
-			year = data['year']
+			year = data['year'],
+			sealed = data['sealed'] if data['sealed'] else False
 		)
 
 		try:

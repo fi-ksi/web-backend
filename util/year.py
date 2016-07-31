@@ -14,7 +14,8 @@ def to_json(year, sum_points=None):
 		'index': year.id,
 		'year': year.year,
 		'sum_points': sum_points[0],
-		'tasks_cnt': int(sum_points[1])
+		'tasks_cnt': int(sum_points[1]),
+		'sealed': year.sealed
 	}
 
 def year_end(year):

@@ -66,6 +66,11 @@ class Threads(object):
 			resp.status = falcon.HTTP_400
 			return
 
+		if session.query(model.Year).get(req.context['year']).sealed:
+			resp.status = falcon.HTTP_403
+			req.context['result'] = { 'errors': [ { 'status': '403', 'title': 'Forbidden', 'detail': u'Ročník zapečetěn.' } ] }
+			return
+
 		data = json.loads(req.stream.read())
 		pblic = data['thread']['public'] if data['thread'].has_key('public') else True
 

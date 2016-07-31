@@ -11,7 +11,8 @@ def to_json(achievement):
 		'active': True,
 		'picture': achievement.picture,
 		'description': achievement.description,
-		"persistent": (achievement.year == None)
+		'persistent': (achievement.year == None),
+		'year': achievement.year
 	}
 
 def ids_set(achievements):

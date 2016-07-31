@@ -1,6 +1,6 @@
 import datetime
 
-from sqlalchemy import Column, Integer, String, Text, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, Boolean
 
 from . import Base
 
@@ -13,4 +13,5 @@ class Year(Base):
 
 	id = Column(Integer, primary_key=True, nullable=False)
 	year = Column(String(100), nullable=True)
+	sealed = Column(Boolean, nullable=False, default=False)
 

@@ -12,7 +12,8 @@ def to_json(thread, user_id=None):
 		'title': thread.title,
 		'unread': unread if unread is not None else count,
 		'posts_count': count,
-		'details': thread.id
+		'details': thread.id,
+		'year': thread.year
 	}
 
 def details_to_json(thread, root_posts=None):

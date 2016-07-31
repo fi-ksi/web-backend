@@ -19,7 +19,8 @@ def _artice_to_json(inst):
 		'picture': inst.picture if inst.picture else DEFAULT_IMAGE,
 		'published': inst.published,
 		'author': inst.author,
-		'content': inst.resource
+		'content': inst.resource,
+		'year': inst.year
 	}
 
 class Article(object):

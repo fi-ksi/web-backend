@@ -106,6 +106,11 @@ class Posts(object):
 			resp.status = falcon.HTTP_400
 			return
 
+		if session.query(model.Year).get(req.context['year']).sealed:
+			resp.status = falcon.HTTP_403
+			req.context['result'] = { 'errors': [ { 'status': '403', 'title': 'Forbidden', 'detail': u'Ročník zapečetěn.' } ] }
+			return
+
 		task_thread = session.query(model.Task).filter(model.Task.thread == thread_id).first()
 		solution_thread = session.query(model.SolutionComment).filter(model.SolutionComment.thread == thread_id, model.SolutionComment.user == user.id).first()
 

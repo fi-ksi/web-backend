@@ -6,6 +6,7 @@ from db import session
 import model
 import util
 import sys
+from sqlalchemy import text
 
 from thread import Thread
 from util import config
@@ -132,6 +133,21 @@ class Posts(object):
 		if data['parent'] and not parent:
 			resp.status = falcon.HTTP_400
 			return
+
+		# Aktualizace navstivenosti vlakna
+		try:
+			visit = util.thread.get_visit(user.id, thread_id)
+			if visit:
+				visit.last_last_visit = visit.last_visit
+				visit.last_visit = text('CURRENT_TIMESTAMP + INTERVAL 1 SECOND')
+			else:
+				time = text('CURRENT_TIMESTAMP + INTERVAL 1 SECOND')
+				visit = model.ThreadVisit(thread=thread_id, user=user.id, last_visit=time, last_last_visit=time)
+				session.add(visit)
+			session.commit()
+		except:
+			session.rollback()
+			raise
 
 		# Tady si pamatujeme, komu jsme email jiz odeslali
 		sent_emails = []

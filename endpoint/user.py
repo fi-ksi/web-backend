@@ -155,6 +155,8 @@ class Users(object):
 		if filt == 'organisators':
 			users_tasks = session.query(model.User, model.Task).\
 				join(model.Task, model.User.id == model.Task.author).\
+				join(model.Wave, model.Wave.id == model.Task.wave).\
+				filter(model.Wave.year == year.id).\
 				group_by(model.User, model.Task).all()
 		else:
 			users_tasks = None

@@ -144,7 +144,11 @@ def to_json(user, year_id, total_score=None, tasks_cnt=None, profile=None, achs=
 		data['school_name'] = profile.school_name
 		data['seasons'] = seasons if seasons is not None else [ key for (key,) in active_years(user.id) ]
 	elif user.role == 'org' or user.role == 'admin':
-		if users_tasks is None: users_tasks = user.tasks
+		if users_tasks is None:
+			users_tasks = session.query(model.Task).\
+				join(model.Wave, model.Wave.id == model.Task.wave).\
+				filter(model.Task.author == user.id, model.Wave.year == year_id).all()
+
 		data['nick_name'] = user.nick_name
 		data['tasks'] = [ task.id for task in users_tasks ]
 		data['short_info'] = user.short_info

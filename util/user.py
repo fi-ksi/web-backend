@@ -123,7 +123,7 @@ def get_profile_picture(user):
 # minimalizace SQL dotazu. Toho se vyuziva napriklad pri vypisovani vysledkovky.
 # Pokud jsou tyto atributy None, provedou se klasicke dotazy.
 # \users_tasks je [model.Task]
-def to_json(user, year_id, total_score=None, tasks_cnt=None, profile=None, achs=None, seasons=None, users_tasks=None, admin_data=False, org_seasons=None):
+def to_json(user, year_obj, total_score=None, tasks_cnt=None, profile=None, achs=None, seasons=None, users_tasks=None, admin_data=False, org_seasons=None, max_points=None):
 	data = { 'id': user.id, 'first_name': user.first_name, 'last_name': user.last_name, 'profile_picture': get_profile_picture(user), 'gender': user.sex }
 	if admin_data: data['email'] = user.email
 
@@ -133,21 +133,25 @@ def to_json(user, year_id, total_score=None, tasks_cnt=None, profile=None, achs=
 	else:
 		data['role'] = user.role
 
-	data['score'] = float(format(total_score, '.1f')) if total_score is not None else float(format(sum_points(user.id, year_id), '.1f'))
-	data['tasks_num'] = tasks_cnt if tasks_cnt is not None else len(util.task.fully_submitted(user.id, year_id))
-	data['achievements'] = achs if achs is not None else list(util.achievement.ids_set(achievements(user.id, year_id)))
+	if total_score is None: total_score = sum_points(user.id, year_obj.id)
+
+	data['score'] = float(format(total_score, '.1f'))
+	data['tasks_num'] = tasks_cnt if tasks_cnt is not None else len(util.task.fully_submitted(user.id, year_obj.id))
+	data['achievements'] = achs if achs is not None else list(util.achievement.ids_set(achievements(user.id, year_obj.id)))
 	data['enabled'] = user.enabled
 
 	if user.role == 'participant' or user.role == 'participant_hidden':
 		if profile is None: profile = session.query(model.Profile).get(user.id)
+		if max_points is None: max_points = util.task.sum_points(year_obj.id, bonus=False) + year_obj.point_pad
 		data['addr_country'] = profile.addr_country
 		data['school_name'] = profile.school_name
 		data['seasons'] = seasons if seasons is not None else [ key for (key,) in active_years(user.id) ]
+		data['successful'] = total_score >= (0.6*max_points)
 	elif user.role == 'org' or user.role == 'admin':
 		if users_tasks is None:
 			users_tasks = session.query(model.Task).\
 				join(model.Wave, model.Wave.id == model.Task.wave).\
-				filter(model.Task.author == user.id, model.Wave.year == year_id).all()
+				filter(model.Task.author == user.id, model.Wave.year == year_obj.id).all()
 
 		data['nick_name'] = user.nick_name
 		data['tasks'] = [ task.id for task in users_tasks ]

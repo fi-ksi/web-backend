@@ -25,13 +25,14 @@ class User(object):
 
 	def on_get(self, req, resp, id):
 		user = session.query(model.User).get(id)
+		year = session.query(model.Year).get(req.context['year'])
 
 		if user is None:
 			req.context['result'] = { 'errors': [ { 'status': '404', 'title': 'Not found', 'detail': u'Uživatel s tímto ID neexistuje.' } ] }
 			resp.status = falcon.HTTP_404
 			return
 
-		req.context['result'] = { 'user': util.user.to_json(user, req.context['year'], admin_data=req.context['user'].is_org()) }
+		req.context['result'] = { 'user': util.user.to_json(user, year, admin_data=req.context['user'].is_org()) }
 
 	def on_delete(self, req, resp, id):
 		user = req.context['user']
@@ -161,10 +162,12 @@ class Users(object):
 		else:
 			users_tasks = None
 
+		max_points = util.task.sum_points(req.context['year'], bonus=False) + year.point_pad
+
 		# Uzivatele s nedefinovanymi tasks_cnt v tomto rocniku  neodevzdali zadnou ulohu
 		# -> nastavime jim natvrdo 'tasks_cnt' = 0 a total_score = 0, abychom omezili
 		# dalsi SQL dotazy v util.user.to_json
-		users_json = [ util.user.to_json(user.User, req.context['year'], \
+		users_json = [ util.user.to_json(user.User, year, \
 			user.total_score if user.total_score else 0, \
 			user.tasks_cnt if user.tasks_cnt else 0, \
 			user.Profile, \
@@ -172,7 +175,8 @@ class Users(object):
 			seasons=[ item.year_id for item in seasons if item.user_id == user.User.id ], \
 			users_tasks=[ task for (_, task) in filter(lambda (usr,task): usr.id == user.User.id, users_tasks) ] if users_tasks else None, \
 			admin_data=req.context['user'].is_org(), \
-			org_seasons=[ item.year_id for item in org_seasons if item.user_id == user.User.id ] ) \
+			org_seasons=[ item.year_id for item in org_seasons if item.user_id == user.User.id ],\
+			max_points=max_points) \
 			for user in users ]
 
 		req.context['result'] = { "users": users_json }

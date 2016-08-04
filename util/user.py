@@ -116,6 +116,22 @@ def percentile(user_id, year_id):
 
 	return 0
 
+# vraci seznam resitelu uspesnych v danem rocniku
+def successful_participants(year_obj):
+	max_points = util.task.sum_points(year_obj.id, bonus=False) + year_obj.point_pad
+	points_per_module = session.query(model.User.id.label('user'), model.Evaluation.module, func.max(model.Evaluation.points).label('points')).\
+		join(model.Evaluation, model.Evaluation.user == model.User.id).\
+		join(model.Module, model.Evaluation.module == model.Module.id).\
+		join(model.Task, model.Task.id == model.Module.task).\
+		filter(model.Task.evaluation_public).\
+		join(model.Wave, model.Wave.id == model.Task.wave).\
+		filter(model.Wave.year == year_obj.id).\
+		group_by(model.User.id, model.Evaluation.module).subquery()
+
+	return session.query(model.User).\
+		join(points_per_module, points_per_module.c.user == model.User.id).\
+		filter(points_per_module.c.points >= 0.6*max_points).all()
+
 def get_profile_picture(user):
 	return PROFILE_PICTURE_URL % user.id if user.profile_picture and os.path.isfile(user.profile_picture) else None
 

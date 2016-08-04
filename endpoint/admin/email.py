@@ -19,7 +19,8 @@ class Email(object):
 		"Bcc": [String],
 		"Gender": (both|male|female) - pokud neni vyplneno, je automaticky povazovano za "both",
 		"KarlikSign": (true|false),
-		"Easteregg": (true|false)
+		"Easteregg": (true|false),
+		"Successful": (true|false)
 	}
 
 	Backend edpovida:
@@ -35,19 +36,26 @@ class Email(object):
 			return
 
 		data = json.loads(req.stream.read())['e-mail']
-		print data
 
 		# Filtrovani uzivatelu
 		if data['To'] != []:
 			active = util.user.active_years_all()
 			active = [ user for (user,year) in filter(lambda (user,year): (user.role == 'participant') and (year.id in data['To']), active) ]
-			active = set(active)
 			if ('Gender' in data) and (data['Gender'] != 'both'): active = filter(lambda user: user.sex == data['Gender'], active)
-			to = [ user.email for user in active ]
+			to = active
 		else:
 			query = session.query(model.User).filter(model.User.role == 'participant')
 			if ('Gender' in data) and (data['Gender'] != 'both'): query = query.filter(model.User.sex == data['Gender'])
-			to = [ user.email for user in query.all() ]
+			to = query.all()
+
+		if ("Successful" in data) and (data['Successful']):
+			succ = set()
+			for year in data['To']:
+				year_obj = session.query(model.Year).get(year)
+				succ |= set(map(lambda user: user.id, util.user.successful_participants(year_obj)))
+			to = filter(lambda user: user.id in succ, to)
+
+		to = set([ user.email for user in to ])
 
 		params = {
 			'Return-Path': data['Sender'],

@@ -8,6 +8,41 @@ from sqlalchemy import func, distinct, desc, text, or_
 
 class UserExport(object):
 
+	# Pomocna metoda pro zapis uzivatelu do souboru
+	# Vraci string k zapisu do souboru
+	def _stringify_users(self, users, sum_points):
+		res = ""
+		order = 0
+		last_points = -1
+		for i in range(0, len(users)):
+			user      = users[i][0]
+			profile   = users[i][1]
+			points    = users[i][2]
+			tasks_cnt = users[i][3]
+			if points != last_points:
+				order = i+1
+				last_points = points
+
+			res += \
+				str(order)+";"+\
+				user.last_name+";" +\
+				user.first_name+";" +\
+				str(points)+";"+\
+				('A' if points >= 0.6*sum_points else 'N')+";"+\
+				user.email+";" +\
+				profile.addr_street+";" +\
+				profile.addr_city+";" +\
+				profile.addr_zip+";" +\
+				profile.addr_country+";" +\
+				profile.school_name+";" +\
+				profile.school_street+";" +\
+				profile.school_city+";" +\
+				profile.school_zip+";" +\
+				profile.school_country+";" +\
+				str(profile.school_finish)+'\n'
+
+		return res
+
 	# Vraci csv vsech resitelu vybraneho rocniku.
 	def on_get(self, req, resp):
 		user = req.context['user']
@@ -50,12 +85,16 @@ class UserExport(object):
 			join(model.Profile, model.User.id == model.Profile.user_id).\
 			filter(model.User.role == 'participant').\
 			filter(text("tasks_cnt"), text("tasks_cnt") > 0).\
-			group_by(model.User).order_by(desc("total_score"), model.User.last_name, model.User.first_name).all()
+			group_by(model.User).order_by(desc("total_score"), model.User.last_name, model.User.first_name)
+
+		year_end = util.year.year_end(year_obj)
+		users_hs = users.filter(model.Profile.school_finish >= year_end).all()
+		users_other = users.filter(model.Profile.school_finish < year_end).all()
 
 		sum_points = util.task.sum_points(req.context['year'], bonus=False) + year_obj.point_pad
 		sum_points_bonus = util.task.sum_points(req.context['year'], bonus=True) + year_obj.point_pad
-		inMemoryOutputFile.write(u"Celkem bodů: " + str(sum_points) + u", včetně bonusových úloh: " + str(sum_points_bonus) + u", bodová vycpávka: " + str(year_obj.point_pad) + '\n')
-		inMemoryOutputFile.write(\
+
+		table_header = \
 			u"Pořadí;" +\
 			u"Příjmení;" +\
 			u"Jméno;" +\
@@ -72,37 +111,18 @@ class UserExport(object):
 			u"PSČ školy;" +\
 			u"Země školy;" +\
 			u'Rok maturity\n'\
-		)
 
-		order = 0
-		last_points = -1
-		for i in range(0, len(users)):
-			user      = users[i][0]
-			profile   = users[i][1]
-			points    = users[i][2]
-			tasks_cnt = users[i][3]
-			if points != last_points:
-				order = i+1
-				last_points = points
+		inMemoryOutputFile.write(u"Celkem bodů: " + str(sum_points) + u", včetně bonusových úloh: " + str(sum_points_bonus) + u", bodová vycpávka: " + str(year_obj.point_pad) + '\n')
 
-			inMemoryOutputFile.write(\
-				str(order)+";"+\
-				user.last_name+";" +\
-				user.first_name+";" +\
-				str(points)+";"+\
-				('A' if points >= 0.6*sum_points else 'N')+";"+\
-				user.email+";" +\
-				profile.addr_street+";" +\
-				profile.addr_city+";" +\
-				profile.addr_zip+";" +\
-				profile.addr_country+";" +\
-				profile.school_name+";" +\
-				profile.school_street+";" +\
-				profile.school_city+";" +\
-				profile.school_zip+";" +\
-				profile.school_country+";" +\
-				str(profile.school_finish)+'\n'\
-			)
+		# Resitele stredoskolaci
+		inMemoryOutputFile.write(u"Středoškoláci\n")
+		inMemoryOutputFile.write(table_header)
+		inMemoryOutputFile.write(self._stringify_users(users_hs, sum_points))
+
+		# Resitele ostatni
+		inMemoryOutputFile.write(u"\nOstatní\n")
+		inMemoryOutputFile.write(table_header)
+		inMemoryOutputFile.write(self._stringify_users(users_other, sum_points))
 
 		resp.set_header('Content-Disposition', "inline; filename=\"resitele_" + str(req.context['year']) + ".csv\"")
 		resp.content_type = "text/csv"

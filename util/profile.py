@@ -61,7 +61,7 @@ def _profile_to_json(user, profile, task_scores, year_obj):
 			'percentile': util.user.percentile(user.id, year_obj.id),
 			'score': float(format(points, '.1f')),
 			'seasons': [ key for (key,) in util.user.active_years(user.id) ],
-			'successful': successful,
+			'percent': successful,
 			'results': [ task.id for task in task_scores.keys() ],
 			'role': user.role,
 			'tasks_num': len(util.task.fully_submitted(user.id, year_obj.id)),

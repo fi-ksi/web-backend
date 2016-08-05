@@ -120,7 +120,10 @@ def points(task_id, user_id):
 # Vraci sumu bodu za vsechny moduly v danem rocniku
 # Pokud je vyplneno \bonus, vraci i bonusove
 def sum_points(year_id, bonus):
-	q = session.query(func.sum(model.Module.max_points))
+	q = session.query(func.sum(model.Module.max_points)).\
+		join(model.Task, model.Task.id == model.Module.task).\
+		join(model.Wave, model.Wave.id == model.Task.wave).\
+		filter(model.Wave.year == year_id)
 	if not bonus: q = q.filter(model.Module.bonus == False)
 	return q.scalar()
 

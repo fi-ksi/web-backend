@@ -14,7 +14,7 @@ class CodeExecution(Base):
 	}
 
 	id = Column(Integer, primary_key=True)
-	module = Column(Integer, ForeignKey(Module.id), nullable=False)
-	user = Column(Integer, ForeignKey(User.id), nullable=False)
+	module = Column(Integer, ForeignKey(Module.id, ondelete='CASCADE'), nullable=False)
+	user = Column(Integer, ForeignKey(User.id, ondelete='CASCADE'), nullable=False)
 	code = Column(Text)
 	time = Column(TIMESTAMP, default=datetime.datetime.utcnow(), server_default=text('CURRENT_TIMESTAMP'))

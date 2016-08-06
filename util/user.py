@@ -17,7 +17,7 @@ def achievements(user_id, year_id):
 		filter(model.UserAchievement.user_id == user_id)
 
 	# Globalni achievementy nejsou propojeny s zadnou ulohou.
-	general = q.filter(model.UserAchievement.task_id == 0).all()
+	general = q.filter(model.UserAchievement.task_id == None).all()
 
 	# Achievementy propojene s ulohou filtrujeme.
 	task = q.join(model.Task, model.Task.id == model.UserAchievement.task_id).\

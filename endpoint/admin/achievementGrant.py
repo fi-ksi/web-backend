@@ -57,7 +57,7 @@ class AchievementGrant(object):
 			if len(errors) > 0:
 				req.context['result'] = { 'errors': errors }
 			else:
-				req.context['result'] = '{}'
+				req.context['result'] = {}
 		except:
 			session.rollback()
 			raise

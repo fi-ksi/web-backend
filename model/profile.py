@@ -16,7 +16,7 @@ class Profile(Base):
 
 	countries = Enum('cz', 'sk')
 
-	user_id = Column(Integer, ForeignKey(User.id), primary_key=True)
+	user_id = Column(Integer, ForeignKey(User.id, ondelete='CASCADE'), primary_key=True)
 	addr_street = Column(String(255), nullable=False)
 	addr_city = Column(String(255), nullable=False)
 	addr_zip = Column(String(20), nullable=False)

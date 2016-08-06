@@ -136,6 +136,7 @@ class Users(object):
 		achievements = session.query(model.User.id.label('user_id'), model.Achievement.id.label('a_id')).\
 			join(model.UserAchievement, model.UserAchievement.user_id == model.User.id).\
 			join(model.Achievement, model.Achievement.id == model.UserAchievement.achievement_id).\
+			filter(or_(model.Achievement.year == None, model.Achievement.year == year.id)).\
 			group_by(model.User, model.Achievement).all()
 
 		# Aktivni roky:

@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
-from sqlalchemy import func
-
+from sqlalchemy import func, or_
 from db import session
 import model
 import util
@@ -10,22 +9,12 @@ import util
 PROFILE_PICTURE_URL = '/images/profile/%d'
 
 # Vrati achievementy uzivatele.
-# Achievementy spojene s ulohami se vraci jen v rocniku, globalni achievementy se vraci ve vsech rocnicich.
+# Achievementy v rocniku se vraci jen v rocniku, globalni achievementy se vraci ve vsech rocnicich.
 def achievements(user_id, year_id):
-	q = session.query(model.Achievement).\
+	return session.query(model.Achievement).\
 		join(model.UserAchievement, model.UserAchievement.achievement_id == model.Achievement.id).\
-		filter(model.UserAchievement.user_id == user_id)
-
-	# Globalni achievementy nejsou propojeny s zadnou ulohou.
-	general = q.filter(model.UserAchievement.task_id == None).all()
-
-	# Achievementy propojene s ulohou filtrujeme.
-	task = q.join(model.Task, model.Task.id == model.UserAchievement.task_id).\
-		filter(model.Task.evaluation_public).\
-		join(model.Wave, model.Wave.id == model.Task.wave).\
-		filter(model.Wave.year == year_id).all()
-
-	return general + task
+		filter(model.UserAchievement.user_id == user_id).\
+		filter(or_(model.Achievement.year == None, model.Achievement.year == year_id)).all()
 
 # Vraci [(year_id)] pro vsechny roky, v nichz je aktivni uzivatel \user_id
 def active_years(user_id):

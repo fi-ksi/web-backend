@@ -20,4 +20,4 @@ def to_json(year, sum_points=None):
 	}
 
 def year_end(year):
-	return int(year.year.split(" ")[0]) + 1
+	return int(year.year.replace(" ", "").split("/")[0]) + 1

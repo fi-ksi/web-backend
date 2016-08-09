@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 
 bind='127.0.0.1:3030'
-pidfile='gunicorn_pid'
-daemon=True
-errorlog='gunicorn_error.log'
 workers=4
 timeout=60
+
+# Set to True for debug
+capture_output=False
 
 def pre_request(worker, req):
 	if req.path.startswith('/content/'):

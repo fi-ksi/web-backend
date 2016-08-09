@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import falcon, json
+import falcon, json, sys
 from datetime import datetime, timedelta
 
 import copy
@@ -80,6 +80,7 @@ def log(req, resp):
 		ip = req.env['REMOTE_ADDR']
 
 	print '[%s] [%s] [%s] [%s] %s' % (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), ip, req.method, resp.status, req.relative_uri)
+	sys.stdout.flush()
 
 class Logger(object):
 

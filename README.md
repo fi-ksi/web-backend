@@ -24,12 +24,13 @@ Je vhodne vyuzit virtualenv - pip install virtualenv, virtualenv env, source env
 
 ## Spusteni
 
-* HTTP: `gunicorn --bind 127.0.0.1:3000 app:api`
-* HTTPS: `gunicorn --bind 127.0.0.1:3000 --certfile=server.crt --keyfile=key.pem app:api`
+* `service gunicorn start`
+  Soubor `ksi-backend` je konfiguracni soubor pro spousteni gunicorn skrze
+  `gunicorn-debian`, `gunicorn_cfg` je primo konfiguracni soubor gunicornu.
 
-Modifikaci parametru `--bind` lze zmenit cilovou IP adresu a port (format: `<ip>:<port>`). Pro spusteni na vsech dostupnych IP adresach, staci nastavit `--bind` na format `0:<port>`.
+  Log je v `/var/log/gunicorn/`.
 
-Doporucene spusteni: skriptem ./start.sh, zabiti serveru skriptem ./kill.sh.
+  `/etc/gunicorn.d/ksi-backend` vede na `ksi-backend`.
 
 ## `config.py`
 Pro funnkcnost backendu musi byt v korenove slozce repozitare souboor `config.py` s heslem k databazi ve formatu:
@@ -40,4 +41,11 @@ Pro funnkcnost backendu musi byt v korenove slozce repozitare souboor `config.py
 
 Pro vytvoreni tabulek spustit pouze s jednim workerem a odkomentovat prislusny
 kud kodu v `app.py`.
+
+## Ocekavana struktura dat v systemu
+
+* any-dir/any-dir/.../any-dir
+  * `pypy`
+  * any-dir-with-backend
+
 

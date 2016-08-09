@@ -1,0 +1,12 @@
+CONFIG = {
+    'mode': 'wsgi',
+    'working_dir': '/root/web-backend',
+    'python': '/usr/bin/python',
+    'user': 'root',
+    'group': 'root',
+    'args': (
+        '-c',
+        'gunicorn_cfg.py',
+        'app:api',
+    ),
+}

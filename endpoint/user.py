@@ -153,14 +153,11 @@ class Users(object):
 			join(model.User, model.User.id == model.ActiveOrg.org).all()
 
 		# Ziskani seznamu uloh vsech orgu na jeden dotaz
-		if filt == 'organisators':
-			users_tasks = session.query(model.User, model.Task).\
-				join(model.Task, model.User.id == model.Task.author).\
-				join(model.Wave, model.Wave.id == model.Task.wave).\
-				filter(model.Wave.year == year.id).\
-				group_by(model.User, model.Task).all()
-		else:
-			users_tasks = None
+		users_tasks = session.query(model.User, model.Task).\
+			join(model.Task, model.User.id == model.Task.author).\
+			join(model.Wave, model.Wave.id == model.Task.wave).\
+			filter(model.Wave.year == year.id).\
+			group_by(model.User, model.Task).all()
 
 		max_points = util.task.sum_points(req.context['year'], bonus=False) + year.point_pad
 

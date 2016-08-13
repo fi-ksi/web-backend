@@ -1,9 +1,9 @@
 CONFIG = {
     'mode': 'wsgi',
-    'working_dir': '/root/web-backend',
+    'working_dir': '/home/ksi/web-backend',
     'python': '/usr/bin/python',
-    'user': 'root',
-    'group': 'root',
+    'user': 'ksi',
+    'group': 'ksi',
     'args': (
         '-c',
         'gunicorn_cfg.py',

@@ -130,10 +130,11 @@ class ThreadDetails(object):
 				return
 
 			last_visit = util.thread.get_visit(thread.id, user.id)
+			posts = session.query(model.Post).filter(model.Post.thread == thread.id).all()
 
 			req.context['result'] = {
 				'threadDetails': util.thread.details_to_json(thread),
-				'posts': [ util.post.to_json(post, user.id, last_visit) for post in thread.posts ]
+				'posts': [ util.post.to_json(post, user.id, last_visit) for post in posts ]
 			}
 		except SQLAlchemyError:
 			session.rollback()

@@ -28,6 +28,7 @@ class Profile(object):
 			user, profile = session.query(model.User).filter(model.User.id == userinfo.get_id()).outerjoin(model.Profile, model.User.id == model.Profile.user_id).add_entity(model.Profile).first()
 
 			user.first_name = data['first_name']
+			user.nick_name = data['nick_name']
 			user.last_name = data['last_name']
 			user.email = data['email']
 			user.sex = data['gender']

@@ -155,6 +155,7 @@ def to_json(user, year_obj, total_score=None, tasks_cnt=None, profile=None, achs
 	data['tasks_num'] = tasks_cnt if tasks_cnt is not None else len(util.task.fully_submitted(user.id, year_obj.id))
 	data['achievements'] = achs if achs is not None else list(util.achievement.ids_set(achievements(user.id, year_obj.id)))
 	data['enabled'] = user.enabled
+	data['nick_name'] = user.nick_name
 
 	if user.role == 'participant' or user.role == 'participant_hidden':
 		if profile is None: profile = session.query(model.Profile).get(user.id)
@@ -169,7 +170,6 @@ def to_json(user, year_obj, total_score=None, tasks_cnt=None, profile=None, achs
 				join(model.Wave, model.Wave.id == model.Task.wave).\
 				filter(model.Task.author == user.id, model.Wave.year == year_obj.id).all()
 
-		data['nick_name'] = user.nick_name
 		data['tasks'] = [ task.id for task in users_tasks ]
 		data['short_info'] = user.short_info
 		data['seasons'] = org_seasons if org_seasons is not None else [ key for (key,) in active_years_org(user.id) ]

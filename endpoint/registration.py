@@ -23,7 +23,7 @@ class Registration(object):
 			raise
 
 		try:
-			user = model.User(email=data['email'], password=auth.get_hashed_password(data['password']), first_name=data['first_name'], last_name=data['last_name'], sex=data['gender'], short_info=data["short_info"])
+			user = model.User(email=data['email'], password=auth.get_hashed_password(data['password']), first_name=data['first_name'], last_name=data['last_name'], nick_name=data['nick_name'], sex=data['gender'], short_info=data["short_info"])
 			session.add(user)
 			session.commit()
 		except:

@@ -42,6 +42,7 @@ def _profile_to_json(user, profile, task_scores, year_obj):
 			'signed_in': True,
 			'first_name': user.first_name,
 			'last_name': user.last_name,
+			'nick_name': user.nick_name,
 			'profile_picture': util.user.get_profile_picture(user),
 			'short_info': user.short_info,
 			'email': user.email,

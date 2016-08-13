@@ -162,12 +162,13 @@ class ThreadDetails(object):
 				resp.status = falcon.HTTP_400
 				return
 
-			last_visit = util.thread.get_visit(thread.id, user.id)
+			last_visit = util.thread.get_visit(user.id, thread.id)
 			posts = session.query(model.Post).filter(model.Post.thread == thread.id).all()
 
 			req.context['result'] = {
 				'threadDetails': util.thread.details_to_json(thread),
-				'posts': [ util.post.to_json(post, user.id, last_visit) for post in posts ]
+				'posts': [ util.post.to_json(post, user.id, last_visit, last_visit_filled=True, \
+					reactions=filter(lambda pst: pst.parent == post.id, posts)) for post in posts ]
 			}
 		except SQLAlchemyError:
 			session.rollback()

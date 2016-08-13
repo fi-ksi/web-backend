@@ -23,7 +23,7 @@ def details_to_json(thread, root_posts=None):
 	}
 
 def get_visit(user_id, thread_id):
-	return session.query(model.ThreadVisit).filter(model.ThreadVisit.user == user_id, model.ThreadVisit.thread == thread_id).first()
+	return session.query(model.ThreadVisit).get((thread_id, user_id))
 
 def get_user_visit(user_id, year_id):
 	return session.query(model.ThreadVisit).\

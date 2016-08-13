@@ -7,7 +7,7 @@ import util
 def to_json(post, user_id, last_visit=None, last_visit_filled=False, reactions=None):
 	if user_id:
 		if not last_visit_filled:
-			last_visit = session.query(model.ThreadVisit).get((thread_id. user_id))
+			last_visit = session.query(model.ThreadVisit).get((post.thread, user_id))
 		is_new = True if (last_visit is None) or (last_visit.last_last_visit is None) else last_visit.last_last_visit < post.published_at
 	else:
 		is_new = False

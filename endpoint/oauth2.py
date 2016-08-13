@@ -2,6 +2,7 @@
 
 import falcon
 
+from sqlalchemy.exc import SQLAlchemyError
 from db import session
 import auth
 import model
@@ -40,24 +41,30 @@ class Authorize(object):
 			resp.status = falcon.HTTP_400
 
 	def on_post(self, req, resp):
-		grant_type = req.get_param('grant_type')
+		try:
+			grant_type = req.get_param('grant_type')
 
-		if grant_type == 'password':
-			self._auth(req, resp)
-		elif grant_type == 'refresh_token':
-			self._refresh(req, resp)
-		else:
-			resp.status = falcon.HTTP_400
+			if grant_type == 'password':
+				self._auth(req, resp)
+			elif grant_type == 'refresh_token':
+				self._refresh(req, resp)
+			else:
+				resp.status = falcon.HTTP_400
 
-		util.auth.update_tokens()
+			util.auth.update_tokens()
+		except SQLAlchemyError:
+			session.rollback()
+			raise
+		finally:
+			session.close()
 
 class Logout(object):
 
 	def on_get(self, req, resp):
-		if not req.context['user'].is_logged_in():
-			return
-
 		try:
+			if not req.context['user'].is_logged_in():
+				return
+
 			token = session.query(model.Token).filter(model.Token.access_token == req.context['user'].token).first()
 
 			if not token:
@@ -65,7 +72,7 @@ class Logout(object):
 
 			session.delete(token)
 			session.commit()
-		except:
+		except SQLAlchemyError:
 			session.rollback()
 			raise
 		finally:

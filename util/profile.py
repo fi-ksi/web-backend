@@ -9,7 +9,7 @@ def fake_profile():
 	return { 'profile': { 'id': 0, 'signed_in': False } }
 
 def to_json(user, profile, year_obj):
-	task_scores = { task: points for task, points in util.task.any_submitted(user.id, year_obj.id) }
+	task_scores = { task: (points, wave, prereq) for task, points, wave, prereq in util.task.any_submitted(user.id, year_obj.id) }
 
 	adeadline = util.task.after_deadline()
 	fsubmitted = util.task.fully_submitted(user.id, year_obj.id)
@@ -25,11 +25,11 @@ def to_json(user, profile, year_obj):
 		group_by(model.Task, model.Achievement).all()
 
 	return {
-			'profile': [ _profile_to_json(user, profile, task_scores, year_obj) ],
-			'tasks': [ util.task.to_json(task, user, adeadline, fsubmitted, None, task.id in corrected, task.id in autocorrected_full, task_max_points=task_max_points_dict[task.id]) for task in task_scores.keys() ],
+			'profile': _profile_to_json(user, profile, task_scores, year_obj),
+			'tasks': [ util.task.to_json(task, prereq, user, adeadline, fsubmitted, wave, task.id in corrected, task.id in autocorrected_full, task_max_points=task_max_points_dict[task.id]) for task, (points, wave, prereq) in task_scores.items() ],
 			'taskScores': [ task_score_to_json(task, points, user, \
 					[ ach.id for (_, ach) in filter(lambda (tsk, ach): tsk.id == task.id, task_achievements) ]) \
-				for task, points in task_scores.items() ]
+				for task, (points, _, _) in task_scores.items() ]
 	}
 
 def _profile_to_json(user, profile, task_scores, year_obj):

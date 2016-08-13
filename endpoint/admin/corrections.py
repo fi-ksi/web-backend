@@ -2,7 +2,7 @@
 
 import falcon
 from sqlalchemy import func, and_, or_,  not_
-
+from sqlalchemy.exc import SQLAlchemyError
 from db import session
 import model
 import util
@@ -17,43 +17,49 @@ class Correction(object):
 	Parametry: moduleX_version=Y (X a Y jsou cisla)
 	"""
 	def on_get(self, req, resp, id):
-		user = req.context['user']
-		year = req.context['year']
-		task = int(id) / 100000
-		participant = int(id) % 100000
+		try:
+			user = req.context['user']
+			year = req.context['year']
+			task = int(id) / 100000
+			participant = int(id) % 100000
 
-		if (not user.is_logged_in()) or (not user.is_org()):
-			resp.status = falcon.HTTP_400
-			return
+			if (not user.is_logged_in()) or (not user.is_org()):
+				resp.status = falcon.HTTP_400
+				return
 
-		# Ziskame prislusna 'evaluation's
-		corrs = session.query(model.Evaluation, model.Task, model.Module).\
-			filter(model.Evaluation.user == participant).\
-			join(model.Module, model.Module.id == model.Evaluation.module).\
-			join(model.Task, model.Task.id == model.Module.task).\
-			join(model.Wave, model.Task.wave == model.Wave.id).\
-			join(model.Year, model.Year.id == model.Wave.year).\
-			filter(model.Year.id == year).\
-			filter(model.Task.id == task)
+			# Ziskame prislusna 'evaluation's
+			corrs = session.query(model.Evaluation, model.Task, model.Module).\
+				filter(model.Evaluation.user == participant).\
+				join(model.Module, model.Module.id == model.Evaluation.module).\
+				join(model.Task, model.Task.id == model.Module.task).\
+				join(model.Wave, model.Task.wave == model.Wave.id).\
+				join(model.Year, model.Year.id == model.Wave.year).\
+				filter(model.Year.id == year).\
+				filter(model.Task.id == task)
 
-		task_id = corrs.group_by(model.Task).first()
-		if task_id is None:
-			resp.status = falcon.HTTP_404
-			return
+			task_id = corrs.group_by(model.Task).first()
+			if task_id is None:
+				resp.status = falcon.HTTP_404
+				return
 
-		task_id = task_id.Task.id
-		corr_evals = corrs.group_by(model.Evaluation).all()
-		corr_modules = corrs.group_by(model.Module).all()
+			task_id = task_id.Task.id
+			corr_evals = corrs.group_by(model.Evaluation).all()
+			corr_modules = corrs.group_by(model.Module).all()
 
-		# Parsovani GET pozadavku:
-		specific_evals = {}
-		for param in req.params:
-			module = re.findall(r'\d+', param)
-			if module: specific_evals[int(module[0])] = session.query(model.Evaluation).get(req.get_param_as_int(param))
+			# Parsovani GET pozadavku:
+			specific_evals = {}
+			for param in req.params:
+				module = re.findall(r'\d+', param)
+				if module: specific_evals[int(module[0])] = session.query(model.Evaluation).get(req.get_param_as_int(param))
 
-		req.context['result'] = {
-			'correction': util.correction.to_json([ (corr, mod, specific_evals[mod.id] if mod.id in specific_evals else None) for (corr, task, mod) in corr_modules ], [ evl for (evl, tsk, mod) in corr_evals ], task_id)
-		}
+			req.context['result'] = {
+				'correction': util.correction.to_json([ (corr, mod, specific_evals[mod.id] if mod.id in specific_evals else None) for (corr, task, mod) in corr_modules ], [ evl for (evl, tsk, mod) in corr_evals ], task_id)
+			}
+		except SQLAlchemyError:
+			session.rollback()
+			raise
+		finally:
+			session.close()
 
 	# PUT: propojeni diskuzniho vlakna komentare
 	def _process_thread(self, corr):
@@ -68,8 +74,6 @@ class Correction(object):
 			except:
 				session.rollback()
 				raise
-			finally:
-				session.close()
 
 		if (corr['comment'] is None) and (curr_thread is not None):
 			# mazeme diskuzni vlakno
@@ -163,139 +167,145 @@ class Corrections(object):
 	Cil: minimalizovat pocet SQL dotazu, provest jeden velky dotaz a vysledky pak filtrovat pythonim filter().
 	"""
 	def on_get(self, req, resp):
-		# Ziskama GET parametry
-		user = req.context['user']
-		year = req.context['year']
-		task = req.get_param_as_int('task')
-		participant = req.get_param_as_int('participant')
-		state = req.get_param('state')
+		try:
+			# Ziskama GET parametry
+			user = req.context['user']
+			year = req.context['year']
+			task = req.get_param_as_int('task')
+			participant = req.get_param_as_int('participant')
+			state = req.get_param('state')
 
-		# Vysledek vracime jen v pripade, kdy je vyplneno alespon jedlo z 'task' nebo 'participant'
-		if task is None and participant is None:
-			resp.status = falcon.HTTP_400
-			return
+			# Vysledek vracime jen v pripade, kdy je vyplneno alespon jedlo z 'task' nebo 'participant'
+			if task is None and participant is None:
+				resp.status = falcon.HTTP_400
+				return
 
-		# Login
-		if (not user.is_logged_in()) or (not user.is_org()):
-			resp.status = falcon.HTTP_400
-			return
+			# Login
+			if (not user.is_logged_in()) or (not user.is_org()):
+				resp.status = falcon.HTTP_400
+				return
 
-		# Ziskame prislusna 'evaluation's v podobe seznamu [eval_id], toto je subquery pro dalsi pozadavky.
-		evals = session.query(model.Evaluation.id.label('eval_id'))
-		if participant is not None:
-			evals = evals.filter(model.Evaluation.user == participant)
-		evals = evals.join(model.Module, model.Module.id == model.Evaluation.module).\
-			join(model.Task, model.Task.id == model.Module.task).\
-			join(model.Wave, model.Task.wave == model.Wave.id).\
-			join(model.Year, model.Year.id == model.Wave.year).\
-			filter(model.Year.id == year)
-		if task is not None:
-			evals = evals.filter(model.Task.id == task)
-		evals = evals.subquery()
+			# Ziskame prislusna 'evaluation's v podobe seznamu [eval_id], toto je subquery pro dalsi pozadavky.
+			evals = session.query(model.Evaluation.id.label('eval_id'))
+			if participant is not None:
+				evals = evals.filter(model.Evaluation.user == participant)
+			evals = evals.join(model.Module, model.Module.id == model.Evaluation.module).\
+				join(model.Task, model.Task.id == model.Module.task).\
+				join(model.Wave, model.Task.wave == model.Wave.id).\
+				join(model.Year, model.Year.id == model.Wave.year).\
+				filter(model.Year.id == year)
+			if task is not None:
+				evals = evals.filter(model.Task.id == task)
+			evals = evals.subquery()
 
-		# Terminilogie:
-		# "Opraveni" je Evaluation.group_by(Task, User).
-		# Jedno opraveni muze mit mit vic modulu a evaluations, ma vzy ale prave jednoho uzivatele a prave jednu ulohu.
+			# Terminilogie:
+			# "Opraveni" je Evaluation.group_by(Task, User).
+			# Jedno opraveni muze mit mit vic modulu a evaluations, ma vzy ale prave jednoho uzivatele a prave jednu ulohu.
 
-		# Pomocny vypocet toho, jestli je dane hodnoceni opravene / neopravene
-		# Tato query bere task_id a user_id a pokud je opraveni opravene, vrati v is_corrected True
-		corrected = session.query(model.Task.id.label('task_id'), model.User.id.label('user_id'), (func.count(model.Evaluation) > 0).label('is_corrected')).\
-			join(model.Module, model.Module.task == model.Task.id).\
-			join(model.Evaluation, model.Evaluation.module == model.Module.id).\
-			join(model.User, model.Evaluation.user == model.User.id).\
-			filter(or_(model.Module.autocorrect == True, model.Evaluation.evaluator != None)).\
-			group_by(model.Task.id, model.User.id).subquery()
+			# Pomocny vypocet toho, jestli je dane hodnoceni opravene / neopravene
+			# Tato query bere task_id a user_id a pokud je opraveni opravene, vrati v is_corrected True
+			corrected = session.query(model.Task.id.label('task_id'), model.User.id.label('user_id'), (func.count(model.Evaluation) > 0).label('is_corrected')).\
+				join(model.Module, model.Module.task == model.Task.id).\
+				join(model.Evaluation, model.Evaluation.module == model.Module.id).\
+				join(model.User, model.Evaluation.user == model.User.id).\
+				filter(or_(model.Module.autocorrect == True, model.Evaluation.evaluator != None)).\
+				group_by(model.Task.id, model.User.id).subquery()
 
-		# Ziskame corrections. Corrections = evalustions obohacena o dalsi pole, jako je napriklad uloha, modul, ci diskuzni vlakno reseni
-		# Tady se bohuzel trochu duplikuje predchozi kod, ale neumim to vyresit lepe...
-		corrs = session.query(model.Evaluation, model.Task, model.Module, model.Thread, corrected.c.is_corrected.label('is_corrected')).\
-			join(evals, model.Evaluation.id == evals.c.eval_id).\
-			join(model.Module, model.Evaluation.module == model.Module.id).\
-			join(model.Task, model.Task.id == model.Module.task)
-		# filtr opravenych uloh
-		if state == 'corrected':
-			corrs = corrs.join(corrected, and_(model.Task.id == corrected.c.task_id, model.Evaluation.user == corrected.c.user_id))
-		else:
-			corrs = corrs.outerjoin(corrected, and_(model.Task.id == corrected.c.task_id, model.Evaluation.user == corrected.c.user_id))
-		if state == 'notcorrected':
-			corrs = corrs.filter(or_(corrected.c.is_corrected == None, not_(corrected.c.is_corrected)))
-		corrs = corrs.outerjoin(model.SolutionComment, and_(model.SolutionComment.user == model.Evaluation.user, model.SolutionComment.task == model.Task.id)).\
-			outerjoin(model.Thread, model.SolutionComment.thread == model.Thread.id)
+			# Ziskame corrections. Corrections = evalustions obohacena o dalsi pole, jako je napriklad uloha, modul, ci diskuzni vlakno reseni
+			# Tady se bohuzel trochu duplikuje predchozi kod, ale neumim to vyresit lepe...
+			corrs = session.query(model.Evaluation, model.Task, model.Module, model.Thread, corrected.c.is_corrected.label('is_corrected')).\
+				join(evals, model.Evaluation.id == evals.c.eval_id).\
+				join(model.Module, model.Evaluation.module == model.Module.id).\
+				join(model.Task, model.Task.id == model.Module.task)
+			# filtr opravenych uloh
+			if state == 'corrected':
+				corrs = corrs.join(corrected, and_(model.Task.id == corrected.c.task_id, model.Evaluation.user == corrected.c.user_id))
+			else:
+				corrs = corrs.outerjoin(corrected, and_(model.Task.id == corrected.c.task_id, model.Evaluation.user == corrected.c.user_id))
+			if state == 'notcorrected':
+				corrs = corrs.filter(or_(corrected.c.is_corrected == None, not_(corrected.c.is_corrected)))
+			corrs = corrs.outerjoin(model.SolutionComment, and_(model.SolutionComment.user == model.Evaluation.user, model.SolutionComment.task == model.Task.id)).\
+				outerjoin(model.Thread, model.SolutionComment.thread == model.Thread.id)
 
-		# Evaluations si pogrupime podle uloh, podle toho vedeme result a pak pomocne podle modulu (to vyuzivame pri budovani vystupu) a jeste podle evaluations
-		corrs_tasks = corrs.group_by(model.Task, model.Evaluation.user).all()
-		corrs_modules = corrs.group_by(model.Module, model.Evaluation.user).all()
-		corrs_evals = corrs.group_by(model.Evaluation, model.Evaluation.user).all()
+			# Evaluations si pogrupime podle uloh, podle toho vedeme result a pak pomocne podle modulu (to vyuzivame pri budovani vystupu) a jeste podle evaluations
+			corrs_tasks = corrs.group_by(model.Task, model.Evaluation.user).all()
+			corrs_modules = corrs.group_by(model.Module, model.Evaluation.user).all()
+			corrs_evals = corrs.group_by(model.Evaluation, model.Evaluation.user).all()
 
-		# Achievementy po ulohach a uzivatelich:
-		corrs_achs = session.query(model.Task.id, model.UserAchievement.user_id.label('user_id'), model.Achievement.id.label('a_id'))
-		if task is not None: corrs_achs = corrs_achs.filter(model.Task.id == task)
-		if participant is not None: corrs_achs = corrs_achs.filter(model.UserAchievement.user_id == participant)
-		corrs_achs = corrs_achs.join(model.UserAchievement, model.UserAchievement.task_id == model.Task.id).\
-			join(model.Achievement, model.Achievement.id == model.UserAchievement.achievement_id).\
-			group_by(model.Task, model.UserAchievement.user_id, model.Achievement).all()
+			# Achievementy po ulohach a uzivatelich:
+			corrs_achs = session.query(model.Task.id, model.UserAchievement.user_id.label('user_id'), model.Achievement.id.label('a_id'))
+			if task is not None: corrs_achs = corrs_achs.filter(model.Task.id == task)
+			if participant is not None: corrs_achs = corrs_achs.filter(model.UserAchievement.user_id == participant)
+			corrs_achs = corrs_achs.join(model.UserAchievement, model.UserAchievement.task_id == model.Task.id).\
+				join(model.Achievement, model.Achievement.id == model.UserAchievement.achievement_id).\
+				group_by(model.Task, model.UserAchievement.user_id, model.Achievement).all()
 
-		# Vsechny achievementy pro hlavni seznam
-		achievements = session.query(model.Achievement).\
-			filter(model.Achievement.year == req.context['year']).all()
+			# Vsechny achievementy pro hlavni seznam
+			achievements = session.query(model.Achievement).\
+				filter(model.Achievement.year == req.context['year']).all()
 
-		# Pripravime si vsechny relevantni soubory k opravovanim na jeden pozadavek
-		files = session.query(model.SubmittedFile).\
-			join(evals, model.SubmittedFile.evaluation == evals.c.eval_id).all()
+			# Pripravime si vsechny relevantni soubory k opravovanim na jeden pozadavek
+			files = session.query(model.SubmittedFile).\
+				join(evals, model.SubmittedFile.evaluation == evals.c.eval_id).all()
 
-		# Prispevky ve vsech relevantnich diskuzich
-		db_posts = session.query(model.Post, model.Thread).\
-			join(model.Thread, model.Post.thread == model.Thread.id).\
-			join(model.SolutionComment, model.SolutionComment.thread == model.Thread.id).\
-			join(model.Module, model.Module.task == model.SolutionComment.task).\
-			join(model.Evaluation, and_(model.Evaluation.module == model.Module.id, model.SolutionComment.user == model.Evaluation.user)).\
-			join(evals, evals.c.eval_id == model.Evaluation.id)
+			# Prispevky ve vsech relevantnich diskuzich
+			db_posts = session.query(model.Post, model.Thread).\
+				join(model.Thread, model.Post.thread == model.Thread.id).\
+				join(model.SolutionComment, model.SolutionComment.thread == model.Thread.id).\
+				join(model.Module, model.Module.task == model.SolutionComment.task).\
+				join(model.Evaluation, and_(model.Evaluation.module == model.Module.id, model.SolutionComment.user == model.Evaluation.user)).\
+				join(evals, evals.c.eval_id == model.Evaluation.id)
 
-		# Korenove prispevky vlaken
-		root_posts = db_posts.filter(model.Post.parent == None).\
-			group_by(model.Thread, model.Post).all()
-		db_posts = db_posts.group_by(model.Post).all()
+			# Korenove prispevky vlaken
+			root_posts = db_posts.filter(model.Post.parent == None).\
+				group_by(model.Thread, model.Post).all()
+			db_posts = db_posts.group_by(model.Post).all()
 
-		# Budujeme vystup 'corrections'
-		# Argumenty (a jejich format) funkce util.correction.to_json popsany v ~/util/correction.py (toto je pomerne magicka funkce)
-		corrections = []
-		threads = []
-		thr_details = []
-		for corr in corrs_tasks:
-			evals = filter(lambda x: x.Task.id == corr.Task.id and x.Evaluation.user == corr.Evaluation.user, corrs_evals)
-			corrections.append(util.correction.to_json( \
-				[ (evl, mod, None) for (evl, tsk, mod, thr, iscor) in filter(lambda x: x.Task.id == corr.Task.id and x.Evaluation.user == corr.Evaluation.user, corrs_modules) ],\
-				[ evl for (evl, tsk, mod, thr, iscor) in evals ],\
-				evals[0].Task.id,\
-				corr.Thread.id if corr.Thread else None,\
-				[ r for (a,b,r) in filter(lambda (task_id, user_id, a_id): task_id == corr.Task.id and user_id == corr.Evaluation.user, corrs_achs) ],\
-				corr.is_corrected if corr.is_corrected is not None else False,
-				files))
+			# Budujeme vystup 'corrections'
+			# Argumenty (a jejich format) funkce util.correction.to_json popsany v ~/util/correction.py (toto je pomerne magicka funkce)
+			corrections = []
+			threads = []
+			thr_details = []
+			for corr in corrs_tasks:
+				evals = filter(lambda x: x.Task.id == corr.Task.id and x.Evaluation.user == corr.Evaluation.user, corrs_evals)
+				corrections.append(util.correction.to_json( \
+					[ (evl, mod, None) for (evl, tsk, mod, thr, iscor) in filter(lambda x: x.Task.id == corr.Task.id and x.Evaluation.user == corr.Evaluation.user, corrs_modules) ],\
+					[ evl for (evl, tsk, mod, thr, iscor) in evals ],\
+					evals[0].Task.id,\
+					corr.Thread.id if corr.Thread else None,\
+					[ r for (a,b,r) in filter(lambda (task_id, user_id, a_id): task_id == corr.Task.id and user_id == corr.Evaluation.user, corrs_achs) ],\
+					corr.is_corrected if corr.is_corrected is not None else False,
+					files))
 
-			if corr.Thread:
-				threads.append(util.thread.to_json(corr.Thread, user.id))
-				r_posts = [ pst.id for (pst,thrd) in filter(lambda (post,thr): thr.id == corr.Thread.id, root_posts) ]
-				thr_details.append(util.thread.details_to_json(corr.Thread, r_posts))
+				if corr.Thread:
+					threads.append(util.thread.to_json(corr.Thread, user.id))
+					r_posts = [ pst.id for (pst,thrd) in filter(lambda (post,thr): thr.id == corr.Thread.id, root_posts) ]
+					thr_details.append(util.thread.details_to_json(corr.Thread, r_posts))
 
-		# Ziskavame last_visit jednotlivych vlaken (opet na jeden SQL pozadavek)
-		last_visit = util.thread.get_user_visit(user.id, year)
-		posts = []
-		for (post, thread) in db_posts:
-			lastv = None
-			for lv in last_visit:
-				if lv.thread == post.thread:
-					lastv = lv
-					break
-			posts.append(util.post.to_json(post, user.id, lastv, True))
+			# Ziskavame last_visit jednotlivych vlaken (opet na jeden SQL pozadavek)
+			last_visit = util.thread.get_user_visit(user.id, year)
+			posts = []
+			for (post, thread) in db_posts:
+				lastv = None
+				for lv in last_visit:
+					if lv.thread == post.thread:
+						lastv = lv
+						break
+				posts.append(util.post.to_json(post, user.id, lastv, True))
 
-		# A konecne vratime vysledek.
-		req.context['result'] = {
-			'corrections': corrections,
-			'tasks': [ util.correction.task_to_json(q.Task) for q in corrs.group_by(model.Task).all() ],
-			'modules': [ util.correction.module_to_json(q.Module) for q in corrs.group_by(model.Module).all() ],
-			'achievements': [ util.achievement.to_json(achievement) for achievement in achievements ],
-			'threads': threads,
-			'posts': posts,
-			'threadDetails': thr_details
-		}
+			# A konecne vratime vysledek.
+			req.context['result'] = {
+				'corrections': corrections,
+				'tasks': [ util.correction.task_to_json(q.Task) for q in corrs.group_by(model.Task).all() ],
+				'modules': [ util.correction.module_to_json(q.Module) for q in corrs.group_by(model.Module).all() ],
+				'achievements': [ util.achievement.to_json(achievement) for achievement in achievements ],
+				'threads': threads,
+				'posts': posts,
+				'threadDetails': thr_details
+			}
+		except SQLAlchemyError:
+			session.rollback()
+			raise
+		finally:
+			session.close()
 

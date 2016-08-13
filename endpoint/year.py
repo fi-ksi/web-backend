@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from db import session
+from sqlalchemy.exc import SQLAlchemyError
 import model
 import util
 import json
@@ -8,37 +9,43 @@ import json
 class Year(object):
 
 	def on_get(self, req, resp, id):
-		year = session.query(model.Year).get(id)
+		try:
+			year = session.query(model.Year).get(id)
 
-		if year is None:
-			resp.status = falcon.HTTP_404
-			return
+			if year is None:
+				resp.status = falcon.HTTP_404
+				return
 
-		req.context['result'] = { 'year': util.year.to_json(year) }
+			req.context['result'] = { 'year': util.year.to_json(year) }
+		except SQLAlchemyError:
+			session.rollback()
+			raise
+		finally:
+			session.close()
 
 	# UPDATE rocniku
 	def on_put(self, req, resp, id):
-		user = req.context['user']
-
-		# Upravovat rocniky mohou jen ADMINI
-		if (not user.is_logged_in()) or (not user.is_admin()):
-			resp.status = falcon.HTTP_400
-			return
-
-		data = json.loads(req.stream.read())['year']
-
-		year = session.query(model.Year).get(id)
-		if year is None:
-			resp.status = falcon.HTTP_404
-			return
-
-		year.id = data['index']
-		year.year = data['year']
-		year.sealed = data['sealed']
-		year.point_pad = data['point_pad']
-
-		# Aktualizace aktivnich orgu
 		try:
+			user = req.context['user']
+
+			# Upravovat rocniky mohou jen ADMINI
+			if (not user.is_logged_in()) or (not user.is_admin()):
+				resp.status = falcon.HTTP_400
+				return
+
+			data = json.loads(req.stream.read())['year']
+
+			year = session.query(model.Year).get(id)
+			if year is None:
+				resp.status = falcon.HTTP_404
+				return
+
+			year.id = data['index']
+			year.year = data['year']
+			year.sealed = data['sealed']
+			year.point_pad = data['point_pad']
+
+			# Aktualizace aktivnich orgu
 			orgs = session.query(model.ActiveOrg).\
 				filter(model.ActiveOrg.year == year.id).all()
 
@@ -48,20 +55,13 @@ class Year(object):
 					del orgs[i]
 
 			for org in orgs: session.delete(org)
-			session.commit()
 
 			for user_id in data['active_orgs']:
 				org = model.ActiveOrg(org=user_id, year=year.id)
 				session.add(org)
-			session.commit()
-		except:
-			session.rollback()
-			raise
 
-
-		try:
 			session.commit()
-		except:
+		except SQLAlchemyError:
 			session.rollback()
 			raise
 		finally:
@@ -71,28 +71,28 @@ class Year(object):
 
 	# Smazani rocniku
 	def on_delete(self, req, resp, id):
-		user = req.context['user']
-
-		if (not user.is_logged_in()) or (not user.is_admin()):
-			resp.status = falcon.HTTP_400
-			return
-
-		year = session.query(model.Year).get(id)
-		if year is None:
-			resp.status = falcon.HTTP_404
-			return
-
-		# Odstranit lze jen neprazdny rocnik
-		waves_cnt = session.query(model.Wave).filter(model.Wave.year == year.id).count()
-		if waves_cnt > 0:
-			resp.status = falcon.HTTP_403
-			return
-
 		try:
+			user = req.context['user']
+
+			if (not user.is_logged_in()) or (not user.is_admin()):
+				resp.status = falcon.HTTP_400
+				return
+
+			year = session.query(model.Year).get(id)
+			if year is None:
+				resp.status = falcon.HTTP_404
+				return
+
+			# Odstranit lze jen neprazdny rocnik
+			waves_cnt = session.query(model.Wave).filter(model.Wave.year == year.id).count()
+			if waves_cnt > 0:
+				resp.status = falcon.HTTP_403
+				return
+
 			session.delete(year)
 			session.commit()
 			req.context['result'] = {}
-		except:
+		except SQLAlchemyError:
 			session.rollback()
 			raise
 		finally:
@@ -103,31 +103,37 @@ class Year(object):
 class Years(object):
 
 	def on_get(self, req, resp):
-		years = session.query(model.Year).all()
+		try:
+			years = session.query(model.Year).all()
 
-		sum_points = util.task.max_points_year_dict()
+			sum_points = util.task.max_points_year_dict()
 
-		req.context['result'] = { 'years': [ util.year.to_json(year, sum_points[year.id]) for year in years ] }
+			req.context['result'] = { 'years': [ util.year.to_json(year, sum_points[year.id]) for year in years ] }
+		except SQLAlchemyError:
+			session.rollback()
+			raise
+		finally:
+			session.close()
 
 	# Vytvoreni noveho rocniku
 	def on_post(self, req, resp):
-		user = req.context['user']
-
-		# Vytvoret novy rocnik mohou jen ADMINI
-		if (not user.is_logged_in()) or (not user.is_admin()):
-			resp.status = falcon.HTTP_400
-			return
-
-		data = json.loads(req.stream.read())['year']
-
-		year = model.Year(
-			id = data['index'],
-			year = data['year'],
-			sealed = data['sealed'] if data['sealed'] else False,
-			point_pad = data['point_pad']
-		)
-
 		try:
+			user = req.context['user']
+
+			# Vytvoret novy rocnik mohou jen ADMINI
+			if (not user.is_logged_in()) or (not user.is_admin()):
+				resp.status = falcon.HTTP_400
+				return
+
+			data = json.loads(req.stream.read())['year']
+
+			year = model.Year(
+				id = data['index'],
+				year = data['year'],
+				sealed = data['sealed'] if data['sealed'] else False,
+				point_pad = data['point_pad']
+			)
+
 			session.add(year)
 			session.commit()
 
@@ -137,11 +143,12 @@ class Years(object):
 					session.add(org)
 
 			session.commit()
-		except:
+
+			req.context['result'] = { 'year': util.year.to_json(year) }
+
+		except SQLAlchemyError:
 			session.rollback()
 			raise
-
-		req.context['result'] = { 'year': util.year.to_json(year) }
-
-		session.close()
+		finally:
+			session.close()
 

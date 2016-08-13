@@ -3,15 +3,12 @@
 from db import session
 import model
 
-def to_json(thread, user_id=None):
-	count = len(thread.posts)
-	unread = count_unread(user_id, thread.id)
-
+def to_json(thread, unread_cnt, posts_cnt, user_id=None):
 	return {
 		'id': thread.id,
 		'title': thread.title,
-		'unread': unread if unread is not None else count,
-		'posts_count': count,
+		'unread': unread_cnt,
+		'posts_count': posts_cnt,
 		'details': thread.id,
 		'year': thread.year
 	}

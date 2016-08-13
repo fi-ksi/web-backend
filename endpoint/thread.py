@@ -2,7 +2,7 @@
 
 import falcon
 import json
-from sqlalchemy import and_, text, not_, desc, func
+from sqlalchemy import and_, text, not_, desc, func, distinct, or_
 from sqlalchemy.orm import load_only
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -56,7 +56,19 @@ class Thread(object):
 				resp.status = falcon.HTTP_400
 				return
 
-			req.context['result'] = { 'thread': util.thread.to_json(thread, user_id) }
+			# Pocet vsech prispevku
+			posts_cnt = session.query(model.Post).filter(model.Post.thread == thread.id).count()
+			# Pocet neprectenych prispevku
+			if not user.is_logged_in():
+				unread_cnt = posts_cnt
+			else:
+				visit = session.query(model.ThreadVisit).filter(model.ThreadVisit.user == user.id, model.ThreadVisit.thread == thread.id).first()
+				if visit:
+					unread_cnt = session.query(model.Post).filter(model.Post.thread == thread.id, model.Post.published_at > visit.last_visit).count()
+				else:
+					unread_cnt = posts_cnt
+
+			req.context['result'] = { 'thread': util.thread.to_json(thread, unread_cnt, posts_cnt, user_id) }
 		except SQLAlchemyError:
 			session.rollback()
 			raise
@@ -102,15 +114,36 @@ class Threads(object):
 
 			wave = req.get_param_as_int('wave')
 
-			threads = session.query(model.Thread, model.Task).\
+			# Pocet vsech prispevku
+			posts_cnt = session.query(model.Thread.id.label('thread'), func.count(model.Post).label('posts_cnt')).\
+				join(model.Post, model.Post.thread == model.Thread.id).\
+				group_by(model.Thread.id).subquery()
+
+			# Pocet neprectenych prispevku
+			unread = session.query(model.Thread.id.label('thread'), model.ThreadVisit.thread.label('thread_visit'), func.count(model.Post.id).label('unread_cnt')).\
+				outerjoin(model.ThreadVisit, and_(model.ThreadVisit.thread == model.Thread.id, model.ThreadVisit.user == user_id)).\
+				outerjoin(model.Post, and_(model.Post.thread == model.Thread.id, model.Post.published_at > model.ThreadVisit.last_visit)).\
+				group_by(model.Thread.id).subquery()
+
+			threads = session.query(model.Thread, model.Task, posts_cnt.c.posts_cnt.label('posts_cnt'), unread.c.unread_cnt.label('unread_cnt'), unread.c.thread_visit.label('thread_visit')).\
 				outerjoin(model.Task, model.Task.thread == model.Thread.id).\
+				join(posts_cnt, posts_cnt.c.thread == model.Thread.id).\
+				outerjoin(unread, unread.c.thread == model.Thread.id).\
 				filter(model.Thread.public, model.Thread.year == req.context['year'])
 			if wave: threads = threads.filter(model.Task.wave == wave)
 			threads = threads.order_by(desc(model.Thread.id)).all()
 
-			if not wave: threads = filter(lambda (thr,tsk): tsk == None, threads)
+			if not wave: threads = filter(lambda (thr,tsk,p,u,tv): tsk == None, threads)
 
-			req.context['result'] = { 'threads': [ util.thread.to_json(thread, user_id) for thread, task in threads] }
+			thr_output = []
+			for (thread, _, posts_cnt, unread_cnt, thread_visit) in threads:
+				if user_id and thread_visit:
+					uunread_cnt = unread_cnt if unread_cnt else 0
+				else:
+					uunread_cnt = posts_cnt
+				thr_output.append(util.thread.to_json(thread, uunread_cnt, posts_cnt, user_id))
+
+			req.context['result'] = { 'threads': thr_output }
 		except SQLAlchemyError:
 			session.rollback()
 			raise

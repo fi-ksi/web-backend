@@ -3,7 +3,13 @@
 from db import session
 import model
 
-def to_json(thread, unread_cnt, posts_cnt, user_id=None):
+def to_json(thread, user_id=None, unread_cnt=None, posts_cnt=None):
+	if posts_cnt is None:
+		posts_cnt = session.query(model.Post).filter(model.Post.thread == thread.id).count()
+	if unread_cnt is None:
+		if user_id is None: unread_cnt = posts_cnt
+		else: unread_cnt = count_unread(user_id, thread.id)
+
 	return {
 		'id': thread.id,
 		'title': thread.title,

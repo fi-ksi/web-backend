@@ -68,7 +68,7 @@ class Thread(object):
 				else:
 					unread_cnt = posts_cnt
 
-			req.context['result'] = { 'thread': util.thread.to_json(thread, unread_cnt, posts_cnt, user_id) }
+			req.context['result'] = { 'thread': util.thread.to_json(thread, user_id, unread_cnt, posts_cnt) }
 		except SQLAlchemyError:
 			session.rollback()
 			raise
@@ -141,7 +141,7 @@ class Threads(object):
 					uunread_cnt = unread_cnt if unread_cnt else 0
 				else:
 					uunread_cnt = posts_cnt
-				thr_output.append(util.thread.to_json(thread, uunread_cnt, posts_cnt, user_id))
+				thr_output.append(util.thread.to_json(thread, user_id, uunread_cnt, posts_cnt))
 
 			req.context['result'] = { 'threads': thr_output }
 		except SQLAlchemyError:

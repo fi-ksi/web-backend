@@ -1,25 +1,19 @@
 # -*- coding: utf-8 -*-
 
-import sqlalchemy
+import sqlalchemy, config, sys
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.exc import DisconnectionError
+from sqlalchemy.interfaces import ConnectionProxy
 
-import config
-
-def checkout_listener(dbapi_con, con_record, con_proxy):
-	try:
-		try:
-			dbapi_con.ping(False)
-		except TypeError:
-			dbapi_con.ping()
-	except dbapi_con.OperationalError as exc:
-		if exc.args[0] in (2006, 2013, 2014, 2045, 2055):
-			raise DisconnectionError()
-		else:
-			raise
+# When `proxy=MyProxy()` is added to create_angine parameters
+# this proxy shows mysql requests. This could be used to
+# measure amount of SQL requests.
+class MyProxy(ConnectionProxy):
+	def cursor_execute(self, execute, cursor, statement, parameters, context, executemany):
+		print("EXECUTING " + statement[:70] + str(parameters))
+		sys.stdout.flush()
+		return execute(cursor, statement, parameters, context)
 
 engine = sqlalchemy.create_engine(config.SQL_ALCHEMY_URI, isolation_level="READ COMMITTED", pool_recycle=3600)
-sqlalchemy.event.listen(engine, 'checkout', checkout_listener)
 _session = sessionmaker(bind=engine)
 session = _session()
 

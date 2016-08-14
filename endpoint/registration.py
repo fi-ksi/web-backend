@@ -3,34 +3,32 @@
 import json, falcon
 
 from db import session
+from sqlalchemy.exc import SQLAlchemyError
 import model
 import auth
 import util
 
 class Registration(object):
 
-	def on_options(self, req, resp):
-		return
-
 	def on_post(self, req, resp):
 		data = json.loads(req.stream.read())
 
-		existing_user = session.query(model.User).filter(model.User.email == data['email']).first()
-		if existing_user != None:
-			req.context['result'] = { 'error': "duplicate_user" }
-			return
-
 		try:
-			user = model.User(email=data['email'], password=auth.get_hashed_password(data['password']), first_name=data['first_name'], last_name=data['last_name'], sex=data['gender'], short_info=data["short_info"])
-		except:
-			req.context['result'] = { 'error': "Nelze vytvořit uživatele, kontaktuj prosím orga." }
+			existing_user = session.query(model.User).filter(model.User.email == data['email']).first()
+			if existing_user != None:
+				req.context['result'] = { 'error': "duplicate_user" }
+				return
+		except SQLAlchemyError:
+			session.rollback()
 			raise
 
 		try:
+			user = model.User(email=data['email'], password=auth.get_hashed_password(data['password']), first_name=data['first_name'], last_name=data['last_name'], nick_name=data['nick_name'], sex=data['gender'], short_info=data["short_info"])
 			session.add(user)
 			session.commit()
 		except:
 			session.rollback()
+			req.context['result'] = { 'error': "Nelze vytvořit uživatele, kontaktuj prosím orga." }
 			raise
 
 		try:

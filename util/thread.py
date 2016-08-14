@@ -3,15 +3,18 @@
 from db import session
 import model
 
-def to_json(thread, user_id=None):
-	count = len(thread.posts)
-	unread = count_unread(user_id, thread.id)
+def to_json(thread, user_id=None, unread_cnt=None, posts_cnt=None):
+	if posts_cnt is None:
+		posts_cnt = session.query(model.Post).filter(model.Post.thread == thread.id).count()
+	if unread_cnt is None:
+		if user_id is None: unread_cnt = posts_cnt
+		else: unread_cnt = count_unread(user_id, thread.id)
 
 	return {
 		'id': thread.id,
 		'title': thread.title,
-		'unread': unread if unread is not None else count,
-		'posts_count': count,
+		'unread': unread_cnt,
+		'posts_count': posts_cnt,
 		'details': thread.id,
 		'year': thread.year
 	}
@@ -26,7 +29,7 @@ def details_to_json(thread, root_posts=None):
 	}
 
 def get_visit(user_id, thread_id):
-	return session.query(model.ThreadVisit).filter(model.ThreadVisit.user == user_id, model.ThreadVisit.thread == thread_id).first()
+	return session.query(model.ThreadVisit).get((thread_id, user_id))
 
 def get_user_visit(user_id, year_id):
 	return session.query(model.ThreadVisit).\

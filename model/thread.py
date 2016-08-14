@@ -30,8 +30,8 @@ class ThreadVisit(Base):
 		'mysql_charset': 'utf8'
 	}
 
-	thread = Column(Integer, ForeignKey(Thread.id, ondelete='CASCADE'), primary_key=True)
-	user = Column(Integer, ForeignKey(User.id, ondelete='CASCADE'), primary_key=True)
+	thread = Column(Integer, ForeignKey(Thread.id, ondelete='CASCADE'), primary_key=True, nullable=False)
+	user = Column(Integer, ForeignKey(User.id, ondelete='CASCADE'), primary_key=True, nullable=False)
 	last_visit = Column(TIMESTAMP, nullable=False, default=datetime.datetime.utcnow, server_default=text('CURRENT_TIMESTAMP'))
 	last_last_visit = Column(TIMESTAMP, nullable=True)
 

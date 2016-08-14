@@ -1,11 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os, time, uuid, magic, multipart
-
 import falcon
-
-from db import session
-import model
 import util
 
 class Content(object):

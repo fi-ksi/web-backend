@@ -2,6 +2,7 @@
 
 from db import session
 import model, util, falcon, json, datetime
+from sqlalchemy.exc import SQLAlchemyError
 
 class AchievementGrant(object):
 
@@ -15,17 +16,17 @@ class AchievementGrant(object):
 	"""
 	# Prideleni achievementu
 	def on_post(self, req, resp):
-		user = req.context['user']
-		data = json.loads(req.stream.read())
-
-		if (not user.is_logged_in()) or (not user.is_org()):
-			resp.status = falcon.HTTP_400
-			return
-
-		errors = []
-		req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized'    , 'detail': u'Přístup odepřen.' } ] }
-
 		try:
+			user = req.context['user']
+			data = json.loads(req.stream.read())
+
+			if (not user.is_logged_in()) or (not user.is_org()):
+				resp.status = falcon.HTTP_400
+				return
+
+			errors = []
+			req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized'    , 'detail': u'Přístup odepřen.' } ] }
+
 			for u in data['users']:
 				if not data['task']:
 					data['task'] = None
@@ -58,7 +59,7 @@ class AchievementGrant(object):
 				req.context['result'] = { 'errors': errors }
 			else:
 				req.context['result'] = {}
-		except:
+		except SQLAlchemyError:
 			session.rollback()
 			raise
 		finally:

@@ -21,8 +21,7 @@ provided you use enough -u options:
 """
 
 import sys, os
-#sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..')))
-sys.path.insert(0, os.path.join(os.path.expanduser("~"), 'pypy/'))
+sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'pypy')))
 from rpython.translator.sandbox.sandlib import SimpleIOSandboxedProc
 from rpython.translator.sandbox.sandlib import VirtualizedSandboxedProc
 from rpython.translator.sandbox.vfs import Dir, RealDir, RealFile

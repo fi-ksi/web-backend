@@ -3,7 +3,7 @@
 import falcon
 from sqlalchemy import func, or_
 from sqlalchemy.orm import aliased
-
+from sqlalchemy.exc import SQLAlchemyError
 from db import session
 import model, util
 
@@ -88,7 +88,7 @@ class CorrectionsEmail(object):
 
 			req.context['result'] = { 'count': len(tos) }
 			if len(errors) > 0: req.context['result']['errors'] = errors
-		except:
+		except SQLAlchemyError:
 			session.rollback()
 			raise
 		finally:

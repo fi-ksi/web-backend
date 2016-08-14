@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from db import session
+from sqlalchemy.exc import SQLAlchemyError
 import model
 import util
 import falcon
@@ -9,26 +10,32 @@ import json
 class Wave(object):
 
 	def on_get(self, req, resp, id):
-		user = req.context['user']
-		wave = session.query(model.Wave).get(id)
+		try:
+			user = req.context['user']
+			wave = session.query(model.Wave).get(id)
 
-		if wave is None:
-			resp.status = falcon.HTTP_404
-			return
+			if wave is None:
+				resp.status = falcon.HTTP_404
+				return
 
-		req.context['result'] = { 'wave': util.wave.to_json(wave) }
+			req.context['result'] = { 'wave': util.wave.to_json(wave) }
+		except SQLAlchemyError:
+			session.rollback()
+			raise
+		finally:
+			session.close()
 
 	# UPDATE vlny
 	def on_put(self, req, resp, id):
-		user = req.context['user']
-
-		if (not user.is_logged_in()) or (not user.is_org()):
-			resp.status = falcon.HTTP_400
-			return
-
-		data = json.loads(req.stream.read())['wave']
-
 		try:
+			user = req.context['user']
+
+			if (not user.is_logged_in()) or (not user.is_org()):
+				resp.status = falcon.HTTP_400
+				return
+
+			data = json.loads(req.stream.read())['wave']
+
 			wave = session.query(model.Wave).get(id)
 			if wave is None:
 				resp.status = falcon.HTTP_404
@@ -45,7 +52,7 @@ class Wave(object):
 			wave.garant = data['garant']
 
 			session.commit()
-		except:
+		except SQLAlchemyError:
 			session.rollback()
 			raise
 		finally:
@@ -55,14 +62,14 @@ class Wave(object):
 
 	# Smazani vlny
 	def on_delete(self, req, resp, id):
-		user = req.context['user']
-
-		# Vlnu mohou smazat jen admini
-		if (not user.is_logged_in()) or (not user.is_admin()):
-			resp.status = falcon.HTTP_400
-			return
-
 		try:
+			user = req.context['user']
+
+			# Vlnu mohou smazat jen admini
+			if (not user.is_logged_in()) or (not user.is_admin()):
+				resp.status = falcon.HTTP_400
+				return
+
 			wave = session.query(model.Wave).get(id)
 			if wave is None:
 				resp.status = falcon.HTTP_404
@@ -77,7 +84,7 @@ class Wave(object):
 			session.delete(wave)
 			session.commit()
 			req.context['result'] = {}
-		except:
+		except SQLAlchemyError:
 			session.rollback()
 			raise
 		finally:
@@ -88,27 +95,33 @@ class Wave(object):
 class Waves(object):
 
 	def on_get(self, req, resp):
-		user = req.context['user']
-		waves = session.query(model.Wave).\
-			filter(model.Wave.year == req.context['year']).all()
+		try:
+			user = req.context['user']
+			waves = session.query(model.Wave).\
+				filter(model.Wave.year == req.context['year']).all()
 
-		max_points = util.task.max_points_wave_dict()
+			max_points = util.task.max_points_wave_dict()
 
-		req.context['result'] = { 'waves': [ util.wave.to_json(wave, max_points[wave.id]) for wave in waves ] }
+			req.context['result'] = { 'waves': [ util.wave.to_json(wave, max_points[wave.id]) for wave in waves ] }
+		except SQLAlchemyError:
+			session.rollback()
+			raise
+		finally:
+			session.close()
 
 	# Vytvoreni nove vlny
 	def on_post(self, req, resp):
-		user = req.context['user']
-		year = req.context['year']
-
-		# Vytvorit novou vlnu mohou jen admini.
-		if (not user.is_logged_in()) or (not user.is_admin()):
-			resp.status = falcon.HTTP_400
-			return
-
-		data = json.loads(req.stream.read())['wave']
-
 		try:
+			user = req.context['user']
+			year = req.context['year']
+
+			# Vytvorit novou vlnu mohou jen admini.
+			if (not user.is_logged_in()) or (not user.is_admin()):
+				resp.status = falcon.HTTP_400
+				return
+
+			data = json.loads(req.stream.read())['wave']
+
 			wave = model.Wave(
 				year = year,
 				index = data['index'],
@@ -119,11 +132,10 @@ class Waves(object):
 
 			session.add(wave)
 			session.commit()
-		except:
+			req.context['result'] = { 'wave': util.wave.to_json(wave) }
+		except SQLAlchemyError:
 			session.rollback()
 			raise
-
-		req.context['result'] = { 'wave': util.wave.to_json(wave) }
-
-		session.close()
+		finally:
+			session.close()
 

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from model import PrerequisiteType
-from db import session
 
 # Prerekvizity uloh maji omezeni:
 # OR nemuze byt vnitrni po AND

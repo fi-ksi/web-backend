@@ -1,12 +1,6 @@
 .DS_Store
 __pycache__
-db.sqlite
-err
 *.pyc
 data/
-gunicorn_error.log
-gunicorn_pid
-images/
-submissions/
 config.py
 

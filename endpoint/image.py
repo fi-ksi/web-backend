@@ -6,6 +6,7 @@ import falcon
 from profile import ALLOWED_MIME_TYPES
 
 from db import session
+from sqlalchemy.exc import SQLAlchemyError
 import model
 import util
 
@@ -13,7 +14,11 @@ class Image(object):
 
 	def on_get(self, req, resp, context, id):
 		if context == 'profile':
-			user = session.query(model.User).filter(model.User.id == int(id)).first()
+			try:
+				user = session.query(model.User).filter(model.User.id == int(id)).first()
+			except SQLAlchemyError:
+				session.rollback()
+				raise
 
 			if not user or not user.profile_picture:
 				resp.status = falcon.HTTP_404
@@ -21,7 +26,11 @@ class Image(object):
 
 			image = user.profile_picture
 		elif context == 'codeExecution':
-			execution = session.query(model.CodeExecution).get(id)
+			try:
+				execution = session.query(model.CodeExecution).get(id)
+			except SQLAlchemyError:
+				session.rollback()
+				raise
 
 			if not execution:
 				resp.status = falcon.HTTP_400

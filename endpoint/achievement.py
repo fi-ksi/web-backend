@@ -3,11 +3,16 @@
 from db import session
 import model, util, falcon, json
 from sqlalchemy import or_
+from sqlalchemy.exc import SQLAlchemyError
 
 class Achievement(object):
 
 	def on_get(self, req, resp, id):
-		achievement = session.query(model.Achievement).get(id)
+		try:
+			achievement = session.query(model.Achievement).get(id)
+		except SQLAlchemyError:
+			session.rollback()
+			raise
 
 		if achievement is None:
 			req.context['result'] = { 'errors': [ { 'status': '404', 'title': 'Not found', 'detail': u'Trofej s tímto ID neexistuje.' } ] }
@@ -18,7 +23,11 @@ class Achievement(object):
 
 	def on_delete(self, req, resp, id):
 		user = req.context['user']
-		achievement = session.query(model.Achievement).get(id)
+		try:
+			achievement = session.query(model.Achievement).get(id)
+		except SQLAlchemyError:
+			session.rollback()
+			raise
 
 		if (not user.is_logged_in()) or (not user.is_admin()):
 			req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized', 'detail': u'Smazání trofeje může provést pouze administrátor.' } ] }
@@ -31,13 +40,13 @@ class Achievement(object):
 			return
 
 		try:
-				session.delete(achievement)
-				session.commit()
-		except:
-				session.rollback()
-				raise
+			session.delete(achievement)
+			session.commit()
+		except SQLAlchemyError:
+			session.rollback()
+			raise
 		finally:
-				session.close()
+			session.close()
 
 		req.context['result'] = {}
 
@@ -53,7 +62,12 @@ class Achievement(object):
 
 		data = json.loads(req.stream.read())['achievement']
 
-		achievement = session.query(model.Achievement).get(id)
+		try:
+			achievement = session.query(model.Achievement).get(id)
+		except SQLAlchemyError:
+			session.rollback()
+			raise
+
 		if achievement is None:
 			req.context['result'] = { 'errors': [ { 'status': '404', 'title': 'Not Found', 'detail': u'Trofej s tímto ID neexistuje.' } ] }
 			resp.status = falcon.HTTP_404
@@ -67,7 +81,7 @@ class Achievement(object):
 
 		try:
 			session.commit()
-		except:
+		except SQLAlchemyError:
 			session.rollback()
 			raise
 		finally:
@@ -79,8 +93,12 @@ class Achievement(object):
 class Achievements(object):
 
 	def on_get(self, req, resp):
-		achievements = session.query(model.Achievement).\
-			filter(or_(model.Achievement.year == None, model.Achievement.year == req.context['year'])).all()
+		try:
+			achievements = session.query(model.Achievement).\
+				filter(or_(model.Achievement.year == None, model.Achievement.year == req.context['year'])).all()
+		except SQLAlchemyError:
+			session.rollback()
+			raise
 
 		req.context['result'] = { 'achievements': [ util.achievement.to_json(achievement) for achievement in achievements ] }
 
@@ -107,7 +125,7 @@ class Achievements(object):
 		try:
 			session.add(achievement)
 			session.commit()
-		except:
+		except SQLAlchemyError:
 			session.rollback()
 			raise
 

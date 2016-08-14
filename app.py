@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import falcon, json
+import falcon, json, sys
 from datetime import datetime, timedelta
 
 import copy
@@ -8,7 +8,8 @@ import model
 import endpoint
 from db import engine, session
 from util import UserInfo
-from sqlalchemy import func
+from sqlalchemy import func, desc
+from sqlalchemy.exc import SQLAlchemyError
 
 # Cache aktualniho rocniku
 c_year = None
@@ -53,25 +54,32 @@ class Authorizer(object):
 
 class Year_fill(object):
 
+	# This middleware has 2 purposes:
+	#  1) Get current year.
+	#  2) Test connection with db. (this is very important!)
 	def process_request(self, req, resp):
-		global c_year
-		global c_year_update
-
-		if ('YEAR' in req.headers):
-			req.context['year'] = req.headers['YEAR']
-		else:
-			if (c_year is None) or (c_year_update is None) or (c_year_update < datetime.utcnow()):
-				try:
-					c_year = session.query(func.max(model.Year.id)).scalar()
-				except:
-					session.rollback()
-					try:
-						c_year = session.query(func.max(model.Year.id)).scalar()
-					except:
-						session.rollback()
-						raise
-				c_year_update = copy.copy(datetime.utcnow()) + timedelta(minutes=30)
-			req.context['year'] = c_year
+		if req.method == 'OPTIONS': return
+		try:
+			if ('YEAR' in req.headers):
+				req.context['year'] = req.headers['YEAR']
+				req.context['year_obj'] = session.query(model.Year).get(req.context['year'])
+			else:
+				year_obj = session.query(model.Year).order_by(desc(model.Year.id)).first()
+				req.context['year_obj'] = year_obj
+				req.context['year'] = year_obj.id
+		except SQLAlchemyError:
+			session.rollback()
+			try:
+				if ('YEAR' in req.headers):
+					req.context['year'] = req.headers['YEAR']
+					req.context['year_obj'] = session.query(model.Year).get(req.context['year'])
+				else:
+					year_obj = session.query(model.Year).order_by(desc(model.Year.id)).first()
+					req.context['year_obj'] = year_obj
+					req.context['year'] = year_obj.id
+			except:
+				session.rollback()
+				raise
 
 def log(req, resp):
 	try:
@@ -80,6 +88,7 @@ def log(req, resp):
 		ip = req.env['REMOTE_ADDR']
 
 	print '[%s] [%s] [%s] [%s] %s' % (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), ip, req.method, resp.status, req.relative_uri)
+	sys.stdout.flush()
 
 class Logger(object):
 

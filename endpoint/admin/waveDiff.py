@@ -1,29 +1,30 @@
 # -*- coding: utf-8 -*-
 
 from db import session
+from sqlalchemy.exc import SQLAlchemyError
 from lockfile import LockFile
 import model, util, falcon, json, datetime, git, os
 
 class WaveDiff(object):
 
 	def on_post(self, req, resp, id):
-		user = req.context['user']
-
-		if (not user.is_logged_in()) or (not user.is_org()):
-			resp.status = falcon.HTTP_400
-			return
-
-		# Kontrola zamku
-		lock = util.lock.git_locked()
-		if lock:
-			req.context['result'] = 'GIT uzamcen zamkem ' + lock + "\nNekdo momentalne provadi akci s gitem, opakujte prosim akci za 20 sekund."
-			resp.status = falcon.HTTP_409
-			return
-
-		pullLock = LockFile(util.admin.waveDiff.LOCKFILE)
-		pullLock.acquire(60) # Timeout zamku je 1 minuta
-
 		try:
+			user = req.context['user']
+
+			if (not user.is_logged_in()) or (not user.is_org()):
+				resp.status = falcon.HTTP_400
+				return
+
+			# Kontrola zamku
+			lock = util.lock.git_locked()
+			if lock:
+				req.context['result'] = 'GIT uzamcen zamkem ' + lock + "\nNekdo momentalne provadi akci s gitem, opakujte prosim akci za 20 sekund."
+				resp.status = falcon.HTTP_409
+				return
+
+			pullLock = LockFile(util.admin.waveDiff.LOCKFILE)
+			pullLock.acquire(60) # Timeout zamku je 1 minuta
+
 			# Fetch
 			repo = git.Repo(util.git.GIT_SEMINAR_PATH)
 			repo.remotes.origin.fetch()
@@ -51,7 +52,7 @@ class WaveDiff(object):
 					task.deploy_status = 'default'
 
 			session.commit()
-		except:
+		except SQLAlchemyError:
 			session.rollback()
 			req.context['result'] = 'Nastala vyjimka backendu'
 			raise

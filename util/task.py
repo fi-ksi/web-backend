@@ -33,7 +33,7 @@ def fully_submitted(user_id, year_id=None):
 
 	return { int(key): int(val) for key, val in real_modules_count.items() if max_modules_count[key] <= val }
 
-# Vraci dvojici { model.Task : sum(body) } pro vsechny jakkoliv odevzdane ulohy
+# Vraci ntici ( model.Task, sum(body), model.Wave, model.Prerequisite ) pro vsechny jakkoliv odevzdane ulohy
 # sum(body) je suma bodu za vsechny moduly v dane uloze
 def any_submitted(user_id, year_id):
 	# Skore uivatele per modul
@@ -44,7 +44,8 @@ def any_submitted(user_id, year_id):
 		group_by(model.Evaluation.module).subquery()
 
 	# Skore per task
-	return session.query(model.Task, func.sum(per_module.c.points).label("score")).\
+	return session.query(model.Task, func.sum(per_module.c.points).label("score"), model.Wave, model.Prerequisite).\
+		join(model.Prerequisite, model.Task.prerequisite == model.Prerequisite.id).\
 		join(model.Module, model.Module.task == model.Task.id).\
 		join(per_module, model.Module.id == per_module.c.module).\
 		join(model.Wave, model.Wave.id == model.Task.wave).\
@@ -87,7 +88,6 @@ def _max_points_per_wave(bonus=False):
 
 # Vraci slovnik s klicem id vlny a hodnotami (max_points, task_count)
 def max_points_wave_dict(bonus=False):
-	print _max_points_per_wave(bonus).all()
 	return { wave.id: (wave.points if wave.points else 0.0, wave.tasks_count if wave.tasks_count else 0) for wave in _max_points_per_wave(bonus).all() }
 
 # Vraci slovnik s klicem year.id a hodnotami (year_max_points, year_tasks_count)
@@ -196,7 +196,7 @@ def status(task, user, adeadline=None, fsubmitted=None, wave=None, corr=None, ac
 		return TaskStatus.CORRECTING
 
 	# pokud je po deadline, zadani ulohy se otevira vsem
-	currently_active = adeadline | set(fully_submitted(user.id).keys())
+	currently_active = adeadline | set(fsubmitted.keys())
 	if task.id in currently_active:
 		return TaskStatus.BASE
 
@@ -212,7 +212,7 @@ def time_published(task_id):
 		join(model.Task, model.Task.wave == model.Wave.id).\
 		filter(model.Task.id == task_id).scalar()
 
-def to_json(task, user=None, adeadline=None, fsubmitted=None, wave=None, corr=None, acfull=None, task_max_points=None):
+def to_json(task, prereq_obj, user=None, adeadline=None, fsubmitted=None, wave=None, corr=None, acfull=None, task_max_points=None):
 	if not task_max_points: task_max_points = max_points(task.id)
 	tstatus = status(task, user, adeadline, fsubmitted, wave, corr, acfull)
 	pict_base = task.picture_base if task.picture_base is not None else "/taskContent/" + str(task.id) + "/icon/"
@@ -230,7 +230,7 @@ def to_json(task, user=None, adeadline=None, fsubmitted=None, wave=None, corr=No
 		'time_published': wave.time_published.isoformat(),
 		'time_deadline': task.time_deadline.isoformat() if task.time_deadline else None,
 		'state': tstatus,
-		'prerequisities': [] if not task.prerequisite_obj else util.prerequisite.to_json(task.prerequisite_obj),
+		'prerequisities': [] if not prereq_obj else util.prerequisite.to_json(prereq_obj),
 		'picture_base': pict_base,
 		'picture_suffix': '.svg',
 		'wave': task.wave

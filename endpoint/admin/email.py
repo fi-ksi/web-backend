@@ -53,7 +53,7 @@ class Email(object):
 				succ = set()
 				for year in data['To']:
 					year_obj = session.query(model.Year).get(year)
-					succ |= set(map(lambda user: user.id, util.user.successful_participants(year_obj)))
+					succ |= set(map(lambda (user,points): user.id, util.user.successful_participants(year_obj)))
 				to = filter(lambda user: user.id in succ, to)
 
 			to = set([ user.email for user in to ])

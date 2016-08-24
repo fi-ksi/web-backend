@@ -59,6 +59,9 @@ def deploy(task_id, deployLock, scoped):
 				if str(fetch_info.ref) == "origin/"+task.git_branch:
 					log("Updated " + str(fetch_info.ref) + " to " + str(fetch_info.commit))
 
+		# Discard all local changes
+		repo.git.reset("--hard", "origin/"+task.git_branch)
+
 		# Check out task branch
 		log("Checking out " + task.git_branch)
 		log(repo.git.checkout(task.git_branch))

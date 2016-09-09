@@ -52,24 +52,20 @@ def deploy(task_id, deployLock, scoped):
 		repo = git.Repo(util.git.GIT_SEMINAR_PATH)
 		assert not repo.bare
 
-		# Pull origin
-		if not task.git_branch in repo.branches:
-			log("Fetching origin...")
-			for fetch_info in repo.remotes.origin.fetch():
-				if str(fetch_info.ref) == "origin/"+task.git_branch:
-					log("Updated " + str(fetch_info.ref) + " to " + str(fetch_info.commit))
-
-		# Discard all local changes
-		repo.git.reset("--hard", "origin/"+task.git_branch)
+		# Fetch origin
+		#if not task.git_branch in repo.branches:
+		log("Fetching origin...")
+		for fetch_info in repo.remotes.origin.fetch():
+			if str(fetch_info.ref) == "origin/"+task.git_branch:
+				log("Updated " + str(fetch_info.ref) + " to " + str(fetch_info.commit))
 
 		# Check out task branch
 		log("Checking out " + task.git_branch)
 		log(repo.git.checkout(task.git_branch))
 
-		log("Pulling origin...")
-		for fetch_info in repo.remotes.origin.pull():
-			if str(fetch_info.ref) == "origin/"+task.git_branch:
-				log("Updated " + str(fetch_info.ref) + " to " + str(fetch_info.commit))
+		# Discard all local changes
+		log("Hard-reseting to origin/" + task.git_branch)
+		repo.git.reset("--hard", "origin/"+task.git_branch)
 
 		# Check if task path exists
 		if not os.path.isdir(util.git.GIT_SEMINAR_PATH + task.git_path):

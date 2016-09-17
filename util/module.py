@@ -40,7 +40,7 @@ def to_json(module, user_id):
 
 	if count > 0:
 		# ziskame nejlepsi evaluation a podle toho rozhodneme, jak je na tom resitel
-		module_json['state'] = 'correct' if best_status.points == module.max_points else 'incorrect'
+		module_json['state'] = 'correct' if best_status.points >= module.max_points else 'incorrect'
 	else:
 		module_json['state'] = 'blank'
 

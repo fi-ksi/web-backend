@@ -29,7 +29,7 @@ def fully_submitted(user_id, year_id=None):
 
 	max_modules_count = { task.id: task.modules for task in q.filter(model.Module.bonus == False).all() }
 
-	real_modules_count = { task.id: task.modules for task in q.join(model.Evaluation).filter(model.Evaluation.user == user_id, or_(model.Module.autocorrect != True, model.Module.max_points == model.Evaluation.points)).group_by(model.Task.id).all() }
+	real_modules_count = { task.id: task.modules for task in q.join(model.Evaluation).filter(model.Evaluation.user == user_id, or_(model.Module.autocorrect != True, model.Module.max_points <= model.Evaluation.points)).group_by(model.Task.id).all() }
 
 	return { int(key): int(val) for key, val in real_modules_count.items() if max_modules_count[key] <= val }
 
@@ -152,7 +152,7 @@ def autocorrected_full(user_id):
 
 	max_modules_count = q.subquery()
 
-	real_modules_count = q.join(model.Evaluation, model.Evaluation.module == model.Module.id).filter(model.Evaluation.user == user_id, or_(model.Module.autocorrect != True, model.Module.max_points == model.Evaluation.points)).subquery()
+	real_modules_count = q.join(model.Evaluation, model.Evaluation.module == model.Module.id).filter(model.Evaluation.user == user_id, or_(model.Module.autocorrect != True, model.Module.max_points <= model.Evaluation.points)).subquery()
 
 	return [ r for (r, ) in session.query(model.Task.id).\
 		join(max_modules_count, model.Task.id == max_modules_count.c.task_id).\

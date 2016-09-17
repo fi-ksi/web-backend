@@ -78,7 +78,7 @@ def points_per_task(user_id):
 
 def sum_points(user_id, year_id):
 	points = session.query(model.Evaluation.module, func.max(model.Evaluation.points).label('points')).\
-		filter(model.Evaluation.user == user_id).\
+		filter(model.Evaluation.user == user_id, model.Evaluation.ok).\
 		join(model.Module, model.Evaluation.module == model.Module.id).\
 		join(model.Task, model.Task.id == model.Module.task).\
 		filter(model.Task.evaluation_public).\
@@ -110,6 +110,7 @@ def successful_participants(year_obj):
 	max_points = util.task.sum_points(year_obj.id, bonus=False) + year_obj.point_pad
 	points_per_module = session.query(model.User.id.label('user'), model.Evaluation.module, func.max(model.Evaluation.points).label('points')).\
 		join(model.Evaluation, model.Evaluation.user == model.User.id).\
+		filter(model.Evaluation.ok).\
 		join(model.Module, model.Evaluation.module == model.Module.id).\
 		join(model.Task, model.Task.id == model.Module.task).\
 		filter(model.Task.evaluation_public).\

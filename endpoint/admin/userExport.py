@@ -62,6 +62,7 @@ class UserExport(object):
 
 			# Skore uzivatele per modul (zahrnuje jen moduly evaluation_public)
 			per_user = session.query(model.Evaluation.user.label('user'), func.max(model.Evaluation.points).label('points')).\
+				filter(model.Evaluation.ok).\
 				join(model.Module, model.Evaluation.module == model.Module.id).\
 				join(model.Task, model.Task.id == model.Module.task).\
 				filter(model.Task.evaluation_public).\

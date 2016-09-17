@@ -15,8 +15,7 @@ class TaskStatus:
 	DONE = 'done'
 
 # Vraci dvojici { task_id : module_cnt } pro vsechny plne odevzdane ulohy
-# sum(body) je suma bodu za vsechny moduly v dane uloze
-# Plne odevzdane moduly = bez autocorrect, nebo s autocorrect majici plny pocet bodu
+# Plne odevzdany modul <=> (evaluation.ok) || (module.bonus)
 # Moduly s maximem 0 bodu jsou bonusove a jsou vzdy fully_submitted (i pokud nebyly odevzdany)
 def fully_submitted(user_id, year_id=None):
 	if user_id is None:
@@ -27,9 +26,11 @@ def fully_submitted(user_id, year_id=None):
 			q = q.join(model.Wave, model.Task.wave == model.Wave.id).filter(model.Wave.year == year_id)
 	q = q.outerjoin(model.Module).group_by(model.Task.id)
 
+	# {task.id : task.max_modules_count}
 	max_modules_count = { task.id: task.modules for task in q.filter(model.Module.bonus == False).all() }
 
-	real_modules_count = { task.id: task.modules for task in q.join(model.Evaluation).filter(model.Evaluation.user == user_id, or_(model.Module.autocorrect != True, model.Module.max_points <= model.Evaluation.points)).group_by(model.Task.id).all() }
+	# {task.id, task.fully_submitted_modules_count}
+	real_modules_count = { task.id: task.modules for task in q.join(model.Evaluation).filter(model.Evaluation.user == user_id, or_(model.Module.autocorrect != True, model.Evaluation.ok)).group_by(model.Task.id).all() }
 
 	return { int(key): int(val) for key, val in real_modules_count.items() if max_modules_count[key] <= val }
 
@@ -55,6 +56,7 @@ def any_submitted(user_id, year_id):
 def after_deadline():
 	return { int(task.id) for task in session.query(model.Task).filter(model.Task.time_deadline < datetime.datetime.utcnow() ).all() }
 
+# Vraci maximalni pocet bodu za ulohu (bez bonusovych bodu)
 def max_points(task_id, bonus=False):
 	points = session.query(func.sum(model.Module.max_points).label('points'))
 	if not bonus: points = points.filter(model.Module.bonus == False)
@@ -62,7 +64,7 @@ def max_points(task_id, bonus=False):
 
 	return float(points) if points else 0
 
-# Vraci seznam svojic (task_id, max_points)
+# Vraci [task_id, max_points)]
 def max_points_dict(bonus=False):
 	# Musime si davat pozor na to, ze uloha muze byt bez modulu
 	# points_per_task musi vratit i ulohy bez modulu (v tom pripade vrati points jako Null)
@@ -104,7 +106,7 @@ def points_per_module(task_id, user_id):
 	return session.query(model.Module, \
 		func.max(model.Evaluation.points).label('points'), model.Evaluation.evaluator.label('evaluator')).\
 		join(model.Evaluation, model.Evaluation.module == model.Module.id).\
-		filter(model.Module.task == task_id, model.Evaluation.user == user_id).\
+		filter(model.Module.task == task_id, model.Evaluation.user == user_id, model.Evaluation.ok).\
 		join(model.Task, model.Task.id == model.Module.task).\
 		filter(model.Task.evaluation_public).\
 		group_by(model.Evaluation.module).all()
@@ -140,7 +142,6 @@ def corrected(user_id):
 
 def comment_thread(task_id, user_id):
 	query = session.query(model.SolutionComment).filter(model.SolutionComment.task == task_id, model.SolutionComment.user == user_id).first()
-
 	return query.thread if query is not None else None
 
 # Vraci seznam automaticky opravovanych uloh, ktere maji plny pocet bodu.
@@ -152,7 +153,8 @@ def autocorrected_full(user_id):
 
 	max_modules_count = q.subquery()
 
-	real_modules_count = q.join(model.Evaluation, model.Evaluation.module == model.Module.id).filter(model.Evaluation.user == user_id, or_(model.Module.autocorrect != True, model.Module.max_points <= model.Evaluation.points)).subquery()
+	real_modules_count = q.join(model.Evaluation, model.Evaluation.module == model.Module.id).\
+		filter(model.Evaluation.user == user_id, or_(model.Module.autocorrect != True, model.Evaluation.ok)).subquery()
 
 	return [ r for (r, ) in session.query(model.Task.id).\
 		join(max_modules_count, model.Task.id == max_modules_count.c.task_id).\
@@ -252,7 +254,7 @@ def best_scores(task_id):
 	per_modules = session.query(model.User.id.label('user_id'), \
 			func.max(model.Evaluation.points).label('points')).\
 			join(model.Evaluation, model.Evaluation.user == model.User.id).\
-			filter(model.Module.task == task_id, 'points' is not None).\
+			filter(model.Module.task == task_id, 'points' is not None, model.Evaluation.ok).\
 			join(model.Module, model.Evaluation.module == model.Module.id).\
 			join(model.Task, model.Task.id == model.Module.task).\
 			filter(model.Task.evaluation_public).\

@@ -1,5 +1,5 @@
 import datetime
-from sqlalchemy import Column, Integer, SmallInteger, String, Text, Enum, ForeignKey, text, DECIMAL
+from sqlalchemy import Column, Integer, SmallInteger, String, Text, Enum, ForeignKey, text, DECIMAL, Boolean
 from sqlalchemy.types import TIMESTAMP
 
 from . import Base
@@ -19,5 +19,6 @@ class Evaluation(Base):
 	module = Column(Integer, ForeignKey(Module.id), nullable=False)
 	evaluator = Column(Integer, ForeignKey(User.id))
 	points = Column(DECIMAL(precision=10, scale=1, asdecimal=False), nullable=False, default=0)
+	ok = Column(Boolean, nullable=False, default=False, server_default=text('FALSE'))
 	full_report = Column(Text, nullable=False, default="")
 	time = Column(TIMESTAMP, default=datetime.datetime.utcnow, server_default=text('CURRENT_TIMESTAMP'))

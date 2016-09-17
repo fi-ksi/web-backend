@@ -62,7 +62,7 @@ class ModuleSubmit(object):
 			else:
 				report = str(datetime.datetime.now()) + ' : === Uploading files for module id \'%s\' for task id \'%s\' ===\n' % (module.id, module.task)
 
-				evaluation = model.Evaluation(user=user_id, module=module.id)
+				evaluation = model.Evaluation(user=user_id, module=module.id, ok=True)
 				session.add(evaluation)
 				session.commit()
 
@@ -138,7 +138,7 @@ class ModuleSubmit(object):
 				evaluation = session.query(model.Evaluation).get(existing[0])
 				evaluation.time = datetime.datetime.utcnow()
 			else:
-				evaluation = model.Evaluation(user=user_id, module=module.id, full_report="")
+				evaluation = model.Evaluation(user=user_id, module=module.id, full_report="", ok=False)
 				session.add(evaluation)
 				session.commit()
 
@@ -155,6 +155,7 @@ class ModuleSubmit(object):
 
 			points = module.max_points if result == 'correct' else 0
 			evaluation.points = points
+			evaluation.ok = (result == 'correct')
 			evaluation.full_report += str(datetime.datetime.now()) + " : " + report + '\n'
 			session.commit()
 			req.context['result'] = {'result': result, 'score': points, 'output': output}
@@ -196,16 +197,16 @@ class ModuleSubmit(object):
 				return
 
 			if module.type == ModuleType.QUIZ:
-				result, report = util.quiz.evaluate(module.task, module, data)
+				ok, report = util.quiz.evaluate(module.task, module, data)
 			elif module.type == ModuleType.SORTABLE:
-				result, report = util.sortable.evaluate(module.task, module, data)
+				ok, report = util.sortable.evaluate(module.task, module, data)
 			elif module.type == ModuleType.TEXT:
-				result, report = util.text.evaluate(module.task, module, data)
+				ok, report = util.text.evaluate(module.task, module, data)
 
 
-			points = module.max_points if result else 0
-			evaluation = model.Evaluation(user=user.id, module=module.id, points=points, full_report=report)
-			req.context['result'] = {'result': 'correct' if result else 'incorrect', 'score': points}
+			points = module.max_points if ok else 0
+			evaluation = model.Evaluation(user=user.id, module=module.id, points=points, full_report=report, ok=ok)
+			req.context['result'] = {'result': 'correct' if ok else 'incorrect', 'score': points}
 
 			if "action" in report:
 				util.module.perform_action(module, user)

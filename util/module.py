@@ -32,15 +32,16 @@ def to_json(module, user_id):
 			join(model.Module, model.Module.id == model.Evaluation.module).\
 			join(model.Task, model.Task.id == model.Module.task).count()
 
+	# Skore nejlepsiho evaluation, kterehoz (ok == True)
 	best_status = session.query(func.max(model.Evaluation.points).label('points')).\
-		filter(model.Evaluation.user == user_id, model.Evaluation.module == module.id).\
+		filter(model.Evaluation.user == user_id, model.Evaluation.module == module.id, model.Evaluation.ok).\
 		join(model.Module, model.Module.id == model.Evaluation.module).\
 		join(model.Task, model.Task.id == model.Module.task).\
 		filter(model.Task.evaluation_public).first()
 
 	if count > 0:
 		# ziskame nejlepsi evaluation a podle toho rozhodneme, jak je na tom resitel
-		module_json['state'] = 'correct' if best_status.points >= module.max_points else 'incorrect'
+		module_json['state'] = 'correct' if best_status.points is not None else 'incorrect'
 	else:
 		module_json['state'] = 'blank'
 

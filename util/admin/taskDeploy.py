@@ -552,8 +552,8 @@ def process_module_sortable(module, lines, specific):
 	return lines[:text_end]
 
 def get_sortable_offset(text):
-	if re.match(r"^if ", text) or re.match(r"^Vstup: ", text) or re.match(r"^while", text) or re.match(r"^for", text): return 1
-	elif re.match(r"^fi$", text) or re.match(r"^return ", text) or re.match(r"^od$", text): return -1
+	if re.match(r"^(if|Vstup:|while|for|def) ", text): return 1
+	elif re.match(r"^(fi|od)$", text) or re.match(r"^return ", text): return -1
 	return 0
 
 def process_module_text(module, lines, specific, path):

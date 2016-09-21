@@ -51,21 +51,24 @@ class TaskMerge(object):
 				resp.status = falcon.HTTP_409
 				return
 
-			mergeLock = LockFile(util.admin.taskMerge.LOCKFILE)
-			mergeLock.acquire(60) # Timeout zamku je 1 minuta
+			try:
+				mergeLock = LockFile(util.admin.taskMerge.LOCKFILE)
+				mergeLock.acquire(60) # Timeout zamku je 1 minuta
 
-			# Fetch repozitare
-			repo = git.Repo(util.git.GIT_SEMINAR_PATH)
+				# Fetch repozitare
+				repo = git.Repo(util.git.GIT_SEMINAR_PATH)
 
-			if task.git_branch in repo.heads:
-				# Cannot delete branch we are on
-				repo.git.checkout("master")
-				repo.git.branch('-D', task.git_branch)
+				if task.git_branch in repo.heads:
+					# Cannot delete branch we are on
+					repo.git.checkout("master")
+					repo.git.branch('-D', task.git_branch)
 
-			task.git_branch = 'master'
+				task.git_branch = 'master'
 
-			session.commit()
-			resp.status = falcon.HTTP_200
+				session.commit()
+				resp.status = falcon.HTTP_200
+			finally:
+				mergeLock.release()
 		except SQLAlchemyError:
 			session.rollback()
 			raise

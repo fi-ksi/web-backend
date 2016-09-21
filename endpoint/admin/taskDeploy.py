@@ -56,10 +56,13 @@ class TaskDeploy(object):
 			task.deploy_status = 'deploying'
 			session.commit()
 
-			deployLock = LockFile(util.admin.taskDeploy.LOCKFILE)
-			deployLock.acquire(60) # Timeout zamku je 1 minuta
-			deployThread = threading.Thread(target=util.admin.taskDeploy.deploy, args=(task.id, deployLock, scoped_session(_session)), kwargs={})
-			deployThread.start()
+			try:
+				deployLock = LockFile(util.admin.taskDeploy.LOCKFILE)
+				deployLock.acquire(60) # Timeout zamku je 1 minuta
+				deployThread = threading.Thread(target=util.admin.taskDeploy.deploy, args=(task.id, deployLock, scoped_session(_session)), kwargs={})
+				deployThread.start()
+			finally:
+				deployLock.release()
 
 			resp.status = falcon.HTTP_200
 		except SQLAlchemyError:

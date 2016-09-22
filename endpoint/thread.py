@@ -127,7 +127,7 @@ class Threads(object):
 
 			threads = session.query(model.Thread, model.Task, posts_cnt.c.posts_cnt.label('posts_cnt'), unread.c.unread_cnt.label('unread_cnt'), unread.c.thread_visit.label('thread_visit')).\
 				outerjoin(model.Task, model.Task.thread == model.Thread.id).\
-				join(posts_cnt, posts_cnt.c.thread == model.Thread.id).\
+				outerjoin(posts_cnt, posts_cnt.c.thread == model.Thread.id).\
 				outerjoin(unread, unread.c.thread == model.Thread.id).\
 				filter(model.Thread.public, model.Thread.year == req.context['year'])
 			if wave: threads = threads.filter(model.Task.wave == wave)
@@ -137,6 +137,7 @@ class Threads(object):
 
 			thr_output = []
 			for (thread, _, posts_cnt, unread_cnt, thread_visit) in threads:
+				if not posts_cnt: posts_cnt = 0
 				if user_id and thread_visit:
 					uunread_cnt = unread_cnt if unread_cnt else 0
 				else:

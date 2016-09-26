@@ -8,6 +8,14 @@ from model import PrerequisiteType
 # (13 || 12) || (15 && 16) validni
 # (13 || 12) && (15 && 16) NEvalidni
 
+class orList(list):
+	def __init__(self, *args, **kwargs):
+		super(orList, self).__init__(args[0])
+
+class andList(list):
+	def __init__(self, *args, **kwargs):
+		super(andList, self).__init__(args[0])
+
 def to_json(prereq):
 	if(prereq.type == PrerequisiteType.ATOMIC):
 		return [ [ prereq.task ] ]
@@ -59,22 +67,22 @@ class PrerequisitiesEvaluator:
 			return prereq.task
 
 		if(prereq.type == PrerequisiteType.AND):
-			return [ self._parse_expression(child) for child in prereq.children ]
+			return andList([ self._parse_expression(child) for child in prereq.children ])
 
 		if(prereq.type == PrerequisiteType.OR):
-			return [ self._parse_expression(child) for child in prereq.children ]
+			return orList([ self._parse_expression(child) for child in prereq.children ])
 
 	def _evaluation_step(self, expr):
 		if expr is None:
 			return True
 
-		if type(expr) is list:
+		if type(expr) is andList:
 			val = True
 			for item in expr:
 				val = val and self._evaluation_step(item)
 			return val
 
-		if type(expr) is set:
+		if type(expr) is orList:
 			val = False
 			for item in expr:
 				val = val or self._evaluation_step(item)

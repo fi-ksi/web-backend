@@ -44,7 +44,7 @@ def easteregg():
 	return u"<hr><p>PS: "  + egg.body + u"</p>"
 
 # Odeslani emailu.
-def send(to, subject, text, params={}, bcc=[]):
+def send(to, subject, text, params={}, bcc=[], cc=[]):
 	global emailThread
 
 	Charset.add_charset('utf-8', Charset.QP, Charset.QP, 'utf-8')
@@ -56,12 +56,15 @@ def send(to, subject, text, params={}, bcc=[]):
 	msg['From'] = config.mail_sender()
 	msg['Sender'] = 'ksi-admin@fi.muni.cz'
 	msg['To'] = (','.join(to)) if isinstance(to, (list)) else to
+	if len(cc) > 0: msg['Cc'] = (','.join(cc)) if isinstance(cc, (list)) else cc
 	msg['Return-Path'] = config.get('return_path')
 	msg['Errors-To'] = config.get('return_path')
 
 	for key in params.keys(): msg[key] = params[key]
 
-	send_to = (to if isinstance(to, (list)) else [ to ]) + (bcc if isinstance(bcc, (list)) else [ bcc ])
+	send_to = set((to if isinstance(to, (list)) else [ to ]) +\
+	          (cc if isinstance(cc, (list)) else [ cc ]) +\
+	          (bcc if isinstance(bcc, (list)) else [ bcc ]))
 
 	# Vlozime email do fronty
 	queueLock.acquire()

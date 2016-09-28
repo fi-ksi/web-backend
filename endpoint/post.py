@@ -154,23 +154,29 @@ class Posts(object):
 			session.commit()
 
 			# Tady si pamatujeme, komu jsme email jiz odeslali
-			sent_emails = []
+			sent_emails = set()
 
 			# ------------------------------------------
 			# Odesilani emailu orgum
 			if user.role == 'participant' or user.role == 'participant_hidden':
 
 				if task_thread:
-					# Vlakno k uloze -> posilame email autoru ulohy
-					task_author = session.query(model.User).filter(model.User.id == task_thread.author).first()
-					sent_emails.append(task_author.email)
+					# Vlakno k uloze -> posilame email autoru ulohy a garantovi vlny
+					task_author_email = session.query(model.User.email).filter(model.User.id == task_thread.author).scalar()
+					wave_garant_email = session.query(model.User.email).\
+						join(model.Wave, model.Wave.garant == model.User.id).\
+						join(model.Task, model.Task.wave == model.Wave.id).\
+						filter(model.Task.id == task_thread.id).scalar()
+					sent_emails.add(task_author_email)
+					sent_emails.add(wave_garant_email)
+					sys.stdout.flush()
 					try:
-						util.mail.send(task_author.email, u'[KSI-WEB] Nový příspěvek k úloze ' + task_thread.title, 
+						util.mail.send(task_author_email, u'[KSI-WEB] Nový příspěvek k úloze ' + task_thread.title, 
 							u'<p>Ahoj,<br/>k tvé úloze <a href="' + config.ksi_web() + u'/ulohy/' + str(task_thread.id) + u'">' +\
 							task_thread.title + u'</a> na <a href="'+ config.ksi_web() + '/">' + config.ksi_web() +u'</a> byl přidán nový komentář:</p><p><i>' +\
 							user_class.first_name + u' ' + user_class.last_name + u':</i></p>' + data['body'] +\
 							u'<p><a href="'  + config.ksi_web() + u'/ulohy/' + str(task_thread.id) + u'/diskuse">Přejít do diskuze.</a></p>' +\
-							config.karlik_img() + util.mail.easteregg())
+							config.karlik_img() + util.mail.easteregg(), cc=wave_garant_email)
 					except:
 						e = sys.exc_info()[0]
 						print str(e)
@@ -183,7 +189,7 @@ class Posts(object):
 						join(model.Task, model.Task.id == model.Module.task).\
 						filter(model.Task.id == solution_thread.task).all() ]
 
-					for corr_email in correctors: sent_emails.append(corr_email)
+					for corr_email in correctors: sent_emails.add(corr_email)
 
 					if correctors:
 						task = session.query(model.Task).get(solution_thread.task)
@@ -200,7 +206,7 @@ class Posts(object):
 				else:
 					# Obecna diskuze -> email na ksi@fi.muni.cz
 					try:
-						sent_emails.append(config.ksi_conf())
+						sent_emails.add(config.ksi_conf())
 						util.mail.send(config.ksi_conf(), '[KSI-WEB] Nový příspěvek v obecné diskuzi',
 							u'<p>Ahoj,<br/>do obecné diskuze na <a href="'+ config.ksi_web() + '/">' + config.ksi_web() +u'</a> byl přidán nový příspěvek:</p><p><i>' +\
 							user_class.first_name + u' ' + user_class.last_name + u':</i></p>' + data['body'] +\
@@ -224,7 +230,7 @@ class Posts(object):
 				parent_profile = session.query(model.Profile).get(parent.author)
 				if (parent_user.email not in sent_emails) and (parent_profile.notify_response):
 					try:
-						sent_emails.append(parent_user.email)
+						sent_emails.add(parent_user.email)
 
 						body = u"<p>Ahoj,<br>do diskuze <a href=\"%s\">%s</a> byl přidán nový příspěvek.</p>" % (util.config.ksi_web() + "/forum/" + str(thread.id), thread.title)
 						body += util.post.to_html(parent, parent_user)

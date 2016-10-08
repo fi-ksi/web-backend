@@ -71,7 +71,7 @@ def to_json(module, user_id):
 			module_json['submitted_files'] = submittedFiles
 		elif module.type == ModuleType.TEXT:
 			txt = util.text.to_json(json.loads(module.data), user_id)
-			module_json['fields'] = txt['inputs']
+			module_json['fields'] = txt['questions']
 	except Exception, e:
 		module_json['description'] += "<pre><code><strong>Module parsing error:</strong><br>" + str(e) + "</code></pre>"
 

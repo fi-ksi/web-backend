@@ -570,9 +570,12 @@ def process_module_text(module, lines, specific, path):
 
 	inputs_cnt = 0
 	diff = []
+	questions = []
 	while line < len(lines):
 		match = re.match(r"^~\s*(.*?)\s*(\*\*(.*?)\*\*|-)", lines[line]+" -")
 		if not match: break
+
+		questions.append(match.group(1))
 
 		inputs_cnt += 1
 		if match.group(3):
@@ -582,6 +585,7 @@ def process_module_text(module, lines, specific, path):
 
 		line += 1
 
+	text_data['questions'] = questions
 	text_data['inputs'] = inputs_cnt
 	if len(diff) > 0:
 		text_data['diff'] = diff

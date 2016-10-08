@@ -11,6 +11,7 @@ import subprocess
 Specifikace \data v databazi modulu pro "text":
 	text = {
 		inputs = 3
+		questions = ["otazka1", "otazka2", ...]
 		diff = ["spravne_reseni_a", "spravne_reseni_b", "spravne_reseni_c"]
 		eval_script = "/path/to/eval/script.py"
 		ignore_case = True
@@ -19,7 +20,13 @@ Kazdy modul muze mit jen jeden text (s vice inputy).
 """
 
 def to_json(db_dict, user_id):
-	return { 'inputs': db_dict['text']['inputs'] }
+	if not 'questions' in db_dict['text']:
+		# Stary format textoveho modulu (bez textu otazek) -> vytvorit texty
+		# otazek.
+		return { 'questions': [ u'Otázka '+str(i+1) for i in range(db_dict['text']['inputs']) ] }
+	else:
+		# Novy format vcetne textu otazek -> vratime texty otazek.
+		return { 'questions': db_dict['text']['questions'] }
 
 def eval_text(eval_script, data, report):
 	cmd = ['/usr/bin/python', eval_script] + data

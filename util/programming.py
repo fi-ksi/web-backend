@@ -81,7 +81,7 @@ def code_execution_dir(execution_id):
 def run(module, user_id, data):
 	programming = json.loads(module.data)['programming']
 	report = ''
-	log = model.CodeExecution(module=module.id, user=user_id, code=data)
+	log = model.CodeExecution(module=module.id, user=user_id, code=data, time=datetime.datetime.utcnow())
 
 	try:
 		session.add(log)

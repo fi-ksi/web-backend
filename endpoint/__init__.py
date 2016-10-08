@@ -15,6 +15,7 @@ from endpoint.feedback import Feedback
 from endpoint.wave import Wave, Waves
 from endpoint.year import Year, Years
 from endpoint.robots import Robots
+from endpoint.csp import CSP
 
 import admin
 

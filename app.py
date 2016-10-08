@@ -121,6 +121,7 @@ api = falcon.API(middleware=[Logger(), JSONTranslator(), Authorizer(), Year_fill
 #model.Base.metadata.create_all(engine)
 
 api.add_route('/robots.txt', endpoint.Robots())
+api.add_route('/csp', endpoint.CSP())
 api.add_route('/articles', endpoint.Articles())
 api.add_route('/articles/{id}', endpoint.Article())
 api.add_route('/achievements', endpoint.Achievements())

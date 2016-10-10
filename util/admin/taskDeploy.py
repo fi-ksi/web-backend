@@ -402,7 +402,7 @@ def process_module_md(module, filename, specific, task):
 	elif module.type == model.ModuleType.PROGRAMMING: data = process_module_programming(module, data, specific, os.path.dirname(filename))
 	elif module.type == model.ModuleType.QUIZ: data = process_module_quiz(module, data, specific, task)
 	elif module.type == model.ModuleType.SORTABLE: data = process_module_sortable(module, data, specific)
-	elif module.type == model.ModuleType.TEXT: data = process_module_text(module, data, specific, os.path.dirname(filename))
+	elif module.type == model.ModuleType.TEXT: data = process_module_text(module, data, specific, os.path.dirname(filename), task)
 	else: module.description = "Neznamy typ modulu"
 
 	log("Processing body")
@@ -556,7 +556,7 @@ def get_sortable_offset(text):
 	elif re.match(r"^(fi|od)$", text) or re.match(r"^return ", text): return -1
 	return 0
 
-def process_module_text(module, lines, specific, path):
+def process_module_text(module, lines, specific, path, task):
 	log("Processing text module")
 
 	text_data = { "inputs": 0 }
@@ -575,7 +575,7 @@ def process_module_text(module, lines, specific, path):
 		match = re.match(r"^~\s*(.*?)\s*(\*\*(.*?)\*\*|-)", lines[line]+" -")
 		if not match: break
 
-		questions.append(match.group(1))
+		questions.append(parse_simple_text(task, match.group(1)).replace("<p>", "").replace("</p>", ""))
 
 		inputs_cnt += 1
 		if match.group(3):

@@ -54,11 +54,9 @@ def send(to, subject, text, params={}, bcc=[], cc=[]):
 
 	msg['Subject'] = subject
 	msg['From'] = config.mail_sender()
-	msg['Sender'] = 'ksi-admin@fi.muni.cz'
+	if not 'Sender' in msg: msg['Sender'] = config.get('return_path')
 	msg['To'] = (','.join(to)) if isinstance(to, (list)) else to
 	if len(cc) > 0: msg['Cc'] = (','.join(cc)) if isinstance(cc, (list)) else cc
-	msg['Return-Path'] = config.get('return_path')
-	msg['Errors-To'] = config.get('return_path')
 
 	for key in params.keys(): msg[key] = params[key]
 
@@ -68,7 +66,7 @@ def send(to, subject, text, params={}, bcc=[], cc=[]):
 
 	# Vlozime email do fronty
 	queueLock.acquire()
-	emailQueue.put(emailData(msg['From'], send_to, msg.as_string()))
+	emailQueue.put(emailData(msg['Sender'], send_to, msg.as_string()))
 	if emailThread and emailThread.isAlive():
 		queueLock.release()
 	else:
@@ -79,7 +77,7 @@ def send(to, subject, text, params={}, bcc=[], cc=[]):
 # Odeslani hromadnych emailu
 def send_multiple(to, subject, text, params={}, bcc=[]):
 	bcc_params = copy.deepcopy(params)
-	bcc_params['To'] = 'undisclosed-recipients@fi.muni.cz'
+	bcc_params['To'] = 'ksi-resitele@fi.muni.cz'
 	bcc.append(config.ksi_conf())
 	for b in bcc:
 		bcc_params['Cc'] = b

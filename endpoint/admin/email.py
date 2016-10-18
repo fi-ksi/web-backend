@@ -59,8 +59,6 @@ class Email(object):
 			to = set([ user.email for user in to ])
 
 			params = {
-				'Return-Path': data['Sender'],
-				'Errors-To': data['Sender'],
 				'Reply-To': data['Reply-To'],
 				'Sender': data['Sender']
 			}

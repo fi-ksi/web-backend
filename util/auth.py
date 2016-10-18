@@ -30,8 +30,10 @@ class UserInfo:
 
 def update_tokens():
 	try:
+		# refresh token nechavame v databazi jeste den, aby se uzivatel mohl znovu prihlasit automaticky
+		# (napriklad po uspani pocitace)
 		tokens = session.query(model.Token).all()
-		tokens = filter(lambda token: datetime.datetime.utcnow() > token.expire, tokens)
+		tokens = filter(lambda token: datetime.datetime.utcnow() > token.expire+datetime.timedelta(days=1), tokens)
 		for token in tokens:
 			session.delete(token)
 		session.commit()

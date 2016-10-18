@@ -39,7 +39,7 @@ class Authorizer(object):
 
 				if token is not None:
 					if req.relative_uri != '/auth' and token.expire < datetime.utcnow():
-						raise falcon.HTTPError(falcon.HTTP_401)
+						return
 
 					try:
 						req.context['user'] = UserInfo(session.query(model.User).get(token.user), token_str)

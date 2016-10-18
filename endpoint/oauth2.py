@@ -18,31 +18,40 @@ class Authorize(object):
 		username = req.get_param('username')
 		password = req.get_param('password')
 
-		challenge = session.query(model.User).filter(
-			model.User.email == username, model.User.enabled).first()
+		try:
+			challenge = session.query(model.User).filter(
+				model.User.email == username, model.User.enabled).first()
 
-		if username and password and challenge and auth.check_password(password, challenge.password):
-			req.context['result'] = auth.OAuth2Token(challenge.id).data
-		else:
-			req.context['result'] = {'error': Error.UNAUTHORIZED_CLIENT}
-			resp.status = falcon.HTTP_400
+			if username and password and challenge and auth.check_password(password, challenge.password):
+				req.context['result'] = auth.OAuth2Token(challenge.id).data
+			else:
+				req.context['result'] = {'error': Error.UNAUTHORIZED_CLIENT}
+				resp.status = falcon.HTTP_400
+		except SQLAlchemyError:
+			session.rollback()
+			raise
 
 	def _refresh(self, req, resp):
 		refresh_token = req.get_param('refresh_token')
 
-		token = session.query(model.Token).filter(
-			model.Token.refresh_token == refresh_token, model.User.enabled).first()
+		try:
+			token = session.query(model.Token).filter(
+				model.Token.refresh_token == refresh_token).first()
 
-		if token:
-			session.delete(token)
-			req.context['result'] = auth.OAuth2Token(token.user).data
-		else:
-			req.context['result'] = {'error': Error.UNAUTHORIZED_CLIENT}
-			resp.status = falcon.HTTP_400
+			if token:
+				session.delete(token)
+				req.context['result'] = auth.OAuth2Token(token.user).data
+			else:
+				req.context['result'] = {'error': Error.UNAUTHORIZED_CLIENT}
+				resp.status = falcon.HTTP_400
+		except SQLAlchemyError:
+			session.rollback()
+			raise
 
 	def on_post(self, req, resp):
 		try:
 			grant_type = req.get_param('grant_type')
+			util.auth.update_tokens()
 
 			if grant_type == 'password':
 				self._auth(req, resp)
@@ -51,7 +60,6 @@ class Authorize(object):
 			else:
 				resp.status = falcon.HTTP_400
 
-			util.auth.update_tokens()
 		except SQLAlchemyError:
 			session.rollback()
 			raise

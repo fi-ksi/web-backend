@@ -161,7 +161,7 @@ class Posts(object):
 			if user.role == 'participant' or user.role == 'participant_hidden':
 
 				if task_thread:
-					# Vlakno k uloze -> posilame email autoru ulohy a garantovi vlny
+					# Vlakno k uloze -> posilame email autoru ulohy, spoluautoru ulohy a garantovi vlny
 					task_author_email = session.query(model.User.email).filter(model.User.id == task_thread.author).scalar()
 					wave_garant_email = session.query(model.User.email).\
 						join(model.Wave, model.Wave.garant == model.User.id).\
@@ -169,9 +169,11 @@ class Posts(object):
 						filter(model.Task.id == task_thread.id).scalar()
 					sent_emails.add(task_author_email)
 					sent_emails.add(wave_garant_email)
-					sys.stdout.flush()
+					if task_thread.co_author:
+						task_co_author_email = session.query(model.User.email).filter(model.User.id == task_thread.co_author).scalar()
+						sent_emails.add(task_co_author_email)
 					try:
-						util.mail.send(task_author_email, u'[KSI-WEB] Nový příspěvek k úloze ' + task_thread.title, 
+						util.mail.send([task_author_email, task_co_author_email], u'[KSI-WEB] Nový příspěvek k úloze ' + task_thread.title,
 							u'<p>Ahoj,<br/>k tvé úloze <a href="' + config.ksi_web() + u'/ulohy/' + str(task_thread.id) + u'">' +\
 							task_thread.title + u'</a> na <a href="'+ config.ksi_web() + '/">' + config.ksi_web() +u'</a> byl přidán nový komentář:</p><p><i>' +\
 							user_class.first_name + u' ' + user_class.last_name + u':</i></p>' + data['body'] +\

@@ -145,6 +145,10 @@ def process_meta(task, filename):
 		data = json.loads(f.read().decode('utf-8-sig'))
 
 	task.author = data['author']
+	if 'co_author' in data:
+		task.co_author = data['co_author']
+	else:
+		task.co_author = None
 
 	if 'date_deadline' in data:
 		task.time_deadline = local2UTC(dateutil.parser.parse(data['date_deadline']).replace(hour=23, minute=59, second=59))

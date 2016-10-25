@@ -18,6 +18,7 @@ class Task(Base):
 	id = Column(Integer, primary_key=True)
 	title = Column(String(255), nullable=False)
 	author = Column(Integer, ForeignKey(User.id), nullable=True)
+	co_author = Column(Integer, ForeignKey(User.id), nullable=True)
 	wave = Column(Integer, ForeignKey(Wave.id), nullable=False)
 	prerequisite = Column(Integer, ForeignKey('prerequisities.id', ondelete='SET NULL'), nullable=True)
 	intro = Column(String(500), nullable=False, default="")

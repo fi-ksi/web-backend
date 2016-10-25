@@ -609,7 +609,7 @@ def process_module_text(module, lines, specific, path, task):
 
 # Parsovani stringu \source pandocem
 def parse_pandoc(source):
-	return pypandoc.convert(source, 'html5', format='md', extra_args=['--smart', '--mathjax'])
+	return pypandoc.convert(source, 'html5', format='md', extra_args=['--smart', '--mathjax', '--email-obfuscation=none'])
 
 # <h2> -> <h3>, <h3> -> <h4>, <h4> -> <h5> (to musi stacit)
 def replace_h(source):

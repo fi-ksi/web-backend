@@ -39,6 +39,8 @@ class Authorizer(object):
 
 				if token is not None:
 					if req.relative_uri != '/auth' and token.expire < datetime.utcnow():
+						# user timeouted
+						req.context['user'] = UserInfo()
 						return
 
 					try:

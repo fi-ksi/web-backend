@@ -21,6 +21,8 @@ Specifikace \data v databazi modulu pro "programming":
 		}
 """
 
+MODULE_LIB_PATH = 'data/module_lib/'
+
 def to_json(db_dict, user_id):
 	return { 'default_code': db_dict['programming']['default_code'] }
 
@@ -157,7 +159,8 @@ def _save_raw(code, out, report):
 
 def _merge(wd, merge_script, code, code_merged, report):
 	status = 'y'
-	cmd = [ '/usr/bin/python', os.path.basename(merge_script), os.path.abspath(code), os.path.abspath(code_merged) ]
+	cmd = [ '/usr/bin/python', os.path.basename(merge_script), os.path.abspath(code),\
+		os.path.abspath(code_merged), os.path.abspath(MODULE_LIB_PATH) ]
 	stdout_path = os.path.join(wd, 'merge.stdout')
 	stderr_path = os.path.join(wd, 'merge.stdout')
 	exception = None
@@ -264,7 +267,8 @@ def _parse_stderr(filename, timeout, elapsed, heaplimit):
 		with codecs.open(filename, "a", "utf-8") as f: f.write(report)
 
 def _post_trigger(wd, trigger_script, sandbox_dir, report):
-	cmd = [ 'xvfb-run', '-a', '/usr/bin/python', os.path.abspath(trigger_script), sandbox_dir ]
+	cmd = [ 'xvfb-run', '-a', '/usr/bin/python',
+		os.path.abspath(trigger_script), sandbox_dir, os.path.abspath(MODULE_LIB_PATH) ]
 	status = 'y'
 	exception = None
 	stdout_path = os.path.join(wd, 'post_trigger.stdout')
@@ -293,7 +297,9 @@ def _post_trigger(wd, trigger_script, sandbox_dir, report):
 	return (status == 'y', report, stdout_path)
 
 def _check(wd, check_script, sandbox_dir, sandbox_stdout, report):
-	cmd = [ 'xvfb-run', '-e', os.path.join('err'), '-a', '/usr/bin/python', os.path.basename(check_script), os.path.abspath(sandbox_dir), os.path.abspath(sandbox_stdout) ]
+	cmd = [ 'xvfb-run', '-e', os.path.join('err'), '-a', '/usr/bin/python',
+		os.path.basename(check_script), os.path.abspath(sandbox_dir),
+		os.path.abspath(sandbox_stdout), os.path.abspath(MODULE_LIB_PATH) ]
 	status = 'y'
 	exception = None
 	stdout_path = os.path.join(wd, 'check.stdout')

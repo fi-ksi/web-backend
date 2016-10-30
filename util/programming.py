@@ -157,7 +157,7 @@ def _save_raw(code, out, report):
 
 def _merge(wd, merge_script, code, code_merged, report):
 	status = 'y'
-	cmd = [ '/usr/bin/python', merge_script, code, code_merged ]
+	cmd = [ '/usr/bin/python', os.path.basename(merge_script), os.path.abspath(code), os.path.abspath(code_merged) ]
 	stdout_path = os.path.join(wd, 'merge.stdout')
 	stderr_path = os.path.join(wd, 'merge.stdout')
 	exception = None
@@ -165,7 +165,7 @@ def _merge(wd, merge_script, code, code_merged, report):
 	try:
 		stdout = open(stdout_path, 'w')
 		stderr = open(stderr_path, 'w')
-		process = subprocess.Popen(cmd, stdout=stdout, stderr=stderr)
+		process = subprocess.Popen(cmd, stdout=stdout, stderr=stderr, cwd=os.path.dirname(merge_script))
 		process.wait()
 
 		if process.returncode != 0:
@@ -293,7 +293,7 @@ def _post_trigger(wd, trigger_script, sandbox_dir, report):
 	return (status == 'y', report, stdout_path)
 
 def _check(wd, check_script, sandbox_dir, sandbox_stdout, report):
-	cmd = [ 'xvfb-run', '-e', os.path.join('err'), '-a', '/usr/bin/python', check_script, sandbox_dir, sandbox_stdout ]
+	cmd = [ 'xvfb-run', '-e', os.path.join('err'), '-a', '/usr/bin/python', os.path.basename(check_script), os.path.abspath(sandbox_dir), os.path.abspath(sandbox_stdout) ]
 	status = 'y'
 	exception = None
 	stdout_path = os.path.join(wd, 'check.stdout')
@@ -302,7 +302,7 @@ def _check(wd, check_script, sandbox_dir, sandbox_stdout, report):
 	try:
 		stdout = open(stdout_path, 'w')
 		stderr = open(stderr_path, 'w')
-		process = subprocess.Popen(cmd, stdout=stdout, stderr=stderr)
+		process = subprocess.Popen(cmd, stdout=stdout, stderr=stderr, cwd=os.path.dirname(check_script))
 		process.wait()
 
 		if process.returncode != 0:

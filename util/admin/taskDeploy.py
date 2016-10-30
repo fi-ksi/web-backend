@@ -444,6 +444,7 @@ def process_module_programming(module, lines, specific, source_path):
 	# Zkopirujeme skripty do prislusnych adresaru
 	target_path = "data/modules/" + str(module.id) + "/"
 	files = [ "eval.py", "merge.py", "post.py", "stdin.txt" ]
+	if 'available' in specific: files.extend(specific['available'])
 	if not os.path.isdir(target_path): os.makedirs(target_path)
 	for f in files:
 		if os.path.isfile(source_path+"/"+f):

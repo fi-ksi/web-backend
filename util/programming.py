@@ -159,7 +159,7 @@ def _save_raw(code, out, report):
 
 def _merge(wd, merge_script, code, code_merged, report):
 	status = 'y'
-	cmd = [ '/usr/bin/python', os.path.basename(merge_script), os.path.abspath(code),\
+	cmd = [ '/usr/bin/python', os.path.abspath(merge_script), os.path.abspath(code),\
 		os.path.abspath(code_merged), os.path.abspath(MODULE_LIB_PATH) ]
 	stdout_path = os.path.join(wd, 'merge.stdout')
 	stderr_path = os.path.join(wd, 'merge.stdout')
@@ -168,7 +168,7 @@ def _merge(wd, merge_script, code, code_merged, report):
 	try:
 		stdout = open(stdout_path, 'w')
 		stderr = open(stderr_path, 'w')
-		process = subprocess.Popen(cmd, stdout=stdout, stderr=stderr, cwd=os.path.dirname(merge_script))
+		process = subprocess.Popen(cmd, stdout=stdout, stderr=stderr, cwd=wd)
 		process.wait()
 
 		if process.returncode != 0:
@@ -268,7 +268,7 @@ def _parse_stderr(filename, timeout, elapsed, heaplimit):
 
 def _post_trigger(wd, trigger_script, sandbox_dir, report):
 	cmd = [ 'xvfb-run', '-a', '/usr/bin/python',
-		os.path.abspath(trigger_script), sandbox_dir, os.path.abspath(MODULE_LIB_PATH) ]
+		os.path.abspath(trigger_script), os.path.abspath(sandbox_dir), os.path.abspath(MODULE_LIB_PATH) ]
 	status = 'y'
 	exception = None
 	stdout_path = os.path.join(wd, 'post_trigger.stdout')
@@ -298,7 +298,7 @@ def _post_trigger(wd, trigger_script, sandbox_dir, report):
 
 def _check(wd, check_script, sandbox_dir, sandbox_stdout, report):
 	cmd = [ 'xvfb-run', '-e', os.path.join('err'), '-a', '/usr/bin/python',
-		os.path.basename(check_script), os.path.abspath(sandbox_dir),
+		os.path.abspath(check_script), os.path.abspath(sandbox_dir),
 		os.path.abspath(sandbox_stdout), os.path.abspath(MODULE_LIB_PATH) ]
 	status = 'y'
 	exception = None
@@ -308,7 +308,7 @@ def _check(wd, check_script, sandbox_dir, sandbox_stdout, report):
 	try:
 		stdout = open(stdout_path, 'w')
 		stderr = open(stderr_path, 'w')
-		process = subprocess.Popen(cmd, stdout=stdout, stderr=stderr, cwd=os.path.dirname(check_script))
+		process = subprocess.Popen(cmd, stdout=stdout, stderr=stderr, cwd=wd)
 		process.wait()
 
 		if process.returncode != 0:

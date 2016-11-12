@@ -130,7 +130,10 @@ def get_profile_picture(user):
 # minimalizace SQL dotazu. Toho se vyuziva napriklad pri vypisovani vysledkovky.
 # Pokud jsou tyto atributy None, provedou se klasicke dotazy.
 # \users_tasks je [model.Task]
-def to_json(user, year_obj, total_score=None, tasks_cnt=None, profile=None, achs=None, seasons=None, users_tasks=None, admin_data=False, org_seasons=None, max_points=None):
+# \users_co_tasks je [model.Task]
+def to_json(user, year_obj, total_score=None, tasks_cnt=None, profile=None,
+		achs=None, seasons=None, users_tasks=None, admin_data=False, org_seasons=None,
+		max_points=None, users_co_tasks=None):
 	data = { 'id': user.id, 'first_name': user.first_name, 'last_name': user.last_name, 'profile_picture': get_profile_picture(user), 'gender': user.sex }
 	if admin_data: data['email'] = user.email
 
@@ -161,7 +164,13 @@ def to_json(user, year_obj, total_score=None, tasks_cnt=None, profile=None, achs
 				join(model.Wave, model.Wave.id == model.Task.wave).\
 				filter(model.Task.author == user.id, model.Wave.year == year_obj.id).all()
 
+		if users_co_tasks is None:
+			users_co_tasks = session.query(model.Task).\
+				join(model.Wave, model.Wave.id == model.Task.wave).\
+				filter(model.Task.co_author == user.id, model.Wave.year == year_obj.id).all()
+
 		data['tasks'] = [ task.id for task in users_tasks ]
+		data['co_tasks'] = [ task.id for task in users_co_tasks ]
 		data['short_info'] = user.short_info
 		data['seasons'] = org_seasons if org_seasons is not None else [ key for (key,) in active_years_org(user.id) ]
 	elif user.role == 'tester':

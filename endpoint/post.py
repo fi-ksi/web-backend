@@ -8,6 +8,7 @@ import util
 import sys
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
+import traceback
 
 from thread import Thread
 from util import config
@@ -182,8 +183,8 @@ class Posts(object):
 							u'<p><a href="'  + config.ksi_web() + u'/ulohy/' + str(task_thread.id) + u'/diskuse">Přejít do diskuze.</a></p>' +\
 							config.karlik_img() + util.mail.easteregg(), cc=wave_garant_email)
 					except:
-						e = sys.exc_info()[0]
-						print str(e)
+						exc_type, exc_value, exc_traceback = sys.exc_info()
+						traceback.print_exception(exc_type, exc_value, exc_traceback, file=sys.stderr)
 
 				elif solution_thread:
 					# Vlakno k oprave -> posilame email autoru opravy
@@ -205,8 +206,8 @@ class Posts(object):
 								user_class.first_name + ' ' + user_class.last_name + u':</i></p><p>' + data['body'] +\
 								config.karlik_img() + util.mail.easteregg())
 						except:
-							e = sys.exc_info()[0]
-							print str(e)
+							exc_type, exc_value, exc_traceback = sys.exc_info()
+							traceback.print_exception(exc_type, exc_value, exc_traceback, file=sys.stderr)
 				else:
 					# Obecna diskuze -> email na ksi@fi.muni.cz
 					try:
@@ -217,8 +218,8 @@ class Posts(object):
 							u'<p><a href='  + config.ksi_web() + u'/forum/' + str(thread.id) + u'>Přejít do diskuze.</a></p>' +\
 							config.karlik_img() + util.mail.easteregg())
 					except:
-						e = sys.exc_info()[0]
-						print str(e)
+						exc_type, exc_value, exc_traceback = sys.exc_info()
+						traceback.print_exception(exc_type, exc_value, exc_traceback, file=sys.stderr)
 
 			# ------------------------------------------
 			# Pridani prispevku
@@ -245,8 +246,8 @@ class Posts(object):
 
 						util.mail.send(parent_user.email, u'[KSI-WEB] Nový příspěvek v diskuzi %s' % (thread.title), body)
 					except:
-						e = sys.exc_info()[0]
-						print str(e)
+						exc_type, exc_value, exc_traceback = sys.exc_info()
+						traceback.print_exception(exc_type, exc_value, exc_traceback, file=sys.stderr)
 
 			req.context['result'] = { 'post': util.post.to_json(post, user.id) }
 		except SQLAlchemyError:

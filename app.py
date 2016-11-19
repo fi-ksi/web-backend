@@ -100,7 +100,8 @@ class Logger(object):
 def log_sink(req, resp):
 	resp.status = falcon.HTTP_404
 
-	log(req, resp)
+	# Uncomment this to log sink
+	#log(req, resp)
 
 class Corser(object):
 
@@ -116,7 +117,8 @@ class Corser(object):
 		response.set_header('Access-Control-Allow-Methods', 'OPTIONS,PUT,POST,GET,DELETE')
 
 
-api = falcon.API(middleware=[Logger(), JSONTranslator(), Authorizer(), Year_fill(), Corser()])
+# Add Logger() to middleware for logging
+api = falcon.API(middleware=[JSONTranslator(), Authorizer(), Year_fill(), Corser()])
 
 
 # Odkomentovat pro vytvoreni tabulek v databazi

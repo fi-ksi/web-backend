@@ -189,6 +189,19 @@ class ModuleSubmit(object):
 				self._upload_files(req, module, user.id, resp)
 				return
 
+			# Kontrola poctu odevzdani
+			if not user.is_org():
+				subm_in_last_day = session.query(model.Evaluation).\
+					filter(model.Evaluation.user == user.id, model.Evaluation.module == id,
+						model.Evaluation.time >= datetime.datetime.utcnow()-datetime.timedelta(days=1)).count()
+
+				if subm_in_last_day >= 20:
+					req.context['result'] = {
+						'result': 'error',
+						'error': u'Překročen limit odevzdání (20 odevzdání / 24 hodin).'
+					}
+					return
+
 			data = json.loads(req.stream.read())['content']
 
 			if module.type == ModuleType.PROGRAMMING:

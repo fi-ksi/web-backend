@@ -6,6 +6,7 @@ import json
 import random, string
 from sqlalchemy import func, distinct, desc, text, or_
 from sqlalchemy.exc import SQLAlchemyError
+import traceback
 
 from db import session
 import model
@@ -166,6 +167,12 @@ class Users(object):
 				filter(model.Wave.year == year.id).\
 				group_by(model.User, model.Task).all()
 
+			users_co_tasks = session.query(model.User, model.Task).\
+				join(model.Task, model.User.id == model.Task.co_author).\
+				join(model.Wave, model.Wave.id == model.Task.wave).\
+				filter(model.Wave.year == year.id).\
+				group_by(model.User, model.Task).all()
+
 			max_points = util.task.sum_points(req.context['year'], bonus=False) + year.point_pad
 
 			# Uzivatele s nedefinovanymi tasks_cnt v tomto rocniku  neodevzdali zadnou ulohu
@@ -180,7 +187,8 @@ class Users(object):
 				users_tasks=[ task for (_, task) in filter(lambda (usr,task): usr.id == user.User.id, users_tasks) ] if users_tasks else None, \
 				admin_data=req.context['user'].is_org(), \
 				org_seasons=[ item.year_id for item in org_seasons if item.user_id == user.User.id ],\
-				max_points=max_points) \
+				max_points=max_points,\
+				users_co_tasks=[ task for (_, task) in filter(lambda (usr,task): usr.id == user.User.id, users_co_tasks) ] if users_co_tasks else None) \
 				for user in users ]
 		except SQLAlchemyError:
 			session.rollback()
@@ -257,8 +265,9 @@ class ForgottenPassword(object):
 		try:
 			util.mail.send(user.email, '[KSI] Nové heslo', u'Ahoj,<br/>na základě tvé žádosti ti bylo vygenerováno nové heslo: %s<br/><br/>KSI' % new_password)
 		except SQLAlchemyError:
-			e = sys.exc_info()[0]
-			print str(e)
+			exc_type, exc_value, exc_traceback = sys.exc_info()
+			traceback.print_exception(exc_type, exc_value, exc_traceback, file=sys.stderr)
+
 		session.close()
 
 		req.context['result'] = { 'result': 'ok' }

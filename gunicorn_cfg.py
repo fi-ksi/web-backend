@@ -3,9 +3,7 @@
 bind='127.0.0.1:3030'
 workers=4
 timeout=60
-
-# Set to True for debug
-capture_output=False
+capture_output=True
 
 def pre_request(worker, req):
 	if req.path.startswith('/content/'):

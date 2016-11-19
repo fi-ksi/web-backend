@@ -6,6 +6,7 @@ import json
 import random, string
 from sqlalchemy import func, distinct, desc, text, or_
 from sqlalchemy.exc import SQLAlchemyError
+import traceback
 
 from db import session
 import model
@@ -264,8 +265,9 @@ class ForgottenPassword(object):
 		try:
 			util.mail.send(user.email, '[KSI] Nové heslo', u'Ahoj,<br/>na základě tvé žádosti ti bylo vygenerováno nové heslo: %s<br/><br/>KSI' % new_password)
 		except SQLAlchemyError:
-			e = sys.exc_info()[0]
-			print str(e)
+			exc_type, exc_value, exc_traceback = sys.exc_info()
+			traceback.print_exception(exc_type, exc_value, exc_traceback, file=sys.stderr)
+
 		session.close()
 
 		req.context['result'] = { 'result': 'ok' }

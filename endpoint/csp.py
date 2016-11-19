@@ -14,7 +14,13 @@ class CSP(object):
 		text = "<p>" + util.config.ksi_web() + \
 			"<br><pre>" + json.dumps(data, indent=4) + "</pre></p>" + \
 			util.mail.easteregg()
-		util.mail.send("ksi-admin@fi.muni.cz", "[KSI-WEB] CSP report", text.decode('utf-8'), )
+
+		try:
+			util.mail.send("ksi-admin@fi.muni.cz", "[KSI-WEB] CSP report", text.decode('utf-8'), )
+		except:
+			exc_type, exc_value, exc_traceback = sys.exc_info()
+			traceback.print_exception(exc_type, exc_value, exc_traceback, file=sys.stderr)
+
 		req.context['result'] = {}
 		resp.status = falcon.HTTP_200
 

@@ -184,7 +184,6 @@ class Tasks(object):
 				return
 
 			# Vytvoreni adresare v repu je option:
-			print data
 			if ('git_create' in data) and (data['git_create']):
 				# Kontrola zamku
 				lock = util.lock.git_locked()

@@ -51,7 +51,6 @@ class AchievementGrant(object):
 						achievement_id = data['achievement'],
 						task_id = data['task']
 					)
-					print data['achievement']
 					session.add(ua)
 
 			session.commit()

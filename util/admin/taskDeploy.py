@@ -282,6 +282,7 @@ def process_assignment(task, filename):
 	body = '\n'.join(parsed)
 	body = replace_h(body)
 	body = change_links(task, body)
+	body = add_table_class(body)
 	task.body = body
 
 # Vlozi reseni ulohy do databaze
@@ -659,8 +660,13 @@ def ksi_collapse(source):
 def change_links(task, source):
 	return re.sub(r"data/", util.config.ksi_web()+":3000/taskContent/"+str(task.id)+"/zadani/", source)
 
+# Doplni ke kazde tabulce class="table table-striped"
+# Tohleto bohuzel nejde udelat lip (napriklad explicitnim napsanim do markdownu)
+def add_table_class(source):
+	return re.sub(r"<table>", "<table class='table table-striped'>", source)
+
 def parse_simple_text(task, text):
-	return change_links(task, replace_h(parse_pandoc(ksi_collapse(ksi_pseudocode(text)))))
+	return add_table_class(change_links(task, replace_h(parse_pandoc(ksi_collapse(ksi_pseudocode(text))))))
 
 ###############################################################################
 

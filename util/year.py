@@ -6,17 +6,17 @@ from util import config
 import util
 
 def to_json(year, sum_points=None):
-	if sum_points is None: sum_points = util.task.max_points_year_dict()[year.id]
+    if sum_points is None: sum_points = util.task.max_points_year_dict()[year.id]
 
-	return {
-		'id': year.id,
-		'index': year.id,
-		'year': year.year,
-		'sum_points': sum_points[0],
-		'tasks_cnt': int(sum_points[1]),
-		'sealed': year.sealed,
-		'point_pad': year.point_pad
-	}
+    return {
+        'id': year.id,
+        'index': year.id,
+        'year': year.year,
+        'sum_points': sum_points[0],
+        'tasks_cnt': int(sum_points[1]),
+        'sealed': year.sealed,
+        'point_pad': year.point_pad
+    }
 
 def year_end(year):
-	return int(year.year.replace(" ", "").split("/")[0]) + 1
+    return int(year.year.replace(" ", "").split("/")[0]) + 1

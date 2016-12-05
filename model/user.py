@@ -7,26 +7,26 @@ from sqlalchemy.orm import relationship
 from . import Base
 
 class User(Base):
-	__tablename__ = 'users'
-	__table_args__ = {
-		'mysql_engine': 'InnoDB',
-		'mysql_charset': 'utf8'
-	}
+    __tablename__ = 'users'
+    __table_args__ = {
+        'mysql_engine': 'InnoDB',
+        'mysql_charset': 'utf8'
+    }
 
-	id = Column(Integer, primary_key=True)
-	email = Column(String(50), nullable=False, unique=True)
-	phone = Column(String(15))
-	first_name = Column(String(50), nullable=False)
-	nick_name = Column(String(50))
-	last_name = Column(String(50), nullable=False)
-	sex = Column(Enum('male', 'female'), nullable=False)
-	password = Column(String(255), nullable=False)
-	short_info = Column(Text, nullable=False)
-	profile_picture = Column(String(255))
-	role = Column(Enum('admin', 'org', 'participant', 'participant_hidden', 'tester'), nullable=False, default='participant', server_default='participant')
-	enabled = Column(Boolean, nullable=False, default=True, server_default='1')
-	registered = Column(TIMESTAMP, nullable=False, default=datetime.datetime.utcnow, server_default=text('CURRENT_TIMESTAMP'))
+    id = Column(Integer, primary_key=True)
+    email = Column(String(50), nullable=False, unique=True)
+    phone = Column(String(15))
+    first_name = Column(String(50), nullable=False)
+    nick_name = Column(String(50))
+    last_name = Column(String(50), nullable=False)
+    sex = Column(Enum('male', 'female'), nullable=False)
+    password = Column(String(255), nullable=False)
+    short_info = Column(Text, nullable=False)
+    profile_picture = Column(String(255))
+    role = Column(Enum('admin', 'org', 'participant', 'participant_hidden', 'tester'), nullable=False, default='participant', server_default='participant')
+    enabled = Column(Boolean, nullable=False, default=True, server_default='1')
+    registered = Column(TIMESTAMP, nullable=False, default=datetime.datetime.utcnow, server_default=text('CURRENT_TIMESTAMP'))
 
-	tasks = relationship("Task", primaryjoin='User.id == Task.author')
+    tasks = relationship("Task", primaryjoin='User.id == Task.author')
 
-	#child = relationship('Token', uselist=False, backref='owner')
+    #child = relationship('Token', uselist=False, backref='owner')

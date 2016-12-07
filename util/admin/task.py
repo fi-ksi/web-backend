@@ -5,37 +5,37 @@ import util, git, shutil, os, json
 LOCKFILE = '/var/lock/ksi-task-new'
 
 def createGit(git_path, git_branch, author_id, title):
-	repo = git.Repo(util.git.GIT_SEMINAR_PATH)
-	repo.git.checkout("master")
-	repo.remotes.origin.pull()
+    repo = git.Repo(util.git.GIT_SEMINAR_PATH)
+    repo.git.checkout("master")
+    repo.remotes.origin.pull()
 
-	# Vytvorime novou gitovskou vetev
-	repo.git.checkout("HEAD", b=git_branch)
+    # Vytvorime novou gitovskou vetev
+    repo.git.checkout("HEAD", b=git_branch)
 
-	# Zkopirujeme vzorovou ulohu do adresare s ulohou
-	# Cilovy adresar nesmi existovat (to vyzaduje copytree)
-	target_path = util.git.GIT_SEMINAR_PATH + git_path
-	shutil.copytree(util.git.GIT_SEMINAR_PATH + util.git.TASK_MOOSTER_PATH, target_path)
+    # Zkopirujeme vzorovou ulohu do adresare s ulohou
+    # Cilovy adresar nesmi existovat (to vyzaduje copytree)
+    target_path = util.git.GIT_SEMINAR_PATH + git_path
+    shutil.copytree(util.git.GIT_SEMINAR_PATH + util.git.TASK_MOOSTER_PATH, target_path)
 
-	# Predzpracovani dat v repozitari
-	with open(target_path+'/task.json', 'r') as f:
-		data = json.loads(f.read())
-	data['author'] = author_id
-	with open(target_path+'/task.json', 'w') as f:
-		f.write(json.dumps(data, indent=4))
+    # Predzpracovani dat v repozitari
+    with open(target_path+'/task.json', 'r') as f:
+        data = json.loads(f.read())
+    data['author'] = author_id
+    with open(target_path+'/task.json', 'w') as f:
+        f.write(json.dumps(data, indent=4))
 
-	with open(target_path+'/assignment.md', 'w') as f:
-		s = title + u".\n\n" + \
-			u"# " + title + u"\n\n" + \
-			u"Název úlohy musí být uvozen `#`, nikoliv podtrhnut rovnítky.\n\n"
-		f.write(s.encode('UTF-8'))
+    with open(target_path+'/assignment.md', 'w') as f:
+        s = title + u".\n\n" + \
+            u"# " + title + u"\n\n" + \
+            u"Název úlohy musí být uvozen `#`, nikoliv podtrhnut rovnítky.\n\n"
+        f.write(s.encode('UTF-8'))
 
-	# Commit
-	repo.index.add([ git_path ])
-	repo.index.commit("Nova uloha: "+title)
+    # Commit
+    repo.index.add([ git_path ])
+    repo.index.commit("Nova uloha: "+title)
 
-	# Push
-	# Netusim, jak udelat push -u, tohle je trosku prasarna:
-	g = git.Git(util.git.GIT_SEMINAR_PATH)
-	g.execute(["git", "push", "-u", "origin", git_branch+':'+git_branch])
+    # Push
+    # Netusim, jak udelat push -u, tohle je trosku prasarna:
+    g = git.Git(util.git.GIT_SEMINAR_PATH)
+    g.execute(["git", "push", "-u", "origin", git_branch+':'+git_branch])
 

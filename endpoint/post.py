@@ -6,7 +6,7 @@ from db import session
 import model
 import util
 import sys
-from sqlalchemy import text
+from sqlalchemy import text, distinct
 from sqlalchemy.exc import SQLAlchemyError
 import traceback
 
@@ -188,7 +188,7 @@ class Posts(object):
 
 				elif solution_thread:
 					# Vlakno k oprave -> posilame email autoru opravy
-					correctors = [ r for r, in session.query(model.User.email).\
+					correctors = [ r for r, in session.query(distinct(model.User.email)).\
 						join(model.Evaluation, model.Evaluation.evaluator == model.User.id).\
 						join(model.Module, model.Evaluation.module == model.Module.id).\
 						join(model.Task, model.Task.id == model.Module.task).\

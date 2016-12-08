@@ -12,7 +12,7 @@ class Achievement(Base):
 
 	id = Column(Integer, primary_key=True)
 	title = Column(String(255), nullable=False)
-	picture = Column(String(128), nullable=False, unique=True)
+	picture = Column(String(128), nullable=False, unique=False)
 	description = Column(String(200), nullable=True)
 	year = Column(Integer, ForeignKey(Year.id), nullable=True)
 

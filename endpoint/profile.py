@@ -62,24 +62,41 @@ class Profile(object):
             session.close()
 
 
-    # Parametry: ?basic=true vraci jen basic profile.
-    # Basic profile je rychly, ale obsahuje jen zakladni data.
     def on_get(self, req, resp):
         try:
             userinfo = req.context['user']
-            basic = req.get_param_as_bool('basic')
 
             if not userinfo.is_logged_in():
                 req.context['result'] = util.profile.fake_profile()
                 return
 
             profile = session.query(model.Profile).get(userinfo.id)
-            req.context['result'] = util.profile.to_json(userinfo.user, profile, req.context['year_obj'], basic=basic)
+            req.context['result'] = util.profile.to_json(userinfo.user, profile, req.context['year_obj'], basic=False)
         except SQLAlchemyError:
             session.rollback()
             raise
         finally:
             session.close()
+
+
+# Basic profile
+class BasicProfile(object):
+    def on_get(self, req, resp):
+        try:
+            userinfo = req.context['user']
+
+            if not userinfo.is_logged_in():
+                req.context['result'] = util.profile.fake_profile()
+                return
+
+            profile = session.query(model.Profile).get(userinfo.id)
+            req.context['result'] = { 'basicProfile' : util.profile.to_json(userinfo.user, profile, req.context['year_obj'], basic=True)['profile'] }
+        except SQLAlchemyError:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
 
 # Profily lidi vydavame jen adminum.
 class OrgProfile(object):

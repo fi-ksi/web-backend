@@ -6,7 +6,7 @@ from endpoint.module import Module, ModuleSubmit, ModuleSubmittedFile
 from endpoint.thread import Thread, Threads, ThreadDetails
 from endpoint.user import User, Users, ChangePassword, ForgottenPassword
 from endpoint.registration import Registration
-from endpoint.profile import Profile, PictureUploader, OrgProfile
+from endpoint.profile import Profile, PictureUploader, OrgProfile, BasicProfile
 from endpoint.image import Image
 from endpoint.content import Content, TaskContent
 from endpoint.oauth2 import Authorize, Logout

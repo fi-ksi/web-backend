@@ -93,6 +93,11 @@ class Threads(object):
             data = json.loads(req.stream.read())
             pblic = data['thread']['public'] if data['thread'].has_key('public') else True
 
+            if len(data['thread']['title']) > 100:
+                resp.status = falcon.HTTP_413
+                req.context['result'] = { 'errors': [ { 'status': '413', 'title': 'Payload too large', 'detail': u'Název vlákna mít maximálně 100 znaků.' } ] }
+                return
+
             thread = model.Thread(title=data['thread']['title'], public=pblic, year = req.context['year'])
             session.add(thread)
             session.commit()

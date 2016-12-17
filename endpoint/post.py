@@ -13,6 +13,8 @@ import traceback
 from thread import Thread
 from util import config
 
+MAX_POST_LEN = 8000
+
 class Post(object):
 
     # Uprava prispevku
@@ -26,6 +28,11 @@ class Post(object):
                 return
 
             data = json.loads(req.stream.read())['post']
+
+            if len(data['body']) > MAX_POST_LEN:
+                resp.status = falcon.HTTP_413
+                req.context['result'] = { 'errors': [ { 'status': '413', 'title': 'Payload too large', 'detail': u'Tělo příspěvku může mít maximálně ' + str(MAX_POST_LEN) + u' znaků.' } ] }
+                return
 
             post = session.query(model.Post).get(id)
             if post is None:
@@ -108,6 +115,11 @@ class Posts(object):
 
             user = req.context['user']
             data = json.loads(req.stream.read())['post']
+
+            if len(data['body']) > MAX_POST_LEN:
+                resp.status = falcon.HTTP_413
+                req.context['result'] = { 'errors': [ { 'status': '413', 'title': 'Payload too large', 'detail': u'Tělo příspěvku může mít maximálně ' + str(MAX_POST_LEN) + u' znaků.' } ] }
+                return
 
             thread_id = data['thread']
             thread = session.query(model.Thread).get(thread_id)

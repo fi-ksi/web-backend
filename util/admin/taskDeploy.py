@@ -16,7 +16,7 @@ LOGFILE = 'data/deploy.log'
 
 # Deploy je spousten v samostatnem vlakne.
 session = None
-eval_public = True
+eval_public = False
 
 """
 Tato funkce je spoustena v samostatnem vlakne.
@@ -79,7 +79,7 @@ def deploy(task_id, deployLock, scoped):
         process_task(task, util.git.GIT_SEMINAR_PATH+task.git_path)
 
         # Update git entries in db
-        task.evaluation_public |= eval_public
+        task.evaluation_public |= eval_public # |= is important for deploying after task is published
         task.git_commit = repo.head.commit.hexsha
         task.deploy_status = 'done'
 

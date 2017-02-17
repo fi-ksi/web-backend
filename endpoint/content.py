@@ -117,7 +117,12 @@ class TaskContent(object):
             resp.status = falcon.HTTP_400
             return
 
-        filePath = 'data/task-content/' + id + '/' + view + '/' + req.get_param('path').replace('..', '')
+        path_param = req.get_param('path')
+        if path_param is None:
+            resp.status = falcon.HTTP_400
+            return
+
+        filePath = 'data/task-content/' + id + '/' + view + '/' + path_param.replace('..', '')
 
         if not os.path.isfile(filePath):
             resp.status = falcon.HTTP_404

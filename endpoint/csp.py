@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import falcon, util, json
+import falcon, util, json, sys
 
 # Content-security policy reports of frontend
 # Every CSP report is forwarded to ksi-admin@fi.muni.cz.

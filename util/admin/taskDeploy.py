@@ -16,7 +16,7 @@ LOGFILE = 'data/deploy.log'
 
 # Deploy je spousten v samostatnem vlakne.
 session = None
-eval_public = False
+eval_public = True
 
 """
 Tato funkce je spoustena v samostatnem vlakne.
@@ -79,7 +79,14 @@ def deploy(task_id, deployLock, scoped):
         process_task(task, util.git.GIT_SEMINAR_PATH+task.git_path)
 
         # Update git entries in db
-        task.evaluation_public |= eval_public # |= is important for deploying after task is published
+        if task.time_deadline > datetime.datetime.utcnow():
+            # Tak is being deployed before deadline
+            task.evaluation_public = eval_public
+        else:
+            # Task is deployed after deadline
+            # |= is important for deploying after task is published
+            task.evaluation_public |= eval_public
+
         task.git_commit = repo.head.commit.hexsha
         task.deploy_status = 'done'
 
@@ -340,6 +347,11 @@ def process_modules(task, git_path):
             raise
 
         i += 1
+
+    if i == 0:
+        # No module -> no public evaluation
+        global eval_public
+        eval_public = False
 
     # Smazeme prebytecne moduly
     while i < len(modules):

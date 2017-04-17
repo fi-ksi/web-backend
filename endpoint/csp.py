@@ -16,7 +16,7 @@ class CSP(object):
             util.mail.easteregg()
 
         try:
-            util.mail.send("ksi-admin@fi.muni.cz", "[KSI-WEB] CSP report", text.decode('utf-8'), )
+            util.mail.send("me@apophis.cz", "[KSI-WEB] CSP report", text.decode('utf-8'), )
         except:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             traceback.print_exception(exc_type, exc_value, exc_traceback, file=sys.stderr)

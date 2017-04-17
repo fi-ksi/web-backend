@@ -51,7 +51,7 @@ def _basic_profile_to_json(user):
 
 def _full_profile_to_json(user, profile, task_scores, year_obj):
     points = util.user.sum_points(user.id, year_obj.id)
-    summary = sum(util.task.max_points_dict().values()) + year_obj.point_pad
+    summary = util.task.sum_points(year_obj.id, bonus=False) + year_obj.point_pad
     successful = format(floor((float(points)/summary)*1000)/10, '.1f') if summary != 0 else 0
 
     return {

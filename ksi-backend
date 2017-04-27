@@ -1,7 +1,7 @@
 CONFIG = {
     'mode': 'wsgi',
     'working_dir': '/home/ksi/web-backend',
-    'python': '/usr/bin/python',
+    'python': '/usr/bin/python3',
     'user': 'ksi',
     'group': 'ksi',
     'args': (

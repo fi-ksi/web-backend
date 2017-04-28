@@ -24,13 +24,9 @@ Je vhodne vyuzit virtualenv - pip install virtualenv, virtualenv env, source env
 
 ## Spusteni
 
-* `service gunicorn start`
-  Soubor `ksi-backend` je konfiguracni soubor pro spousteni gunicorn skrze
-  `gunicorn-debian`, `gunicorn_cfg` je primo konfiguracni soubor gunicornu.
+* `./runner start`
 
   Log je v `/var/log/gunicorn/`.
-
-  `/etc/gunicorn.d/ksi-backend` vede na `ksi-backend`.
 
 ## `config.py`
 Pro funnkcnost backendu musi byt v korenove slozce repozitare souboor `config.py` s heslem k databazi ve formatu:

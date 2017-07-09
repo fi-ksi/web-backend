@@ -3,7 +3,7 @@ from sqlalchemy.types import TIMESTAMP
 import datetime
 
 from . import Base
-from module import Module
+from .module import Module
 
 class Text(Base):
     __tablename__ = 'text'

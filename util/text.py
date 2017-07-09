@@ -23,7 +23,7 @@ def to_json(db_dict, user_id):
     if not 'questions' in db_dict['text']:
         # Stary format textoveho modulu (bez textu otazek) -> vytvorit texty
         # otazek.
-        return { 'questions': [ u'Otázka '+str(i+1) for i in range(db_dict['text']['inputs']) ] }
+        return { 'questions': [ 'Otázka '+str(i+1) for i in range(db_dict['text']['inputs']) ] }
     else:
         # Novy format vcetne textu otazek -> vratime texty otazek.
         return { 'questions': db_dict['text']['questions'] }

@@ -4,7 +4,7 @@ from sqlalchemy import Column, Integer, String, Text, ForeignKey, text, Boolean
 from sqlalchemy.types import TIMESTAMP
 
 from . import Base
-from year import Year
+from .year import Year
 
 class Article(Base):
     __tablename__ = 'articles'

@@ -4,7 +4,7 @@ import falcon
 from db import session
 from sqlalchemy.exc import SQLAlchemyError
 import model, util, os
-from StringIO import StringIO
+from io import StringIO
 from sqlalchemy import func, distinct, desc, text, or_
 
 class UserExport(object):
@@ -98,32 +98,32 @@ class UserExport(object):
             sum_points_bonus = util.task.sum_points(req.context['year'], bonus=True) + year_obj.point_pad
 
             table_header = \
-                u"Pořadí;" +\
-                u"Příjmení;" +\
-                u"Jméno;" +\
-                u"Body;"+\
-                u"Úspěšný řešitel;"+\
-                u"E-mail;" +\
-                u"Ulice;" +\
-                u"Město;" +\
-                u"PSČ;" +\
-                u"Země;" +\
-                u"Škola;" +\
-                u"Adresa školy;" +\
-                u"Město školy;" +\
-                u"PSČ školy;" +\
-                u"Země školy;" +\
-                u'Rok maturity\n'\
+                "Pořadí;" +\
+                "Příjmení;" +\
+                "Jméno;" +\
+                "Body;"+\
+                "Úspěšný řešitel;"+\
+                "E-mail;" +\
+                "Ulice;" +\
+                "Město;" +\
+                "PSČ;" +\
+                "Země;" +\
+                "Škola;" +\
+                "Adresa školy;" +\
+                "Město školy;" +\
+                "PSČ školy;" +\
+                "Země školy;" +\
+                'Rok maturity\n'\
 
-            inMemoryOutputFile.write(u"Celkem bodů: " + str(sum_points) + u", včetně bonusových úloh: " + str(sum_points_bonus) + u", bodová vycpávka: " + str(year_obj.point_pad) + '\n')
+            inMemoryOutputFile.write("Celkem bodů: " + str(sum_points) + ", včetně bonusových úloh: " + str(sum_points_bonus) + ", bodová vycpávka: " + str(year_obj.point_pad) + '\n')
 
             # Resitele stredoskolaci
-            inMemoryOutputFile.write(u"Středoškoláci\n")
+            inMemoryOutputFile.write("Středoškoláci\n")
             inMemoryOutputFile.write(table_header)
             inMemoryOutputFile.write(self._stringify_users(users_hs, sum_points))
 
             # Resitele ostatni
-            inMemoryOutputFile.write(u"\nOstatní\n")
+            inMemoryOutputFile.write("\nOstatní\n")
             inMemoryOutputFile.write(table_header)
             inMemoryOutputFile.write(self._stringify_users(users_other, sum_points))
 

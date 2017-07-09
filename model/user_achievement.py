@@ -1,9 +1,9 @@
 from sqlalchemy import Column, Integer, ForeignKey
 
 from . import Base
-from user import User
-from achievement import Achievement
-from task import Task
+from .user import User
+from .achievement import Achievement
+from .task import Task
 
 class UserAchievement(Base):
     __tablename__ = 'user_achievement'

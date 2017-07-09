@@ -15,7 +15,7 @@ class Achievement(object):
             raise
 
         if achievement is None:
-            req.context['result'] = { 'errors': [ { 'status': '404', 'title': 'Not found', 'detail': u'Trofej s tímto ID neexistuje.' } ] }
+            req.context['result'] = { 'errors': [ { 'status': '404', 'title': 'Not found', 'detail': 'Trofej s tímto ID neexistuje.' } ] }
             resp.status = falcon.HTTP_404
             return
 
@@ -30,12 +30,12 @@ class Achievement(object):
             raise
 
         if (not user.is_logged_in()) or (not user.is_admin()):
-            req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized', 'detail': u'Smazání trofeje může provést pouze administrátor.' } ] }
+            req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized', 'detail': 'Smazání trofeje může provést pouze administrátor.' } ] }
             resp.status = falcon.HTTP_400
             return
 
         if not achievement:
-            req.context['result'] = { 'errors': [ { 'status': '404', 'title': 'Not Found', 'detail': u'Trofej s tímto ID neexsituje.' } ] }
+            req.context['result'] = { 'errors': [ { 'status': '404', 'title': 'Not Found', 'detail': 'Trofej s tímto ID neexsituje.' } ] }
             resp.status = falcon.HTTP_404
             return
 
@@ -56,7 +56,7 @@ class Achievement(object):
 
         # Upravovat trofeje mohou jen orgove
         if (not user.is_logged_in()) or (not user.is_org()):
-            req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized', 'detail': u'Úpravu trofeje může provést pouze organizátor.' } ] }
+            req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized', 'detail': 'Úpravu trofeje může provést pouze organizátor.' } ] }
             resp.status = falcon.HTTP_400
             return
 
@@ -69,7 +69,7 @@ class Achievement(object):
             raise
 
         if achievement is None:
-            req.context['result'] = { 'errors': [ { 'status': '404', 'title': 'Not Found', 'detail': u'Trofej s tímto ID neexistuje.' } ] }
+            req.context['result'] = { 'errors': [ { 'status': '404', 'title': 'Not Found', 'detail': 'Trofej s tímto ID neexistuje.' } ] }
             resp.status = falcon.HTTP_404
             return
 
@@ -108,7 +108,7 @@ class Achievements(object):
 
         # Vytvoret novou trofej mohou jen orgove
         if (not user.is_logged_in()) or (not user.is_org()):
-            req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized', 'detail': u'Přidání trofeje může provést pouze organizátor.' } ] }
+            req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized', 'detail': 'Přidání trofeje může provést pouze organizátor.' } ] }
             resp.status = falcon.HTTP_400
             return
 

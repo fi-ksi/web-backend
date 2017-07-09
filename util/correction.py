@@ -35,7 +35,7 @@ def _corr_general_to_json(module, evaluation, files=None):
         files = session.query(model.SubmittedFile).\
             join(model.Evaluation, model.SubmittedFile.evaluation == evaluation.id).all()
     else:
-        files = filter(lambda smbfl: smbfl.evaluation == evaluation.id, files)
+        files = [smbfl for smbfl in files if smbfl.evaluation == evaluation.id]
 
     return {
         'files': [ {'id': inst.id, 'filename': os.path.basename(inst.path)} for inst in files ]
@@ -99,7 +99,7 @@ def to_json(modules, evals, task_id, thread_id=None, achievements=None, correcte
         'user': user_id,
         'comment': thread_id,
         'achievements': achievements,
-        'modules': [ _corr_module_to_json(filter(lambda x: x.module == module.id, evals), module, spec_evl, files) for (evl, module, spec_evl) in modules ]
+        'modules': [ _corr_module_to_json([x for x in evals if x.module == module.id], module, spec_evl, files) for (evl, module, spec_evl) in modules ]
     }
 
 def module_to_json(module):

@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Text, ForeignKey
 
 from . import Base
-from evaluation import Evaluation
+from .evaluation import Evaluation
 
 class SubmittedFile(Base):
     __tablename__ = 'submitted_files'

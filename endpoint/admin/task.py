@@ -18,12 +18,12 @@ class Task(object):
 
             # task_admin mohou ziskat jen orgove
             if (not user.is_logged_in()) or (not user.is_org()):
-                req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized', 'detail': u'Přístup odepřen.' } ] }
+                req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized', 'detail': 'Přístup odepřen.' } ] }
                 resp.status = falcon.HTTP_400
                 return
 
             if task is None:
-                req.context['result'] = { 'errors': [ { 'status': '404', 'title': 'Not Found', 'detail': u'Úloha s tímto ID neexistuje.' } ] }
+                req.context['result'] = { 'errors': [ { 'status': '404', 'title': 'Not Found', 'detail': 'Úloha s tímto ID neexistuje.' } ] }
                 resp.status = falcon.HTTP_404
                 return
 
@@ -127,7 +127,7 @@ class Tasks(object):
 
             # Zobrazovat task_admin mohou jen orgove
             if (not user.is_logged_in()) or (not user.is_org()):
-                req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized', 'detail': u'Přístup odepřen.' } ] }
+                req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized', 'detail': 'Přístup odepřen.' } ] }
                 resp.status = falcon.HTTP_400
                 return
 

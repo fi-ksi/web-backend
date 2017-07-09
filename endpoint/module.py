@@ -17,7 +17,7 @@ class Module(object):
         user = req.context['user']
 
         if not user.is_logged_in():
-            req.context['result'] = { 'errors': [ { 'status': '404', 'title': 'Not Found', 'detail': u'Modul s tímto ID neexistuje.' } ] }
+            req.context['result'] = { 'errors': [ { 'status': '404', 'title': 'Not Found', 'detail': 'Modul s tímto ID neexistuje.' } ] }
             resp.status = falcon.HTTP_400
             return
 
@@ -177,12 +177,12 @@ class ModuleSubmit(object):
 
             if not module:
                 resp.status = falcon.HTTP_404
-                req.context['result'] = { 'result': 'error', 'error': u'Neexistující modul' }
+                req.context['result'] = { 'result': 'error', 'error': 'Neexistující modul' }
                 return
 
             # Po deadlinu nelze POSTovat reseni
             if session.query(model.Task).get(module.task).time_deadline < datetime.datetime.utcnow():
-                req.context['result'] = { 'result': 'error', 'error': u'Nelze odevzdat po termínu odevzdání úlohy' }
+                req.context['result'] = { 'result': 'error', 'error': 'Nelze odevzdat po termínu odevzdání úlohy' }
                 return
 
             if module.type == ModuleType.GENERAL:
@@ -198,7 +198,7 @@ class ModuleSubmit(object):
                 if subm_in_last_day >= 20:
                     req.context['result'] = {
                         'result': 'error',
-                        'error': u'Překročen limit odevzdání (20 odevzdání / 24 hodin).'
+                        'error': 'Překročen limit odevzdání (20 odevzdání / 24 hodin).'
                     }
                     return
 
@@ -285,7 +285,7 @@ class ModuleSubmittedFile(object):
                     filter(model.Evaluation.id == submittedFile.evaluation).first()
 
                 if task.time_deadline < datetime.datetime.utcnow():
-                    req.context['result'] = { 'result': 'error', 'error': u'Nelze smazat soubory po termínu odevzdání úlohy' }
+                    req.context['result'] = { 'result': 'error', 'error': 'Nelze smazat soubory po termínu odevzdání úlohy' }
                     return
 
                 try:
@@ -308,18 +308,18 @@ class ModuleSubmittedFile(object):
                     req.context['result'] = { 'status': 'ok' }
 
                 except OSError:
-                    req.context['result'] = { 'status': 'error', 'error': u'Soubor se nepodařilo odstranit z filesystému' }
+                    req.context['result'] = { 'status': 'error', 'error': 'Soubor se nepodařilo odstranit z filesystému' }
                     return
                 except exc.SQLAlchemyError:
-                    req.context['result'] = { 'status': 'error', 'error': u'Záznam o souboru se nepodařilo odstranit z databáze' }
+                    req.context['result'] = { 'status': 'error', 'error': 'Záznam o souboru se nepodařilo odstranit z databáze' }
                     return
             else:
                 if resp.status == falcon.HTTP_404:
-                    req.context['result'] = { 'status': 'error', 'error': u'Soubor nenalezen na serveru' }
+                    req.context['result'] = { 'status': 'error', 'error': 'Soubor nenalezen na serveru' }
                 elif resp.status == falcon.HTTP_403:
-                    req.context['result'] = { 'status': 'error', 'error': u'K tomuto souboru nemáte oprávnění' }
+                    req.context['result'] = { 'status': 'error', 'error': 'K tomuto souboru nemáte oprávnění' }
                 else:
-                    req.context['result'] = { 'status': 'error', 'error': u'Soubor se nepodařilo získat' }
+                    req.context['result'] = { 'status': 'error', 'error': 'Soubor se nepodařilo získat' }
                 resp.status = falcon.HTTP_200
         except SQLAlchemyError:
             session.rollback()

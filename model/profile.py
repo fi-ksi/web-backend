@@ -5,7 +5,7 @@ from sqlalchemy.types import TIMESTAMP
 from sqlalchemy.orm import relationship
 
 from . import Base
-from user import User
+from .user import User
 
 class Profile(Base):
     __tablename__ = 'profiles'

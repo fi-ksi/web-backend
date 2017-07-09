@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import subprocess, traceback, os, shutil, json, ast, codecs, re, datetime
-from pypy_interact import PyPySandboxedProc
+#from pypy_interact import PyPySandboxedProc
 from humanfriendly import format_size
 
 from db import session
@@ -43,12 +43,12 @@ def evaluate(task, module, user_id, data):
 
     success, report = _save_raw(data, raw_code, report)
     if not success:
-        print report
+        print(report)
         return ( 'error', 'Selhala operace _save_raw', '' )
 
     success, report = _merge(dir, programming['merge_script'], raw_code, merged_code, report)
     if not success:
-        print report
+        print(report)
         return ( 'error', 'Selhala operace _merge', '' )
 
     sandbox_dir = os.path.abspath(os.path.join(dir, 'sandbox'))
@@ -261,9 +261,9 @@ def _parse_stderr(filename, timeout, elapsed, heaplimit):
     killed = re.search(r"\[Subprocess killed by SIGTERM\]", content)
     memory = re.search(r"MemoryError", content)
     if killed or memory:
-        report = u"Program byl ukončen z důvodu vyčerpání přidělených prostředků.\n"
-        report += u"Časový limit: %d s, limit paměti: %s, čas běhu programu: %.2f s\n" % (timeout, format_size(heaplimit) if heaplimit else "-", elapsed.total_seconds())
-        if elapsed.total_seconds() >= timeout: report += u"Program překročil maximální čas běhu.\n"
+        report = "Program byl ukončen z důvodu vyčerpání přidělených prostředků.\n"
+        report += "Časový limit: %d s, limit paměti: %s, čas běhu programu: %.2f s\n" % (timeout, format_size(heaplimit) if heaplimit else "-", elapsed.total_seconds())
+        if elapsed.total_seconds() >= timeout: report += "Program překročil maximální čas běhu.\n"
         with codecs.open(filename, "a", "utf-8") as f: f.write(report)
 
 def _post_trigger(wd, trigger_script, sandbox_dir, report):

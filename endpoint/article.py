@@ -37,13 +37,13 @@ class Article(object):
             raise
 
         if data is None:
-            req.context['result'] = { 'errors': [ { 'status': '404', 'title': 'Not Found', 'detail': u'Článek s tímto ID neexistuje.' } ] }
+            req.context['result'] = { 'errors': [ { 'status': '404', 'title': 'Not Found', 'detail': 'Článek s tímto ID neexistuje.' } ] }
             resp.status = falcon.HTTP_404
             return
 
         # nezverejneny clanek mohou ziskat jen orgove
         if (not data.published) and ((not user.is_logged_in()) or (not user.is_org())):
-            req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized', 'detail': u'Přístup odepřen.' } ] }
+            req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized', 'detail': 'Přístup odepřen.' } ] }
             resp.status = falcon.HTTP_400
             return
 
@@ -56,7 +56,7 @@ class Article(object):
     def on_put(self, req, resp, id):
         user = req.context['user']
         if (not user.is_logged_in()) or (not user.is_org()):
-            req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized', 'detail': u'Upravit článek může pouze organizátor.' } ] }
+            req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized', 'detail': 'Upravit článek může pouze organizátor.' } ] }
             resp.status = falcon.HTTP_400
             return
 
@@ -65,7 +65,7 @@ class Article(object):
         try:
             article = session.query(model.Article).get(id)
             if article is None:
-                req.context['result'] = { 'errors': [ { 'status': '404', 'title': 'Not Found', 'detail': u'Článek s tímto ID neexistuje.' } ] }
+                req.context['result'] = { 'errors': [ { 'status': '404', 'title': 'Not Found', 'detail': 'Článek s tímto ID neexistuje.' } ] }
                 resp.status = falcon.HTTP_404
                 return
 
@@ -88,14 +88,14 @@ class Article(object):
     def on_delete(self, req, resp, id):
         user = req.context['user']
         if (not user.is_logged_in()) or (not user.is_org()):
-            req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized', 'detail': u'Smazat článek může pouze organizátor.' } ] }
+            req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized', 'detail': 'Smazat článek může pouze organizátor.' } ] }
             resp.status = falcon.HTTP_400
             return
 
         try:
             article = session.query(model.Article).get(id)
             if article is None:
-                req.context['result'] = { 'errors': [ { 'status': '404', 'title': 'Not Found', 'detail': u'Článek s tímto ID neexistuje.' } ] }
+                req.context['result'] = { 'errors': [ { 'status': '404', 'title': 'Not Found', 'detail': 'Článek s tímto ID neexistuje.' } ] }
                 resp.status = falcon.HTTP_404
                 return
 
@@ -143,7 +143,7 @@ class Articles(object):
     def on_post(self, req, resp):
         user = req.context['user']
         if (not user.is_logged_in()) or (not user.is_org()):
-            req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized', 'detail': u'Přidat článek může pouze organizátor.' } ] }
+            req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized', 'detail': 'Přidat článek může pouze organizátor.' } ] }
             resp.status = falcon.HTTP_400
             return
 

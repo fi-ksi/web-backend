@@ -45,7 +45,7 @@ class CorrectionsInfo(object):
             year = req.context['year']
 
             if (not user.is_logged_in()) or (not user.is_org()):
-                req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized', 'detail': u'Přístup k opravovátku mají pouze organizátoři.' } ] }
+                req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized', 'detail': 'Přístup k opravovátku mají pouze organizátoři.' } ] }
                 resp.status = falcon.HTTP_400
                 return
 

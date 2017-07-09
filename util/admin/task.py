@@ -25,9 +25,9 @@ def createGit(git_path, git_branch, author_id, title):
         f.write(json.dumps(data, indent=4))
 
     with open(target_path+'/assignment.md', 'w') as f:
-        s = title + u".\n\n" + \
-            u"# " + title + u"\n\n" + \
-            u"Název úlohy musí být uvozen `#`, nikoliv podtrhnut rovnítky.\n\n"
+        s = title + ".\n\n" + \
+            "# " + title + "\n\n" + \
+            "Název úlohy musí být uvozen `#`, nikoliv podtrhnut rovnítky.\n\n"
         f.write(s.encode('UTF-8'))
 
     # Commit

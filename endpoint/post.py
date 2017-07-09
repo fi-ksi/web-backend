@@ -10,7 +10,7 @@ from sqlalchemy import text, distinct
 from sqlalchemy.exc import SQLAlchemyError
 import traceback
 
-from thread import Thread
+from .thread import Thread
 from util import config
 
 MAX_POST_LEN = 8000
@@ -31,7 +31,7 @@ class Post(object):
 
             if len(data['body']) > MAX_POST_LEN:
                 resp.status = falcon.HTTP_413
-                req.context['result'] = { 'errors': [ { 'status': '413', 'title': 'Payload too large', 'detail': u'Tělo příspěvku může mít maximálně ' + str(MAX_POST_LEN) + u' znaků.' } ] }
+                req.context['result'] = { 'errors': [ { 'status': '413', 'title': 'Payload too large', 'detail': 'Tělo příspěvku může mít maximálně ' + str(MAX_POST_LEN) + ' znaků.' } ] }
                 return
 
             post = session.query(model.Post).get(id)
@@ -118,7 +118,7 @@ class Posts(object):
 
             if len(data['body']) > MAX_POST_LEN:
                 resp.status = falcon.HTTP_413
-                req.context['result'] = { 'errors': [ { 'status': '413', 'title': 'Payload too large', 'detail': u'Tělo příspěvku může mít maximálně ' + str(MAX_POST_LEN) + u' znaků.' } ] }
+                req.context['result'] = { 'errors': [ { 'status': '413', 'title': 'Payload too large', 'detail': 'Tělo příspěvku může mít maximálně ' + str(MAX_POST_LEN) + ' znaků.' } ] }
                 return
 
             thread_id = data['thread']
@@ -130,7 +130,7 @@ class Posts(object):
 
             if req.context['year_obj'].sealed:
                 resp.status = falcon.HTTP_403
-                req.context['result'] = { 'errors': [ { 'status': '403', 'title': 'Forbidden', 'detail': u'Ročník zapečetěn.' } ] }
+                req.context['result'] = { 'errors': [ { 'status': '403', 'title': 'Forbidden', 'detail': 'Ročník zapečetěn.' } ] }
                 return
 
             task_thread = session.query(model.Task).filter(model.Task.thread == thread_id).first()
@@ -188,11 +188,11 @@ class Posts(object):
                         sent_emails.add(task_co_author_email)
                         recipients.append(task_co_author_email)
                     try:
-                        util.mail.send(recipients, u'[KSI-WEB] Nový příspěvek k úloze ' + task_thread.title,
-                            u'<p>Ahoj,<br/>k tvé úloze <a href="' + config.ksi_web() + u'/ulohy/' + str(task_thread.id) + u'">' +\
-                            task_thread.title + u'</a> na <a href="'+ config.ksi_web() + '/">' + config.ksi_web() +u'</a> byl přidán nový komentář:</p><p><i>' +\
-                            user_class.first_name + u' ' + user_class.last_name + u':</i></p>' + data['body'] +\
-                            u'<p><a href="'  + config.ksi_web() + u'/ulohy/' + str(task_thread.id) + u'/diskuse">Přejít do diskuze.</a></p>' +\
+                        util.mail.send(recipients, '[KSI-WEB] Nový příspěvek k úloze ' + task_thread.title,
+                            '<p>Ahoj,<br/>k tvé úloze <a href="' + config.ksi_web() + '/ulohy/' + str(task_thread.id) + '">' +\
+                            task_thread.title + '</a> na <a href="'+ config.ksi_web() + '/">' + config.ksi_web() +'</a> byl přidán nový komentář:</p><p><i>' +\
+                            user_class.first_name + ' ' + user_class.last_name + ':</i></p>' + data['body'] +\
+                            '<p><a href="'  + config.ksi_web() + '/ulohy/' + str(task_thread.id) + '/diskuse">Přejít do diskuze.</a></p>' +\
                             config.karlik_img() + util.mail.easteregg(), cc=wave_garant_email)
                     except:
                         exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -211,11 +211,11 @@ class Posts(object):
                     if correctors:
                         task = session.query(model.Task).get(solution_thread.task)
                         try:
-                            util.mail.send(correctors, u'[KSI-WEB] Nový komentář k tvé korektuře úlohy ' + task.title, \
-                                u'<p>Ahoj,<br/>k tvé <a href="'+ config.ksi_web() + u'/admin/opravovani?task_='+str(task.id)+u'&participant_='+str(user_class.id)+\
-                                u'">korektuře</a> úlohy <a href="' + config.ksi_web() + u'/ulohy/' + str(task.id) + u'">' + task.title +\
-                                u'</a> na <a href="'+ config.ksi_web() + '/">' + config.ksi_web() +u'</a> byl přidán nový komentář:<p><p><i>' +\
-                                user_class.first_name + ' ' + user_class.last_name + u':</i></p><p>' + data['body'] +\
+                            util.mail.send(correctors, '[KSI-WEB] Nový komentář k tvé korektuře úlohy ' + task.title, \
+                                '<p>Ahoj,<br/>k tvé <a href="'+ config.ksi_web() + '/admin/opravovani?task_='+str(task.id)+'&participant_='+str(user_class.id)+\
+                                '">korektuře</a> úlohy <a href="' + config.ksi_web() + '/ulohy/' + str(task.id) + '">' + task.title +\
+                                '</a> na <a href="'+ config.ksi_web() + '/">' + config.ksi_web() +'</a> byl přidán nový komentář:<p><p><i>' +\
+                                user_class.first_name + ' ' + user_class.last_name + ':</i></p><p>' + data['body'] +\
                                 config.karlik_img() + util.mail.easteregg())
                         except:
                             exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -225,9 +225,9 @@ class Posts(object):
                     try:
                         sent_emails.add(config.ksi_conf())
                         util.mail.send(config.ksi_conf(), '[KSI-WEB] Nový příspěvek v obecné diskuzi',
-                            u'<p>Ahoj,<br/>do obecné diskuze na <a href="'+ config.ksi_web() + '/">' + config.ksi_web() +u'</a> byl přidán nový příspěvek:</p><p><i>' +\
-                            user_class.first_name + u' ' + user_class.last_name + u':</i></p>' + data['body'] +\
-                            u'<p><a href='  + config.ksi_web() + u'/forum/' + str(thread.id) + u'>Přejít do diskuze.</a></p>' +\
+                            '<p>Ahoj,<br/>do obecné diskuze na <a href="'+ config.ksi_web() + '/">' + config.ksi_web() +'</a> byl přidán nový příspěvek:</p><p><i>' +\
+                            user_class.first_name + ' ' + user_class.last_name + ':</i></p>' + data['body'] +\
+                            '<p><a href='  + config.ksi_web() + '/forum/' + str(thread.id) + '>Přejít do diskuze.</a></p>' +\
                             config.karlik_img() + util.mail.easteregg())
                     except:
                         exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -249,14 +249,14 @@ class Posts(object):
                     try:
                         sent_emails.add(parent_user.email)
 
-                        body = u"<p>Ahoj,<br>do diskuze <a href=\"%s\">%s</a> byl přidán nový příspěvek.</p>" % (util.config.ksi_web() + "/forum/" + str(thread.id), thread.title)
+                        body = "<p>Ahoj,<br>do diskuze <a href=\"%s\">%s</a> byl přidán nový příspěvek.</p>" % (util.config.ksi_web() + "/forum/" + str(thread.id), thread.title)
                         body += util.post.to_html(parent, parent_user)
-                        body += u"<div style='margin-left: 50px;'>%s</div>" % (util.post.to_html(post))
+                        body += "<div style='margin-left: 50px;'>%s</div>" % (util.post.to_html(post))
                         body += util.config.karlik_img()
-                        body += u"<hr><p style='font-size: 70%%;'>Tuto zprávu dostáváš, protože máš v nastavení na <a href=\"%s\">KSI webu</a> aktivované zasílání notifikací. Pokud nechceš dostávat notifikace, změň si nastavení na webu.</p>" % (util.config.ksi_web())
+                        body += "<hr><p style='font-size: 70%%;'>Tuto zprávu dostáváš, protože máš v nastavení na <a href=\"%s\">KSI webu</a> aktivované zasílání notifikací. Pokud nechceš dostávat notifikace, změň si nastavení na webu.</p>" % (util.config.ksi_web())
 
 
-                        util.mail.send(parent_user.email, u'[KSI-WEB] Nový příspěvek v diskuzi %s' % (thread.title), body)
+                        util.mail.send(parent_user.email, '[KSI-WEB] Nový příspěvek v diskuzi %s' % (thread.title), body)
                     except:
                         exc_type, exc_value, exc_traceback = sys.exc_info()
                         traceback.print_exception(exc_type, exc_value, exc_traceback, file=sys.stderr)

@@ -47,12 +47,12 @@ class Thread(object):
             thread = session.query(model.Thread).get(id)
 
             if not thread:
-                req.context['result'] = { 'errors': [ { 'status': '404', 'title': 'Not Found', 'detail': u'Toto vlákno neexistuje.' } ] }
+                req.context['result'] = { 'errors': [ { 'status': '404', 'title': 'Not Found', 'detail': 'Toto vlákno neexistuje.' } ] }
                 resp.status = falcon.HTTP_404
                 return
 
             if (not thread) or (not thread.public and not (user.is_org() or util.thread.is_eval_thread(user.id, thread.id))):
-                req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized', 'detail': u'Přístup k vláknu odepřen.' } ] }
+                req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized', 'detail': 'Přístup k vláknu odepřen.' } ] }
                 resp.status = falcon.HTTP_400
                 return
 
@@ -87,15 +87,15 @@ class Threads(object):
 
             if req.context['year_obj'].sealed:
                 resp.status = falcon.HTTP_403
-                req.context['result'] = { 'errors': [ { 'status': '403', 'title': 'Forbidden', 'detail': u'Ročník zapečetěn.' } ] }
+                req.context['result'] = { 'errors': [ { 'status': '403', 'title': 'Forbidden', 'detail': 'Ročník zapečetěn.' } ] }
                 return
 
             data = json.loads(req.stream.read())
-            pblic = data['thread']['public'] if data['thread'].has_key('public') else True
+            pblic = data['thread']['public'] if 'public' in data['thread'] else True
 
             if len(data['thread']['title']) > 100:
                 resp.status = falcon.HTTP_413
-                req.context['result'] = { 'errors': [ { 'status': '413', 'title': 'Payload too large', 'detail': u'Název vlákna mít maximálně 100 znaků.' } ] }
+                req.context['result'] = { 'errors': [ { 'status': '413', 'title': 'Payload too large', 'detail': 'Název vlákna mít maximálně 100 znaků.' } ] }
                 return
 
             thread = model.Thread(title=data['thread']['title'], public=pblic, year = req.context['year'])
@@ -138,7 +138,7 @@ class Threads(object):
             if wave: threads = threads.filter(model.Task.wave == wave)
             threads = threads.order_by(desc(model.Thread.id)).all()
 
-            if not wave: threads = filter(lambda (thr,tsk,p,u,tv): tsk == None, threads)
+            if not wave: threads = [thr_tsk_p_u_tv for thr_tsk_p_u_tv in threads if thr_tsk_p_u_tv[1] == None]
 
             thr_output = []
             for (thread, _, posts_cnt, unread_cnt, thread_visit) in threads:
@@ -174,7 +174,7 @@ class ThreadDetails(object):
             req.context['result'] = {
                 'threadDetails': util.thread.details_to_json(thread),
                 'posts': [ util.post.to_json(post, user.id, last_visit, last_visit_filled=True, \
-                    reactions=filter(lambda pst: pst.parent == post.id, posts)) for post in posts ]
+                    reactions=[pst for pst in posts if pst.parent == post.id]) for post in posts ]
             }
         except SQLAlchemyError:
             session.rollback()

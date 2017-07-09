@@ -3,8 +3,8 @@ from sqlalchemy.types import TIMESTAMP
 import datetime
 
 from . import Base
-from module import Module
-from user import User
+from .module import Module
+from .user import User
 
 class CodeExecution(Base):
     __tablename__ = 'code_executions'

@@ -267,19 +267,19 @@ class Corrections(object):
             threads = []
             thr_details = []
             for corr in corrs_tasks:
-                evals = filter(lambda x: x.Task.id == corr.Task.id and x.Evaluation.user == corr.Evaluation.user, corrs_evals)
+                evals = [x for x in corrs_evals if x.Task.id == corr.Task.id and x.Evaluation.user == corr.Evaluation.user]
                 corrections.append(util.correction.to_json( \
-                    [ (evl, mod, None) for (evl, tsk, mod, thr, iscor) in filter(lambda x: x.Task.id == corr.Task.id and x.Evaluation.user == corr.Evaluation.user, corrs_modules) ],\
+                    [ (evl, mod, None) for (evl, tsk, mod, thr, iscor) in [x for x in corrs_modules if x.Task.id == corr.Task.id and x.Evaluation.user == corr.Evaluation.user] ],\
                     [ evl for (evl, tsk, mod, thr, iscor) in evals ],\
                     evals[0].Task.id,\
                     corr.Thread.id if corr.Thread else None,\
-                    [ r for (a,b,r) in filter(lambda (task_id, user_id, a_id): task_id == corr.Task.id and user_id == corr.Evaluation.user, corrs_achs) ],\
+                    [ r for (a,b,r) in [task_id_user_id_a_id for task_id_user_id_a_id in corrs_achs if task_id_user_id_a_id[0] == corr.Task.id and task_id_user_id_a_id[1] == corr.Evaluation.user] ],\
                     corr.is_corrected if corr.is_corrected is not None else False,
                     files))
 
                 if corr.Thread:
                     threads.append(util.thread.to_json(corr.Thread, user.id))
-                    r_posts = [ pst.id for (pst,thrd) in filter(lambda (post,thr): thr.id == corr.Thread.id, root_posts) ]
+                    r_posts = [ pst.id for (pst,thrd) in [post_thr for post_thr in root_posts if post_thr[1].id == corr.Thread.id] ]
                     thr_details.append(util.thread.details_to_json(corr.Thread, r_posts))
 
             # Ziskavame last_visit jednotlivych vlaken (opet na jeden SQL pozadavek)

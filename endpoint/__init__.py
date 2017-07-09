@@ -17,5 +17,5 @@ from endpoint.year import Year, Years
 from endpoint.robots import Robots
 from endpoint.csp import CSP
 
-import admin
+from . import admin
 

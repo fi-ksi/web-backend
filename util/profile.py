@@ -28,11 +28,11 @@ def to_json(user, profile, year_obj, basic=False):
             group_by(model.Task, model.Achievement).all()
 
         return {
-            'profile': dict(_basic_profile_to_json(user).items() + _full_profile_to_json(user, profile, task_scores, year_obj).items()),
-            'tasks': [ util.task.to_json(task, prereq, user, adeadline, fsubmitted, wave, task.id in corrected, task.id in autocorrected_full, task_max_points=task_max_points_dict[task.id]) for task, (points, wave, prereq) in task_scores.items() ],
+            'profile': dict(list(_basic_profile_to_json(user).items()) + list(_full_profile_to_json(user, profile, task_scores, year_obj).items())),
+            'tasks': [ util.task.to_json(task, prereq, user, adeadline, fsubmitted, wave, task.id in corrected, task.id in autocorrected_full, task_max_points=task_max_points_dict[task.id]) for task, (points, wave, prereq) in list(task_scores.items()) ],
             'taskScores': [ task_score_to_json(task, points, user, \
-                    [ ach.id for (_, ach) in filter(lambda (tsk, ach): tsk.id == task.id, task_achievements) ]) \
-                for task, (points, _, _) in task_scores.items() ]
+                    [ ach.id for (_, ach) in [tsk_ach for tsk_ach in task_achievements if tsk_ach[0].id == task.id] ]) \
+                for task, (points, _, _) in list(task_scores.items()) ]
         }
 
 def _basic_profile_to_json(user):
@@ -71,7 +71,7 @@ def _full_profile_to_json(user, profile, task_scores, year_obj):
         'score': float(format(points, '.1f')),
         'seasons': [ key for (key,) in util.user.active_years(user.id) ],
         'percent': successful,
-        'results': [ task.id for task in task_scores.keys() ],
+        'results': [ task.id for task in list(task_scores.keys()) ],
         'tasks_num': len(util.task.fully_submitted(user.id, year_obj.id)),
 
         'notify_eval': profile.notify_eval,

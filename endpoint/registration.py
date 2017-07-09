@@ -49,7 +49,7 @@ class Registration(object):
             raise
 
         try:
-            util.mail.send(user.email, u'[KSI-WEB] Potvrzení registrace do Korespondenčního semináře z informatiky', u'Ahoj!<br/>Vítáme tě v Korespondenčním semináři z informatiky Fakulty informatiky Masarykovy univerzity. Nyní můžeš začít řešit naplno. Stačí se přihlásit na https://ksi.fi.muni.cz pomocí e-mailu a zvoleného hesla. Přejeme ti hodně úspěchů při řešení semináře!<br/><br/>KSI')
+            util.mail.send(user.email, '[KSI-WEB] Potvrzení registrace do Korespondenčního semináře z informatiky', 'Ahoj!<br/>Vítáme tě v Korespondenčním semináři z informatiky Fakulty informatiky Masarykovy univerzity. Nyní můžeš začít řešit naplno. Stačí se přihlásit na https://ksi.fi.muni.cz pomocí e-mailu a zvoleného hesla. Přejeme ti hodně úspěchů při řešení semináře!<br/><br/>KSI')
         except:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             traceback.print_exception(exc_type, exc_value, exc_traceback, file=sys.stderr)

@@ -216,7 +216,7 @@ def parse_prereq_logic(logic, prereq):
     if logic:
         log("Parsing " + str(logic))
 
-    if isinstance(logic, (unicode)):
+    if isinstance(logic, (str)):
         # ATOMIC
         prereq.type = model.PrerequisiteType.ATOMIC
         prereq.task = int(logic)
@@ -635,10 +635,10 @@ def replace_h(source):
 # na vstup dostane \match, \match.group() obsahuje "<ksi-pseudocode>TEXT</ksi-pseudocode>"
 def one_ksi_pseudocode(match):
     source = match.group()
-    source = re.sub(ur"(function|funkce|procedure|Vstup|Výstup|then|return|else)", r"**\1**", source)
-    source = re.sub(ur"(if|while|for) ", r"**\1** ", source) # Za klicovymslovem musi nasledovat mezera
-    source = re.sub(ur" (do)", r" **\1**", source) # Pred klicovymslovem musi nasledovat mezera
-    source = re.sub(ur"\n(\s*)(od|fi)\s*(\\?)\n", r"\n\1**\2**\3\n", source) # Klicove slovo musi byt na samostatnem radku
+    source = re.sub(r"(function|funkce|procedure|Vstup|Výstup|then|return|else)", r"**\1**", source)
+    source = re.sub(r"(if|while|for) ", r"**\1** ", source) # Za klicovymslovem musi nasledovat mezera
+    source = re.sub(r" (do)", r" **\1**", source) # Pred klicovymslovem musi nasledovat mezera
+    source = re.sub(r"\n(\s*)(od|fi)\s*(\\?)\n", r"\n\1**\2**\3\n", source) # Klicove slovo musi byt na samostatnem radku
     source = re.sub(r"<ksi-pseudocode>", r"<div style='padding-left:20px'>\n", source)
     source = re.sub(r"</ksi-pseudocode>", r"</div>", source)
     source = re.sub(r"\n", r"\n\n", source) # Takto donutime pandoc davat kazdy radek do samostateho odstavce
@@ -647,7 +647,7 @@ def one_ksi_pseudocode(match):
 
 # Nahrazuje <ksi-pseudocode> za prislusne HTML
 def ksi_pseudocode(source):
-    source = re.sub(u"<ksi-pseudocode>\n((.|\n)*?)</ksi-pseudocode>", one_ksi_pseudocode, source)
+    source = re.sub("<ksi-pseudocode>\n((.|\n)*?)</ksi-pseudocode>", one_ksi_pseudocode, source)
     return source
 
 # Nahrauje jedno <ksi-collapse>

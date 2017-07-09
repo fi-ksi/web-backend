@@ -41,8 +41,8 @@ class Email(object):
             # Filtrovani uzivatelu
             if data['To'] != []:
                 active = util.user.active_years_all()
-                active = [ user for (user,year) in filter(lambda (user,year): (user.role == 'participant') and (year.id in data['To']), active) ]
-                if ('Gender' in data) and (data['Gender'] != 'both'): active = filter(lambda user: user.sex == data['Gender'], active)
+                active = [ user for (user,year) in [user_year for user_year in active if (user_year[0].role == 'participant') and (user_year[1].id in data['To'])] ]
+                if ('Gender' in data) and (data['Gender'] != 'both'): active = [user for user in active if user.sex == data['Gender']]
                 to = active
             else:
                 query = session.query(model.User).filter(model.User.role == 'participant')
@@ -53,8 +53,8 @@ class Email(object):
                 succ = set()
                 for year in data['To']:
                     year_obj = session.query(model.Year).get(year)
-                    succ |= set(map(lambda (user,points): user.id, util.user.successful_participants(year_obj)))
-                to = filter(lambda user: user.id in succ, to)
+                    succ |= set([user_points[0].id for user_points in util.user.successful_participants(year_obj)])
+                to = [user for user in to if user.id in succ]
 
             to = set([ user.email for user in to ])
 

@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, Enum, ForeignKey
 from sqlalchemy.orm import relationship
 
 from . import Base
-from task import Task
+from .task import Task
 
 class PrerequisiteType:
     ATOMIC = 'ATOMIC'

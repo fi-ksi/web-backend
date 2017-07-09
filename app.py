@@ -89,7 +89,7 @@ def log(req, resp):
     except KeyError:
         ip = req.env['REMOTE_ADDR']
 
-    print '[%s] [%s] [%s] [%s] %s' % (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), ip, req.method, resp.status, req.relative_uri)
+    print('[%s] [%s] [%s] [%s] %s' % (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), ip, req.method, resp.status, req.relative_uri))
     sys.stdout.flush()
 
 class Logger(object):
@@ -115,6 +115,7 @@ class Corser(object):
 
         response.set_header('Access-Control-Allow-Headers', 'authorization,content-type,year')
         response.set_header('Access-Control-Allow-Methods', 'OPTIONS,PUT,POST,GET,DELETE')
+
 
 
 # Add Logger() to middleware for logging

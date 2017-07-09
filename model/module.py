@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, SmallInteger, String, Text, Enum, Boolean, ForeignKey, text, DECIMAL
 
 from . import Base
-from task import Task
+from .task import Task
 
 class ModuleType(Enum):
     GENERAL = "general"

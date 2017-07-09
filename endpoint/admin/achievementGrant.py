@@ -25,7 +25,7 @@ class AchievementGrant(object):
                 return
 
             errors = []
-            req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized'    , 'detail': u'Přístup odepřen.' } ] }
+            req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized'    , 'detail': 'Přístup odepřen.' } ] }
 
             for u in data['users']:
                 if not data['task']:

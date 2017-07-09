@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from email.mime.text import MIMEText
-from email import Charset
-import sys, copy, threading, random, model, smtplib, Queue
+from email import charset as Charset
+import sys, copy, threading, random, model, smtplib, queue
 
 from db import session
 from util import config
@@ -10,7 +10,7 @@ from util import config
 # Emaily jsou odesilane v parelelnim vlakne.
 
 queueLock = threading.Lock()    # Zamek fronty emailQueue
-emailQueue = Queue.Queue()      # Fronta emailu k odeslani
+emailQueue = queue.Queue()      # Fronta emailu k odeslani
 emailThread = None              # Vlakno pro odesilani emailu
 
 # Jeden zaznam fronty emailu
@@ -41,14 +41,14 @@ class sendThread(threading.Thread):
 def easteregg():
     rand = random.randrange(0, session.query(model.MailEasterEgg).count())
     egg = session.query(model.MailEasterEgg).all()[rand]
-    return u"<hr><p>PS: "  + egg.body + u"</p>"
+    return "<hr><p>PS: "  + egg.body + "</p>"
 
 # Odeslani emailu.
 def send(to, subject, text, params={}, bcc=[], cc=[]):
     global emailThread
 
     Charset.add_charset('utf-8', Charset.QP, Charset.QP, 'utf-8')
-    text = u"<html>" + text + u"</html>"
+    text = "<html>" + text + "</html>"
 
     msg = MIMEText(text, 'html', 'utf-8')
 
@@ -58,7 +58,7 @@ def send(to, subject, text, params={}, bcc=[], cc=[]):
     msg['To'] = (','.join(to)) if isinstance(to, (list)) else to
     if len(cc) > 0: msg['Cc'] = (','.join(cc)) if isinstance(cc, (list)) else cc
 
-    for key in params.keys(): msg[key] = params[key]
+    for key in list(params.keys()): msg[key] = params[key]
 
     send_to = set((to if isinstance(to, (list)) else [ to ]) +\
               (cc if isinstance(cc, (list)) else [ cc ]) +\

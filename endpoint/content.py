@@ -42,7 +42,7 @@ class Content(object):
         user = req.context['user']
 
         if (not user.is_logged_in()) or (not user.is_org()):
-            req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized', 'detail': u'Upravovat content může pouze organizátor.' } ] }
+            req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized', 'detail': 'Upravovat content může pouze organizátor.' } ] }
             resp.status = falcon.HTTP_400
             return
 

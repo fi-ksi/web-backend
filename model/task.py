@@ -4,9 +4,9 @@ from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey, Bool
 from sqlalchemy.orm import relationship
 
 from . import Base
-from user import User
-from thread import Thread
-from wave import Wave
+from .user import User
+from .thread import Thread
+from .wave import Wave
 
 class Task(Base):
     __tablename__ = 'tasks'

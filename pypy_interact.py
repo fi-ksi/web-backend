@@ -55,7 +55,7 @@ class PyPySandboxedProc(VirtualizedSandboxedProc, SimpleIOSandboxedProc):
 
         return Dir({
             'bin': Dir({
-                'pypy-c': RealFile(self.executable, mode=0111),
+                'pypy-c': RealFile(self.executable, mode=0o111),
                 'lib-python': RealDir(os.path.join(libroot, 'lib-python'),
                                       exclude=exclude),
                 'lib_pypy': RealDir(os.path.join(libroot, 'lib_pypy'),
@@ -76,7 +76,7 @@ def main():
     extraoptions = []
 
     def help():
-        print >> sys.stderr, __doc__
+        print(__doc__, file=sys.stderr)
         sys.exit(2)
 
     for option, value in options:
@@ -97,8 +97,8 @@ def main():
                 bytes = int(value)
             if bytes <= 0:
                 raise ValueError
-            if bytes > sys.maxint:
-                raise OverflowError("--heapsize maximum is %d" % sys.maxint)
+            if bytes > sys.maxsize:
+                raise OverflowError("--heapsize maximum is %d" % sys.maxsize)
             extraoptions[:0] = ['--heapsize', str(bytes)]
         elif option == '--timeout':
             timeout = int(value)

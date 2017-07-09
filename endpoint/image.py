@@ -3,7 +3,7 @@
 import os, time, uuid, magic
 
 import falcon
-from profile import ALLOWED_MIME_TYPES
+from .profile import ALLOWED_MIME_TYPES
 
 from db import session
 from sqlalchemy.exc import SQLAlchemyError

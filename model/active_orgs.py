@@ -1,8 +1,8 @@
 from sqlalchemy import Column, Integer, ForeignKey
 
 from . import Base
-from user import User
-from year import Year
+from .user import User
+from .year import Year
 
 class ActiveOrg(Base):
     __tablename__ = 'active_orgs'

@@ -4,7 +4,7 @@ from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Interval, 
 from sqlalchemy.ext.hybrid import hybrid_property, hybrid_method
 
 from . import Base
-from user import User
+from .user import User
 
 class Token(Base):
     __tablename__ = 'oauth2_tokens'

@@ -7,7 +7,7 @@ from sqlalchemy.exc import SQLAlchemyError
 import model
 import util
 from zipfile import ZipFile
-from StringIO import StringIO
+from io import StringIO
 import unicodedata
 import os
 

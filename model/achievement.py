@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey
 
 from . import Base
-from year import Year
+from .year import Year
 
 class Achievement(Base):
     __tablename__ = 'achievements'

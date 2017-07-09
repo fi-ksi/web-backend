@@ -33,7 +33,7 @@ def update_tokens():
         # refresh token nechavame v databazi jeste den, aby se uzivatel mohl znovu prihlasit automaticky
         # (napriklad po uspani pocitace)
         tokens = session.query(model.Token).all()
-        tokens = filter(lambda token: datetime.datetime.utcnow() > token.expire+datetime.timedelta(days=1), tokens)
+        tokens = [token for token in tokens if datetime.datetime.utcnow() > token.expire+datetime.timedelta(days=1)]
         for token in tokens:
             session.delete(token)
         session.commit()

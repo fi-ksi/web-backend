@@ -17,13 +17,13 @@ class Task(object):
             task = session.query(model.Task).get(id)
 
             if task is None:
-                req.context['result'] = { 'errors': [ { 'status': '404', 'title': 'Not found', 'detail': u'Úloha s tímto ID neexistuje.' } ] }
+                req.context['result'] = { 'errors': [ { 'status': '404', 'title': 'Not found', 'detail': 'Úloha s tímto ID neexistuje.' } ] }
                 resp.status = falcon.HTTP_404
                 return
 
             if (not user.is_logged_in()) or ((not user.is_org()) and (not user.is_tester())):
                 if not session.query(model.Wave).get(task.wave).public:
-                    req.context['result'] = { 'errors': [ { 'status': '403', 'title': 'Forbidden', 'detail': u'Úloha s tímto ID je uzamčena.' } ] }
+                    req.context['result'] = { 'errors': [ { 'status': '403', 'title': 'Forbidden', 'detail': 'Úloha s tímto ID je uzamčena.' } ] }
                     resp.status = falcon.HTTP_403
                     return
 
@@ -69,13 +69,13 @@ class TaskDetails(object):
             user = req.context['user']
             task = session.query(model.Task).get(id)
             if task is None:
-                req.context['result'] = { 'errors': [ { 'status': '404', 'title': 'Not found', 'detail': u'Úloha s tímto ID neexistuje.' } ] }
+                req.context['result'] = { 'errors': [ { 'status': '404', 'title': 'Not found', 'detail': 'Úloha s tímto ID neexistuje.' } ] }
                 resp.status = falcon.HTTP_404
                 return
             status = util.task.status(task, user)
 
             if status == util.TaskStatus.LOCKED:
-                req.context['result'] = { 'errors': [ { 'status': '403', 'title': 'Forbudden', 'detail': u'Úloha uzamčena.' } ] }
+                req.context['result'] = { 'errors': [ { 'status': '403', 'title': 'Forbudden', 'detail': 'Úloha uzamčena.' } ] }
                 resp.status = falcon.HTTP_403
                 return
 

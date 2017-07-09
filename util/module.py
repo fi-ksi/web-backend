@@ -72,7 +72,7 @@ def to_json(module, user_id):
         elif module.type == ModuleType.TEXT:
             txt = util.text.to_json(json.loads(module.data), user_id)
             module_json['fields'] = txt['questions']
-    except Exception, e:
+    except Exception as e:
         module_json['description'] += "<pre><code><strong>Module parsing error:</strong><br>" + str(e) + "</code></pre>"
 
     return module_json
@@ -105,10 +105,10 @@ def perform_action(module, user):
     if not module.action:
         return
     action = json.loads(module.action)
-    if u"action" in action:
-        if action[u"action"] == u"add_achievement":
-            achievement = model.UserAchievement(user_id=user.id, achievement_id=action[u"achievement_id"],task_id=module.task)
-            already_done = session.query(model.UserAchievement).filter(model.UserAchievement.user_id==user.id, model.UserAchievement.achievement_id==action[u"achievement_id"], model.UserAchievement.task_id==module.task).first()
+    if "action" in action:
+        if action["action"] == "add_achievement":
+            achievement = model.UserAchievement(user_id=user.id, achievement_id=action["achievement_id"],task_id=module.task)
+            already_done = session.query(model.UserAchievement).filter(model.UserAchievement.user_id==user.id, model.UserAchievement.achievement_id==action["achievement_id"], model.UserAchievement.task_id==module.task).first()
             if not already_done:
                 session.add(achievement)
         else:

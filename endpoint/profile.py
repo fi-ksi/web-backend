@@ -105,7 +105,7 @@ class OrgProfile(object):
             userinfo = req.context['user']
 
             if (not userinfo.is_logged_in()) or (not userinfo.is_admin()):
-                req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized', 'detail': u'Prohlížet cizí profily může pouze administrátor.' } ] }
+                req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized', 'detail': 'Prohlížet cizí profily může pouze administrátor.' } ] }
                 resp.status = falcon.HTTP_400
                 return
 
@@ -113,7 +113,7 @@ class OrgProfile(object):
             profile = session.query(model.Profile).get(id)
 
             if (not user) or (not profile):
-                req.context['result'] = { 'errors': [ { 'status': '404', 'title': 'Not Found', 'detail': u'Uživatel nebo profil s tímto ID neexistuje.' } ] }
+                req.context['result'] = { 'errors': [ { 'status': '404', 'title': 'Not Found', 'detail': 'Uživatel nebo profil s tímto ID neexistuje.' } ] }
                 resp.status = falcon.HTTP_404
                 return
 
@@ -183,7 +183,7 @@ class PictureUploader(object):
                 try:
                     os.makedirs(UPLOAD_DIR)
                 except OSError:
-                    print 'Unable to create directory for profile pictures'
+                    print('Unable to create directory for profile pictures')
                     resp.status = falcon.HTTP_500
                     return
 
@@ -193,7 +193,7 @@ class PictureUploader(object):
             try:
                 os.remove(tmpfile.name)
             except OSError:
-                print 'Unable to remove temporary file %s' % tmpfile.name
+                print('Unable to remove temporary file %s' % tmpfile.name)
 
             user.profile_picture = new_picture
 

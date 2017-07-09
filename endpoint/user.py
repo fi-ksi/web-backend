@@ -24,7 +24,7 @@ class User(object):
             raise
 
         if user is None:
-            req.context['result'] = { 'errors': [ { 'status': '404', 'title': 'Not found', 'detail': u'Uživatel s tímto ID neexistuje.' } ] }
+            req.context['result'] = { 'errors': [ { 'status': '404', 'title': 'Not found', 'detail': 'Uživatel s tímto ID neexistuje.' } ] }
             resp.status = falcon.HTTP_404
             return
 
@@ -184,11 +184,11 @@ class Users(object):
                 user.Profile, \
                 achs=[ item.a_id for item in achievements if item.user_id == user.User.id ], \
                 seasons=[ item.year_id for item in seasons if item.user_id == user.User.id ], \
-                users_tasks=[ task for (_, task) in filter(lambda (usr,task): usr.id == user.User.id, users_tasks) ] if users_tasks else None, \
+                users_tasks=[ task for (_, task) in [usr_task for usr_task in users_tasks if usr_task[0].id == user.User.id] ] if users_tasks else None, \
                 admin_data=req.context['user'].is_org(), \
                 org_seasons=[ item.year_id for item in org_seasons if item.user_id == user.User.id ],\
                 max_points=max_points,\
-                users_co_tasks=[ task for (_, task) in filter(lambda (usr,task): usr.id == user.User.id, users_co_tasks) ] if users_co_tasks else None) \
+                users_co_tasks=[ task for (_, task) in [usr_task1 for usr_task1 in users_co_tasks if usr_task1[0].id == user.User.id] ] if users_co_tasks else None) \
                 for user in users ]
         except SQLAlchemyError:
             session.rollback()
@@ -263,7 +263,7 @@ class ForgottenPassword(object):
             raise
 
         try:
-            util.mail.send(user.email, '[KSI] Nové heslo', u'Ahoj,<br/>na základě tvé žádosti ti bylo vygenerováno nové heslo: %s<br/><br/>KSI' % new_password)
+            util.mail.send(user.email, '[KSI] Nové heslo', 'Ahoj,<br/>na základě tvé žádosti ti bylo vygenerováno nové heslo: %s<br/><br/>KSI' % new_password)
         except SQLAlchemyError:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             traceback.print_exception(exc_type, exc_value, exc_traceback, file=sys.stderr)

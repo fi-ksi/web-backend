@@ -5,8 +5,8 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.types import TIMESTAMP
 
 from . import Base
-from year import Year
-from user import User
+from .year import Year
+from .user import User
 
 class Thread(Base):
     __tablename__ = 'threads'

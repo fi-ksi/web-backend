@@ -3,8 +3,8 @@ from sqlalchemy import Column, Integer, SmallInteger, String, Text, Enum, Foreig
 from sqlalchemy.types import TIMESTAMP
 
 from . import Base
-from user import User
-from module import Module
+from .user import User
+from .module import Module
 
 class Evaluation(Base):
     __tablename__ = 'evaluations'

@@ -1,4 +1,4 @@
-import taskDeploy
-import taskMerge
-import waveDiff
-import task
+from . import taskDeploy
+from . import taskMerge
+from . import waveDiff
+from . import task

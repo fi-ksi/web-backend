@@ -4,8 +4,8 @@ from sqlalchemy import Column, Integer, String, Text, ForeignKey, Boolean, DateT
 from sqlalchemy.ext.hybrid import hybrid_property, hybrid_method
 
 from . import Base
-from year import Year
-from user import User
+from .year import Year
+from .user import User
 
 class Wave(Base):
     __tablename__ = 'waves'

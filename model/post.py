@@ -5,8 +5,8 @@ from sqlalchemy.types import TIMESTAMP
 from sqlalchemy.orm import relationship
 
 from . import Base
-from thread import Thread
-from user import User
+from .thread import Thread
+from .user import User
 
 class Post(Base):
     __tablename__ = 'posts'

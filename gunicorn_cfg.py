@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 bind='127.0.0.1:3030'
-workers=4
+workers=1
 timeout=60
 capture_output=True
 

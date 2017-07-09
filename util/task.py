@@ -32,7 +32,7 @@ def fully_submitted(user_id, year_id=None):
     # {task.id, task.fully_submitted_modules_count}
     real_modules_count = { task.id: task.modules for task in q.join(model.Evaluation).filter(model.Evaluation.user == user_id, or_(model.Module.autocorrect != True, model.Evaluation.ok)).group_by(model.Task.id).all() }
 
-    return { int(key): int(val) for key, val in real_modules_count.items() if max_modules_count[key] <= val }
+    return { int(key): int(val) for key, val in list(real_modules_count.items()) if max_modules_count[key] <= val }
 
 # Vraci ntici ( model.Task, sum(body), model.Wave, model.Prerequisite ) pro vsechny jakkoliv odevzdane ulohy
 # sum(body) je suma bodu za vsechny moduly v dane uloze

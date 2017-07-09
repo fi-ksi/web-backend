@@ -92,7 +92,7 @@ def percentile(user_id, year_id):
     query = session.query(model.User).filter(model.User.role == 'participant')
     count = query.count()
     user_points = { user.id: sum_points(user.id, year_id) for user in query.all() }
-    points_order = sorted(user_points.values(), reverse=True)
+    points_order = sorted(list(user_points.values()), reverse=True)
 
     if user_id not in user_points:
         return 0
@@ -121,7 +121,7 @@ def successful_participants(year_obj):
     results = session.query(model.User, func.sum(points_per_module.c.points).label('sum_points')).\
         join(points_per_module, points_per_module.c.user == model.User.id).\
         group_by(model.User).all()
-    return filter(lambda (user, points): points >= 0.6*max_points, results)
+    return [user_points1 for user_points1 in results if user_points1[1] >= 0.6*max_points]
 
 def get_profile_picture(user):
     return PROFILE_PICTURE_URL % user.id if user.profile_picture and os.path.isfile(user.profile_picture) else None

@@ -204,7 +204,7 @@ class Corrections(object):
 
             # Pomocny vypocet toho, jestli je dane hodnoceni opravene / neopravene
             # Tato query bere task_id a user_id a pokud je opraveni opravene, vrati v is_corrected True
-            corrected = session.query(model.Task.id.label('task_id'), model.User.id.label('user_id'), (func.count(model.Evaluation) > 0).label('is_corrected')).\
+            corrected = session.query(model.Task.id.label('task_id'), model.User.id.label('user_id'), (func.count(model.Evaluation.id) > 0).label('is_corrected')).\
                 join(model.Module, model.Module.task == model.Task.id).\
                 join(model.Evaluation, model.Evaluation.module == model.Module.id).\
                 join(model.User, model.Evaluation.user == model.User.id).\

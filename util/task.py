@@ -83,7 +83,7 @@ def _max_points_per_wave(bonus=False):
     points_per_task = points_per_task.group_by(model.Module.task).subquery()
 
     # points_per_wave
-    return session.query(model.Wave.id.label('id'), func.sum(points_per_task.c.points).label('points'), func.count(model.Task).label('tasks_count')).\
+    return session.query(model.Wave.id.label('id'), func.sum(points_per_task.c.points).label('points'), func.count(model.Task.id).label('tasks_count')).\
         outerjoin(model.Task, model.Task.wave == model.Wave.id).\
         outerjoin(points_per_task, points_per_task.c.id == model.Task.id).\
         group_by(model.Wave)

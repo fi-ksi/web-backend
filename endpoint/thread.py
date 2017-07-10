@@ -120,7 +120,7 @@ class Threads(object):
             wave = req.get_param_as_int('wave')
 
             # Pocet vsech prispevku
-            posts_cnt = session.query(model.Thread.id.label('thread'), func.count(model.Post).label('posts_cnt')).\
+            posts_cnt = session.query(model.Thread.id.label('thread'), func.count(model.Post.id).label('posts_cnt')).\
                 join(model.Post, model.Post.thread == model.Thread.id).\
                 group_by(model.Thread.id).subquery()
 

@@ -11,7 +11,7 @@ import os
 
 # Vraci seznam plne opravenych uloh (tj. takovych uloh, kde jsou vsechna reseni jiz opravena)
 def tasks_corrected():
-    task_corrected = session.query(model.Task.id.label('task_id'), (func.count(model.Evaluation) > 0).label('notcorrected')).\
+    task_corrected = session.query(model.Task.id.label('task_id'), (func.count(model.Evaluation.id) > 0).label('notcorrected')).\
         join(model.Module, model.Module.task == model.Task.id).\
         join(model.Evaluation, model.Module.id == model.Evaluation.module).\
         filter(model.Evaluation.evaluator == None, not_(model.Module.autocorrect)).\

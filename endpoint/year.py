@@ -34,7 +34,7 @@ class Year(object):
                 resp.status = falcon.HTTP_400
                 return
 
-            data = json.loads(req.stream.read())['year']
+            data = json.loads(req.stream.read().decode('utf-8'))['year']
 
             year = session.query(model.Year).get(id)
             if year is None:
@@ -126,7 +126,7 @@ class Years(object):
                 resp.status = falcon.HTTP_400
                 return
 
-            data = json.loads(req.stream.read())['year']
+            data = json.loads(req.stream.read().decode('utf-8'))['year']
 
             year = model.Year(
                 id = data['index'],

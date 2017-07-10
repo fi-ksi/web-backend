@@ -202,7 +202,7 @@ class ModuleSubmit(object):
                     }
                     return
 
-            data = json.loads(req.stream.read())['content']
+            data = json.loads(req.stream.read().decode('utf-8'))['content']
 
             if module.type == ModuleType.PROGRAMMING:
                 self._evaluate_code(req, module, user.id, resp, data)

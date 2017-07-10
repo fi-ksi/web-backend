@@ -212,7 +212,7 @@ class ChangePassword(object):
             session.rollback()
             raise
 
-        data = json.loads(req.stream.read())
+        data = json.loads(req.stream.read().decode('utf-8').decode('utf-8'))
 
         if not auth.check_password(data['old_password'], user.password):
             resp.status = falcon.HTTP_401
@@ -239,7 +239,7 @@ class ChangePassword(object):
 class ForgottenPassword(object):
 
     def on_post(self, req, resp):
-        email = json.loads(req.stream.read())['email']
+        email = json.loads(req.stream.read().decode('utf-8').decode('utf-8'))['email']
         try:
             user = session.query(model.User).filter(model.User.email == email).first()
         except SQLAlchemyError:

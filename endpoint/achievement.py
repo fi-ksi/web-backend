@@ -60,7 +60,7 @@ class Achievement(object):
             resp.status = falcon.HTTP_400
             return
 
-        data = json.loads(req.stream.read())['achievement']
+        data = json.loads(req.stream.read().decode('utf-8'))['achievement']
 
         try:
             achievement = session.query(model.Achievement).get(id)
@@ -112,7 +112,7 @@ class Achievements(object):
             resp.status = falcon.HTTP_400
             return
 
-        data = json.loads(req.stream.read())['achievement']
+        data = json.loads(req.stream.read().decode('utf-8'))['achievement']
 
         achievement = model.Achievement(
             title = data['title'],

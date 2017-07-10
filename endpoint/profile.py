@@ -24,7 +24,7 @@ class Profile(object):
                 resp.status = falcon.HTTP_400
                 return
 
-            data = json.loads(req.stream.read())
+            data = json.loads(req.stream.read().decode('utf-8'))
             user, profile = session.query(model.User).filter(model.User.id == userinfo.get_id()).outerjoin(model.Profile, model.User.id == model.Profile.user_id).add_entity(model.Profile).first()
 
             user.first_name = data['first_name']

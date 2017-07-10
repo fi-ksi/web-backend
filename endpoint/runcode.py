@@ -18,7 +18,7 @@ class RunCode(object):
                 resp.status = falcon.HTTP_400
                 return
 
-            data = json.loads(req.stream.read())['content']
+            data = json.loads(req.stream.read().decode('utf-8'))['content']
             module = session.query(model.Module).get(id)
 
             if not module:

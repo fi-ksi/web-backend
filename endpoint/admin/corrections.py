@@ -138,7 +138,7 @@ class Correction(object):
             resp.status = falcon.HTTP_400
             return
 
-        corr = json.loads(req.stream.read())['correction']
+        corr = json.loads(req.stream.read().decode('utf-8'))['correction']
 
         self._process_thread(corr)
         self._process_achievements(corr)

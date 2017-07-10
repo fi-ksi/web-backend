@@ -90,7 +90,7 @@ class Threads(object):
                 req.context['result'] = { 'errors': [ { 'status': '403', 'title': 'Forbidden', 'detail': 'Ročník zapečetěn.' } ] }
                 return
 
-            data = json.loads(req.stream.read())
+            data = json.loads(req.stream.read().decode('utf-8'))
             pblic = data['thread']['public'] if 'public' in data['thread'] else True
 
             if len(data['thread']['title']) > 100:

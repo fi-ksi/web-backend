@@ -10,7 +10,7 @@ import falcon, util, json, sys, traceback
 class CSP(object):
 
     def on_post(self, req, resp):
-        data = json.loads(req.stream.read())
+        data = json.loads(req.stream.read().decode('utf-8').decode('utf-8'))
 
         # Ignore "about" violations caused by Disconnect plugin
         if "csp-report" not in data:
@@ -29,7 +29,7 @@ class CSP(object):
             util.mail.easteregg()
 
         try:
-            util.mail.send("me@apophis.cz", "[KSI-WEB] CSP report", text.decode('utf-8'), )
+            util.mail.send("me@apophis.cz", "[KSI-WEB] CSP report", text, )
         except:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             traceback.print_exception(exc_type, exc_value, exc_traceback, file=sys.stderr)

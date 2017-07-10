@@ -36,7 +36,7 @@ class Email(object):
                 resp.status = falcon.HTTP_400
                 return
 
-            data = json.loads(req.stream.read())['e-mail']
+            data = json.loads(req.stream.read().decode('utf-8'))['e-mail']
 
             # Filtrovani uzivatelu
             if data['To'] != []:

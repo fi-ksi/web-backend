@@ -60,7 +60,7 @@ class Article(object):
             resp.status = falcon.HTTP_400
             return
 
-        data = json.loads(req.stream.read())['article']
+        data = json.loads(req.stream.read().decode('utf-8'))['article']
 
         try:
             article = session.query(model.Article).get(id)
@@ -147,7 +147,7 @@ class Articles(object):
             resp.status = falcon.HTTP_400
             return
 
-        data = json.loads(req.stream.read())['article']
+        data = json.loads(req.stream.read().decode('utf-8'))['article']
 
         try:
             article = model.Article(

@@ -38,7 +38,7 @@ class Task(object):
     def on_put(self, req, resp, id):
         try:
             user = req.context['user']
-            data = json.loads(req.stream.read())['atask']
+            data = json.loads(req.stream.read().decode('utf-8'))['atask']
             wave = session.query(model.Wave).get(data['wave'])
 
             if wave is None:
@@ -166,7 +166,7 @@ class Tasks(object):
         try:
             user = req.context['user']
             year = req.context['year']
-            data = json.loads(req.stream.read())['atask']
+            data = json.loads(req.stream.read().decode('utf-8'))['atask']
             wave = session.query(model.Wave).get(data['wave'])
 
             if wave is None:

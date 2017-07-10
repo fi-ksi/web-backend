@@ -34,7 +34,7 @@ class Wave(object):
                 resp.status = falcon.HTTP_400
                 return
 
-            data = json.loads(req.stream.read())['wave']
+            data = json.loads(req.stream.read().decode('utf-8'))['wave']
 
             wave = session.query(model.Wave).get(id)
             if wave is None:
@@ -120,7 +120,7 @@ class Waves(object):
                 resp.status = falcon.HTTP_400
                 return
 
-            data = json.loads(req.stream.read())['wave']
+            data = json.loads(req.stream.read().decode('utf-8'))['wave']
 
             wave = model.Wave(
                 year = year,

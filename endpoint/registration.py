@@ -11,7 +11,7 @@ import util
 class Registration(object):
 
     def on_post(self, req, resp):
-        data = json.loads(req.stream.read())
+        data = json.loads(req.stream.read().decode('utf-8'))
 
         try:
             existing_user = session.query(model.User).filter(model.User.email == data['email']).first()

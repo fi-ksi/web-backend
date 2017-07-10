@@ -18,7 +18,7 @@ class AchievementGrant(object):
     def on_post(self, req, resp):
         try:
             user = req.context['user']
-            data = json.loads(req.stream.read())
+            data = json.loads(req.stream.read().decode('utf-8'))
 
             if (not user.is_logged_in()) or (not user.is_org()):
                 resp.status = falcon.HTTP_400

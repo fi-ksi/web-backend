@@ -27,7 +27,7 @@ class Post(object):
                 self.on_get(req, resp, id)
                 return
 
-            data = json.loads(req.stream.read())['post']
+            data = json.loads(req.stream.read().decode('utf-8'))['post']
 
             if len(data['body']) > MAX_POST_LEN:
                 resp.status = falcon.HTTP_413
@@ -114,7 +114,7 @@ class Posts(object):
                 return
 
             user = req.context['user']
-            data = json.loads(req.stream.read())['post']
+            data = json.loads(req.stream.read().decode('utf-8'))['post']
 
             if len(data['body']) > MAX_POST_LEN:
                 resp.status = falcon.HTTP_413

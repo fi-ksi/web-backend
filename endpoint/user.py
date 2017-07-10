@@ -120,15 +120,15 @@ class Users(object):
             elif filt == 'part-hs':
                 # Resitele zobrazujeme jen v aktualnim rocniku (pro jine neni tasks_cnt definovano)
                 users = users.filter(model.User.role == 'participant').\
-                    filter(text("tasks_cnt"), text("tasks_cnt") > 0)
+                    filter(text("tasks_cnt"), text("tasks_cnt > 0"))
                 if year: users = users.filter(model.Profile.school_finish >= util.year.year_end(year))
             elif filt == 'part-other':
                 users = users.filter(model.User.role == 'participant').\
-                    filter(text("tasks_cnt"), text("tasks_cnt") > 0)
+                    filter(text("tasks_cnt"), text("tasks_cnt > 0"))
                 if year: users = users.filter(model.Profile.school_finish < util.year.year_end(year))
             elif filt == 'part' or filt == 'participants':
                 users = users.filter(model.User.role == 'participant').\
-                    filter(text("tasks_cnt"), text("tasks_cnt") > 0)
+                    filter(text("tasks_cnt"), text("tasks_cnt > 0"))
             # Razeni uzivatelu
             if sort == 'score':
                 users = users.filter(model.User.enabled).order_by(desc("total_score"))

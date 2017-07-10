@@ -120,7 +120,7 @@ class Corser(object):
 
 # Add Logger() to middleware for logging
 api = falcon.API(middleware=[JSONTranslator(), Authorizer(), Year_fill(), Corser()])
-
+api.req_options.auto_parse_form_urlencoded = True
 
 # Odkomentovat pro vytvoreni tabulek v databazi
 #model.Base.metadata.create_all(engine)

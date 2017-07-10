@@ -1,47 +1,25 @@
 # Backend pro KSI web
 
-## Potrebny software
+## Potřebný software
 
-* Python 2.7
+ * Python 3.5
+ * virtualenv
+ * balíčky viz `requirements.txt`
 
-### Python balicky
+## První instalace
 
-Je vhodne vyuzit virtualenv - pip install virtualenv, virtualenv env, source env/bin/activate. Timto je zajisteno nepospineni systemove instalace.
-
-* falcon (0.3.0)
-* gunicorn (19.3.0)
-* talons (0.3)
-* SQLAlchemy (1.0.8)
-* python-magic
-* py-bcrypt
-* PyPy (build vlozit do ~/pypy/, [how-to](http://doc.pypy.org/en/latest/build.html))
-* python-dateutil
-* lockfile
-* pypandoc
-* pyparsing
-* gitpython
-* humanfriendly
-
-## Spusteni
-
-* `./runner start`
-
-  Log je v `/var/log/gunicorn/`.
-
-## `config.py`
-Pro funnkcnost backendu musi byt v korenove slozce repozitare souboor `config.py` s heslem k databazi ve formatu:
+ 1. Naklonovat repo.
+ 2. Spustit `init-makedirs.sh`, který vytvoří potřebné adresáře v kořenu
+    projektu.
+ 3. Do adresáře `ksi-py3-venv` nainstalovat virtualenv s balíčky z
+    `requirements.txt`
+ 4. Naplnit soubor `config.py` přístupovými údaji k databázi:
 
 	SQL_ALCHEMY_URI = 'mysql://username:password@server/db_name?charset=utf8'
 
-## Prvni spusteni
+ 5. Odkomentovat kód v `app.py`, který vytvoří tabulky v databázi.
+ 6. Spustit server, vytvoří se tabulky, kód vytvořující tabulky opět
+    zakomentovat.
 
-Pro vytvoreni tabulek spustit pouze s jednim workerem a odkomentovat prislusny
-kud kodu v `app.py`.
-
-## Ocekavana struktura dat v systemu
-
-* any-dir/any-dir/.../any-dir
-  * `pypy`
-  * any-dir-with-backend
-
+TODO: pypy
 

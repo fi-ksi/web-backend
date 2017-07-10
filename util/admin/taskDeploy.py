@@ -105,7 +105,8 @@ def deploy(task_id, deployLock, scoped):
         except:
             session.rollback()
     finally:
-        deployLock.release()
+        if deployLock.is_locked():
+            deployLock.release()
         log("Done")
         session.close()
         scoped.remove()
@@ -148,8 +149,8 @@ def process_meta(task, filename):
 
     log("Processing meta " + filename)
 
-    with open(filename, 'r') as f:
-        data = json.loads(f.read().decode('utf-8-sig'))
+    with open(filename, 'r', encoding='utf-8-sig') as f:
+        data = json.loads(f.read())
 
     task.author = data['author']
     if 'co_author' in data:
@@ -375,8 +376,8 @@ def process_module(module, module_path, task):
 # Zpracovani souboru module.json
 def process_module_json(module, filename):
     log("Processing module json")
-    with open(filename, 'r') as f:
-        data = json.loads(f.read().decode('utf-8-sig'))
+    with open(filename, 'r', encoding='utf-8-sig') as f:
+        data = json.loads(f.read())
 
     if data['type'] == 'text': module.type = model.ModuleType.TEXT
     elif data['type'] == 'general': module.type = model.ModuleType.GENERAL

@@ -62,8 +62,10 @@ class TaskDeploy(object):
                 deployThread = threading.Thread(target=util.admin.taskDeploy.deploy, args=(task.id, deployLock, scoped_session(_session)), kwargs={})
                 deployThread.start()
             finally:
-                deployLock.release()
+                if deployLock.is_locked():
+                    deployLock.release()
 
+            req.context['result'] = '{}'
             resp.status = falcon.HTTP_200
         except SQLAlchemyError:
             session.rollback()

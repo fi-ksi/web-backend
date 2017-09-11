@@ -127,7 +127,8 @@ def sum_points(year_id, bonus):
         join(model.Wave, model.Wave.id == model.Task.wave).\
         filter(model.Wave.year == year_id)
     if not bonus: q = q.filter(model.Module.bonus == False)
-    return q.scalar()
+    val = q.scalar()
+    return val if val is not None else 0
 
 # vraci seznam id vsech opravenych uloh daneho uzivatele
 # tzn. u uloh, ktere jsou odevzdavany opakovane (automaticky vyhodnocovane)

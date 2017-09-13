@@ -9,6 +9,7 @@ from db import session
 from model import ModuleType
 import model
 import util
+import traceback
 
 
 class Module(object):
@@ -151,12 +152,26 @@ class ModuleSubmit(object):
                 req.context['result'] = {'result': 'correct'}
                 return
 
-            result, report, output = util.programming.evaluate(module.task, module, user_id, data)
+            reporter = util.programming.Reporter()
 
-            points = module.max_points if result == 'correct' else 0
+            success = False
+            try:
+                (success, output) = util.programming.evaluate(module.task, module,
+                    user_id, data, reporter)
+                result = "correct" if success else "incorrect"
+            except util.programming.ENoFreeBox as e:
+                result = "error"
+                output = "Přesáhnut maximální počet souběžně běžících opravení, zkuste to za chvíli."
+            except Exception as e:
+                reporter += traceback.format_exc()
+                result = "error"
+                output = ""
+                print(traceback.format_exc())
+
+            points = module.max_points if success else 0
             evaluation.points = points
-            evaluation.ok = (result == 'correct')
-            evaluation.full_report += str(datetime.datetime.now()) + " : " + report + '\n'
+            evaluation.ok = success
+            evaluation.full_report += str(datetime.datetime.now()) + " : " + reporter.report + '\n'
             session.commit()
             req.context['result'] = {'result': result, 'score': points, 'output': output}
         except SQLAlchemyError:

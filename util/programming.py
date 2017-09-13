@@ -26,61 +26,44 @@ MODULE_LIB_PATH = 'data/module_lib/'
 EXEC_PATH = '/tmp/box/'
 MAX_CONCURRENT_EXEC = 10
 
+class ENoFreeBox(Exception): pass
+class EIsolateError(Exception): pass
+class EPostTriggerError(Exception): pass
+class ECheckError(Exception): pass
+
+class Reporter(object):
+    def __init__(self):
+        self.report = ""
+
+    def __iadd__(self, other):
+        self.report += other
+        return self
+
+
 def to_json(db_dict, user_id):
     return { 'default_code': db_dict['programming']['default_code'] }
 
-def evaluate(task, module, user_id, data):
-    programming = json.loads(module.data)['programming']
 
-    report = '=== Evaluating programming id \'%s\' for task id \'%s\' ===\n\n' % (module.id, task)
-    report += ' Evaluation:\n'
+def evaluate(task, module, user_id, code, reporter):
+    prog_info = json.loads(module.data)['programming']
+    box_id = init_exec_environment()
 
-    dir = util.module.submission_dir(module.id, user_id)
     try:
-        os.makedirs(dir)
-    except OSError:
+        res = _run(prog_info, code, box_id, reporter)
+        if res["code"] == 0:
+            success = _check(os.path.join(EXEC_PATH, box_id),
+                prog_info['check_script'],
+                os.path.join(EXEC_PATH, box_id, "output"), reporter)
+        else:
+            success = False
+    finally:
+        cleanup_exec_environment(box_id)
         pass
 
-    raw_code = os.path.join(dir, 'code_raw.py')
-    merged_code = os.path.join(dir, 'code_merged.py')
+    return (success, res["output"])
 
-    success, report = _save_raw(data, raw_code, report)
-    if not success:
-        print(report)
-        return ( 'error', 'Selhala operace _save_raw', '' )
 
-    success, report = _merge(dir, programming['merge_script'], raw_code, merged_code, report)
-    if not success:
-        print(report)
-        return ( 'error', 'Selhala operace _merge', '' )
-
-    sandbox_dir = os.path.abspath(os.path.join(dir, 'sandbox'))
-    try:
-        os.mkdir(sandbox_dir)
-    except OSError:
-        pass
-    script = os.path.join(sandbox_dir, 'code.py')
-    shutil.copyfile(merged_code, script)
-
-    if not 'args' in programming: programming['args'] = []
-    if not 'timeout' in programming: programming['timeout'] = 5
-    if not 'heaplimit' in programming: programming['heaplimit'] = None
-
-    (success, report, sandbox_stdout, sandbox_stderr) = _exec(dir, sandbox_dir, 'code.py', programming['args'], programming['stdin'], programming['timeout'], programming['heaplimit'], report)
-    if not success:
-        return ( 'exec-error', report, open(sandbox_stderr).read())
-
-    #if programming.post_trigger_script:
-    #   success, report, trigger_stdout = _post_trigger(dir, programming.post_trigger_script, sandbox_dir, report)
-
-    success, report, result = _check(dir, programming['check_script'], sandbox_dir, sandbox_stdout, report)
-
-    if success:
-        return ('correct', report, '')
-    else:
-        return ('incorrect', report, '')
-
-def find_free_exec_id() -> str:
+def find_free_box_id() -> str:
     # Search for free id in EXEC_PATH
     ids = [ True for i in range(MAX_CONCURRENT_EXEC) ]
     for d in os.listdir(EXEC_PATH):
@@ -93,99 +76,109 @@ def find_free_exec_id() -> str:
 
     return None
 
-def run(module, user_id, data):
+
+def init_exec_environment():
+    # Create directory for sandbox
     if not os.path.exists(EXEC_PATH):
         os.makedirs(EXEC_PATH)
 
-    exec_id = find_free_exec_id()
-    if exec_id is None:
-        return ({'output': 'Přesáhnut maximální počet zároveň spuštěných úloh,'
-            ' zkuste to později.' }, report)
+    box_id = find_free_box_id()
 
-    res = _run(module, user_id, data, exec_id)
+    if box_id is None:
+        raise ENoFreeBox("Reached limit of concurrent tasks!")
 
-    sandbox_root = os.path.join(EXEC_PATH, exec_id)
+    # Run isolate --init
+    p = subprocess.Popen([ "isolate", "-b", box_id, "--init"])
+    p.wait()
+    if p.returncode != 0:
+        raise EIsolateError("Isolate --init returned code " + str(p.returncode))
+
+    return box_id
+
+
+def cleanup_exec_environment(box_id):
+    sandbox_root = os.path.join(EXEC_PATH, box_id)
     if os.path.isdir(sandbox_root):
-        p = subprocess.Popen([ "isolate", "-b", exec_id, "--cleanup"])
+        p = subprocess.Popen([ "isolate", "-b", box_id, "--cleanup"])
         p.wait()
+
+
+"""
+Manages whole process of running participant`s code.
+"""
+def run(module, user_id, code, reporter):
+    # TODO: allow to preserve sandbox files to debug
+    prog_info = json.loads(module.data)['programming']
+
+    try:
+        box_id = init_exec_environment()
+    except ENotFreeBox as e:
+        reporter += str(e) + "\n"
+        return {'output': 'Přesáhnut maximální počet zároveň spuštěných úloh,'
+            ' zkuste to později.' }
+    except EIsolateError as e:
+        reporter += str(e) + "\n"
+        return {'output': 'Nepovedlo se inicializovat sandbox, kontaktujte'
+            'organizátora.'}
+
+    try:
+        res = _run(prog_info, code, box_id, reporter)
+    finally:
+        cleanup_exec_environment(box_id)
 
     return res
 
-def _run(module, user_id, data, exec_id):
-    programming = json.loads(module.data)['programming']
-    report = ''
-
-    # Initialize sandbox
-    p = subprocess.Popen([ "isolate", "-b", exec_id, "--init"])
-    p.wait()
-    if p.returncode != 0:
-        report += "Error: isolate --init returned code " + str(p.returncode) + "\n"
-        return ({'output': 'Nepovedlo se inicializovat sandbox, kontaktujte'
-            'organizátora.'}, report)
-
+"""
+Runs merge and runs the merged file inside of a sandbox. Requires initialized
+sandbox with id \box_id (str). \data is participant`s code.
+This function can throw exceptions, exceptions must be handled.
+"""
+def _run(prog_info, code, box_id, reporter):
     # Prepare files with participant`s code
-    sandbox_root = os.path.join(EXEC_PATH, exec_id)
+    sandbox_root = os.path.join(EXEC_PATH, box_id)
     raw_code = os.path.join(sandbox_root, 'raw')
     merged_code = os.path.join(sandbox_root, 'box', 'run')
 
-    success, rep = _save_raw(data, raw_code, report)
-    if not success:
-        report += "Error: cannot save participant`s code:\n" + rep
-        return ({ 'output': 'Selhalo uložení řešitelova kódu, kontaktujte '
-            'organizátora.' }, report)
+    # Save participant`s 'raw' code
+    reporter += "Saving raw code into %s...\n" % (raw_code)
+    with open(raw_code, "w") as f:
+        f.write(code)
 
     # Merge participant`s code
-    success, rep = _merge(sandbox_root, programming['merge_script'], raw_code,
-        merged_code)
-    report += rep + "\n"
-    if not success:
-        return ({ 'output': 'Selhala operace merge, kontaktujte organizátora.' },
-            report)
+    _merge(sandbox_root, prog_info['merge_script'], raw_code, merged_code,
+        reporter)
 
-    success, rep, output_path, meta_path, stderr_path = _exec(sandbox_root,
-        exec_id, "/box/run", os.path.abspath(programming['stdin']))
-    report += rep + "\n"
+    (return_code, output_path, secret_path, stderr_path) = _exec(sandbox_root,
+        box_id, "/box/run", os.path.abspath(prog_info['stdin']), reporter)
 
     trigger_data = None
-    if ('post_trigger_script' in programming) and (programming['post_trigger_script']):
-        post_success, rep, trigger_stdout = _post_trigger(dir,
-            programming['post_trigger_script'], sandbox_dir, report)
-        if not post_success:
-            report += "Error: post trigger error:\n" + rep
-            return ({ 'output': 'Selhal post trigger skript, prosím kontaktujte '
-                'organizátora.' }, report)
+    if ((return_code == 0) and ('post_trigger_script' in prog_info) and
+       (prog_info['post_trigger_script'])):
+        trigger_stdout = _post_trigger(sandbox_dir,
+            prog_info['post_trigger_script'], reporter)
 
         trigger_data = json.loads(open(trigger_stdout).read())
-        if success:
-            output = trigger_data['stdout']
-        else:
-            output = trigger_data['stdout'] + open(stderr_path).read()
+        output = trigger_data['stdout']
     else:
-        if success:
+        if return_code == 0:
             output = open(output_path).read()
         else:
             output = open(output_path).read() + open(stderr_path).read()
 
-    return ({
+    return {
         'output': output,
-        'image_output': '/images/codeExecution/%d?file=%s' % (execution.id,
-            trigger_data['attachments'][0])
-            if trigger_data and 'attachments' in trigger_data else None
-    }, report)
+        'code': return_code,
+#        'image_output': '/images/codeExecution/%d?file=%s' % (execution.id,
+#            trigger_data['attachments'][0])
+#            if trigger_data and 'attachments' in trigger_data else None
+# TODO: encode image output as base64 image
+    }
 
-def _save_raw(code, out, report):
-    status = 'y'
 
-    try:
-        codecs.open(out, 'w', "utf-8").write(code)
-    except IOError:
-        save_status = 'n'
-
-    report += '  [%s] Saving user code to %s\n' % (status, out)
-
-    return (status == 'y', report)
-
-def _merge(wd, merge_script, code, code_merged):
+"""
+Runs merge script.
+"""
+def _merge(wd, merge_script, code, code_merged, reporter):
     cmd = [
         os.path.abspath(merge_script),
         os.path.abspath(code),
@@ -195,11 +188,10 @@ def _merge(wd, merge_script, code, code_merged):
 
     stdout_path = os.path.join(wd, 'merge.stdout')
     stderr_path = os.path.join(wd, 'merge.stderr')
-    exception = None
 
-    report = 'Merging code to %s (cmd: %s)\n' % (code_merged, " ".join(cmd))
-    report += ' * stdout: %s\n' % stdout_path
-    report += ' * stderr: %s\n' % stderr_path
+    reporter += 'Merging code to %s (cmd: %s)\n' % (code_merged, " ".join(cmd))
+    reporter += ' * stdout: %s\n' % stdout_path
+    reporter += ' * stderr: %s\n' % stderr_path
 
     try:
         stdout = open(stdout_path, 'w')
@@ -210,27 +202,29 @@ def _merge(wd, merge_script, code, code_merged):
         if process.returncode != 0:
             status = 'n'
     except BaseException:
-        report += '\n __ Error report: __\n%s\n' % traceback.format_exc()
-        return (False, report)
+        reporter += '\n __ Error report: __\n%s\n' % traceback.format_exc()
+        raise
 
     if not os.path.exists(code_merged):
-        report += '\n Error: merge script did not create merged file!\n'
-        return ('n', report)
+        reporter += '\n Error: merge script did not create merged file!\n'
+        raise FileNotFoundError("Merge script did not create merged file!")
 
     # Add executable flag to merged code
     st = os.stat(code_merged)
     os.chmod(code_merged, st.st_mode | stat.S_IEXEC)
 
-    return (True, report)
 
-def _exec(sandbox_dir, box_id, filename, stdin):
+"""
+Executes single file inside a sandbox.
+"""
+def _exec(sandbox_dir, box_id, filename, stdin, reporter):
     # TODO: default timeout
     timeout = 10
 
     stdout_path = os.path.join(sandbox_dir, "stdout")
     stderr_path = os.path.join(sandbox_dir, "stderr")
     output_path = os.path.join(sandbox_dir, "output")
-    meta_path = os.path.join(sandbox_dir, "meta")
+    secret_path = os.path.join(sandbox_dir, "secret")
 
     cmd = [
         "isolate",
@@ -242,18 +236,15 @@ def _exec(sandbox_dir, box_id, filename, stdin):
         filename,
     ]
 
-    # Mockup /etc/passwd
+    # Mock /etc/passwd
     if not os.path.isdir(os.path.join(sandbox_dir, "etc")):
         os.mkdir(os.path.join(sandbox_dir, "etc"))
     with open(os.path.join(sandbox_dir, "etc", "passwd"), 'w') as f:
         f.write("tester:x:"+str(60000+int(box_id))+":0:Tester:/:\n")
 
-    status = 'y'
-    exception = None
-
-    report = 'Running sandbox: %s\n' % (" ".join(cmd))
-    report += ' * stdout: %s\n' % stdout_path
-    report += ' * stderr: %s\n' % stderr_path
+    reporter += 'Running sandbox: %s\n' % (" ".join(cmd))
+    reporter += ' * stdout: %s\n' % stdout_path
+    reporter += ' * stderr: %s\n' % stderr_path
 
     try:
         start_time = datetime.datetime.now()
@@ -261,13 +252,12 @@ def _exec(sandbox_dir, box_id, filename, stdin):
             stdout=open(stdout_path, 'w'), stderr=open(stderr_path, 'w'))
         p.wait()
 
-        report += "Return code: %d\n" % (p.returncode)
+        reporter += "Return code: %d\n" % (p.returncode)
         if p.returncode != 0:
-            report += "Stdout: " +\
+            reporter += "Stdout: " +\
                 open(stdout_path, 'r').read() + "\n"
-            report += "Stderr: " +\
+            reporter += "Stderr: " +\
                 open(stderr_path, 'r').read() + "\n"
-            status = 'n'
 
         # Post process stdout
         with open(stdout_path, 'r') as f:
@@ -289,17 +279,17 @@ def _exec(sandbox_dir, box_id, filename, stdin):
         with open(output_path, 'w') as f:
             f.write(''.join(out))
 
-        with open(meta_path, 'w') as f:
+        with open(secret_path, 'w') as f:
             f.write(''.join(data))
 
         # Post process stderr
         #_parse_stderr(stderr_path, timeout, datetime.datetime.now()-start_time, heaplimit)
 
-    except BaseException:
-        report += "Sandbox error:\n" +  traceback.format_exc()
-        status = 'n'
+    except:
+        reporter += "Sandbox error:\n" + traceback.format_exc()
+        raise
 
-    return (status == 'y', report, output_path, meta_path, stderr_path)
+    return (p.returncode, output_path, secret_path, stderr_path)
 
 def _parse_stderr(filename, timeout, elapsed, heaplimit):
     with open(filename, "r") as f: content = f.read()
@@ -312,62 +302,65 @@ def _parse_stderr(filename, timeout, elapsed, heaplimit):
         if elapsed.total_seconds() >= timeout: report += "Program překročil maximální čas běhu.\n"
         with codecs.open(filename, "a", "utf-8") as f: f.write(report)
 
-def _post_trigger(wd, trigger_script, sandbox_dir, report):
-    cmd = [ 'xvfb-run', '-a', '/usr/bin/python',
-        os.path.abspath(trigger_script), os.path.abspath(sandbox_dir), os.path.abspath(MODULE_LIB_PATH) ]
-    status = 'y'
-    exception = None
-    stdout_path = os.path.join(wd, 'post_trigger.stdout')
-    stderr_path = os.path.join(wd, 'post_trigger.stderr')
+
+"""
+Runs post trigger script.
+"""
+def _post_trigger(sandbox_dir, trigger_script, reporter):
+    cmd = [
+        os.path.abspath(trigger_script),
+        os.path.abspath(sandbox_dir),
+        os.path.abspath(MODULE_LIB_PATH),
+    ]
+
+    stdout_path = os.path.join(sandbox_dir, 'post_trigger.stdout')
+    stderr_path = os.path.join(sandbox_dir, 'post_trigger.stderr')
+
+    reporter += 'Running post trigger (cmd: %s)\n' % (" ".join(cmd))
+    reporter += ' * stdout: %s\n' % stdout_path
+    reporter += ' * stderr: %s\n' % stderr_path
 
     try:
         stdout = open(stdout_path, 'w')
         stderr = open(stderr_path, 'w')
-        process = subprocess.Popen(cmd, cwd=wd, stdout=stdout, stderr=stderr)
-        process.wait()
+        p = subprocess.Popen(cmd, cwd=wd, stdout=stdout, stderr=stderr)
+        p.wait()
 
-        if process.returncode != 0:
-            status = 'n'
-    except BaseException:
-        traceback.print_exc()
-        exception = traceback.format_exc()
-        status = 'n'
+        if p.returncode != 0:
+            raise EPostTriggerError("Post trigger returned code %d" % (p.returncode))
+    except Exception as e:
+        reporter += str(e) + "\n"
+        raise
 
-    report += '  [%s] Running post trigger (cmd: %s)\n' % (status, cmd)
-    report += '   * stdout: %s\n' % stdout_path
-    report += '   * stderr: %s\n' % stderr_path
+    return stdout_path
 
-    if exception:
-        report += '\n __ Error report: __\n%s\n' % exception
 
-    return (status == 'y', report, stdout_path)
+"""
+Runs check script.
+"""
+def _check(sandbox_dir, check_script, sandbox_stdout, reporter):
+    cmd = [
+        os.path.abspath(check_script),
+        os.path.abspath(sandbox_dir),
+        os.path.abspath(sandbox_stdout),
+        os.path.abspath(MODULE_LIB_PATH)
+    ]
 
-def _check(wd, check_script, sandbox_dir, sandbox_stdout, report):
-    cmd = [ 'xvfb-run', '-e', os.path.join('err'), '-a', '/usr/bin/python',
-        os.path.abspath(check_script), os.path.abspath(sandbox_dir),
-        os.path.abspath(sandbox_stdout), os.path.abspath(MODULE_LIB_PATH) ]
-    status = 'y'
-    exception = None
-    stdout_path = os.path.join(wd, 'check.stdout')
-    stderr_path = os.path.join(wd, 'check.stdout')
+    stdout_path = os.path.join(sandbox_dir, 'check.stdout')
+    stderr_path = os.path.join(sandbox_dir, 'check.stderr')
 
-    try:
-        stdout = open(stdout_path, 'w')
-        stderr = open(stderr_path, 'w')
-        process = subprocess.Popen(cmd, stdout=stdout, stderr=stderr, cwd=wd)
-        process.wait()
+    reporter += 'Checking output (cmd: %s)\n' % (" ".join(cmd))
+    reporter += ' * stdout: %s\n' % stdout_path
+    reporter += ' * stderr: %s\n' % stderr_path
 
-        if process.returncode != 0:
-            status = 'n'
-    except BaseException:
-        exception = traceback.format_exc()
-        status = 'n'
+    stdout = open(stdout_path, 'w')
+    stderr = open(stderr_path, 'w')
+    p = subprocess.Popen(cmd, stdout=stdout, stderr=stderr, cwd=sandbox_dir)
+    p.wait()
 
-    report += '  [%s] Checking output (cmd: %s)\n' % (status, cmd)
-    report += '   * stdout: %s\n' % stdout_path
-    report += '   * stderr: %s\n' % stderr_path
+    if os.path.getsize(stderr_path) > 0:
+        reporter += "Check script returned nonempty stderr:\n"
+        reporter += open(stderr_path, 'r').read()
+        raise ECheckError("Check script returned non-empty stderr!")
 
-    if exception:
-        report += '\n __ Error report: __\n%s\n' % exception
-
-    return (status == 'y', report, stdout_path)
+    return p.returncode == 0

@@ -32,31 +32,32 @@ class RunCode(object):
                 resp.status = falcon.HTTP_400
                 return
 
+            execution = model.CodeExecution(
+                module=module.id,
+                user=user.id,
+                code=data,
+                time=datetime.utcnow(),
+                report="",
+            )
+
+            reporter = util.programming.Reporter()
             try:
-                execution = model.CodeExecution(
-                    module=module.id,
-                    user=user.id,
-                    code=data,
-                    time=datetime.utcnow(),
-                    report="",
-                )
+                result = util.programming.run(module, user.id, data, reporter)
+                req.context['result'] = result
+            except Exception as e:
+                reporter += traceback.format_exc()
+                req.context['result'] = { 'output': 'Kód se nepodařilo '
+                    'spustit, kontaktujte organizátora.' }
+                print(traceback.format_exc())
 
-                (user, report) = util.programming.run(module, user.id, data)
-                req.context['result'] = user
-
-                execution.report = report
-                session.add(execution)
-                session.commit()
-            except:
-                session.rollback()
-                req.context['result'] = {
-                    'output': 'Výjimka při operaci run, kontaktujte organizátora.',
-                }
-                raise
+            execution.report = reporter.report
+            session.add(execution)
+            session.commit()
 
         except SQLAlchemyError:
             session.rollback()
             raise
+
         finally:
             session.close()
 

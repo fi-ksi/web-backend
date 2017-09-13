@@ -18,3 +18,4 @@ class CodeExecution(Base):
     user = Column(Integer, ForeignKey(User.id, ondelete='CASCADE'), nullable=False)
     code = Column(Text)
     time = Column(TIMESTAMP, default=datetime.datetime.utcnow(), server_default=text('CURRENT_TIMESTAMP'))
+    report = Column(Text)

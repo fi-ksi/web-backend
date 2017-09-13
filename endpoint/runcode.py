@@ -8,6 +8,7 @@ from db import session
 from sqlalchemy.exc import SQLAlchemyError
 import model
 import util
+import traceback
 
 class RunCode(object):
 
@@ -31,7 +32,28 @@ class RunCode(object):
                 resp.status = falcon.HTTP_400
                 return
 
-            req.context['result'] = util.programming.run(module, user.id, data)
+            try:
+                execution = model.CodeExecution(
+                    module=module.id,
+                    user=user.id,
+                    code=data,
+                    time=datetime.utcnow(),
+                    report="",
+                )
+
+                (user, report) = util.programming.run(module, user.id, data)
+                req.context['result'] = user
+
+                execution.report = report
+                session.add(execution)
+                session.commit()
+            except:
+                session.rollback()
+                req.context['result'] = {
+                    'output': 'Výjimka při operaci run, kontaktujte organizátora.',
+                }
+                raise
+
         except SQLAlchemyError:
             session.rollback()
             raise

@@ -1,9 +1,11 @@
-# -*- coding: utf-8 -*-
-
-import subprocess, traceback, os, shutil, json, ast, codecs, re, datetime
-#from pypy_interact import PyPySandboxedProc
+import datetime
 from humanfriendly import format_size
+import json
+import os
+import shutil
 import stat
+import traceback
+import subprocess
 
 from db import session
 import model
@@ -17,7 +19,8 @@ Specifikace \data v databazi modulu pro "programming":
             "stdin": Text,
             "args": "[]", <- tento argument je nepovinny
             "timeout": Integer, <- tento argument je nepovinny
-            "post_trigger_script": Text, (path/to/post-triggger-script.py), <- tento argument je nepovinny
+            "post_trigger_script": Text, (path/to/post-triggger-script.py),
+                tento argument je nepovinny
             "check_script": Text (path/to/check/script)
         }
 """
@@ -26,10 +29,22 @@ MODULE_LIB_PATH = 'data/module_lib/'
 EXEC_PATH = '/tmp/box/'
 MAX_CONCURRENT_EXEC = 10
 
-class ENoFreeBox(Exception): pass
-class EIsolateError(Exception): pass
-class EPostTriggerError(Exception): pass
-class ECheckError(Exception): pass
+
+class ENoFreeBox(Exception):
+    pass
+
+
+class EIsolateError(Exception):
+    pass
+
+
+class EPostTriggerError(Exception):
+    pass
+
+
+class ECheckError(Exception):
+    pass
+
 
 class Reporter(object):
     def __init__(self):
@@ -41,10 +56,14 @@ class Reporter(object):
 
 
 def to_json(db_dict, user_id):
-    return { 'default_code': db_dict['programming']['default_code'] }
+    return {'default_code': db_dict['programming']['default_code']}
 
 
 def evaluate(task, module, user_id, code, reporter):
+    """
+    Evaluates task. Runs merge, runs code, runs post trigger if necessary, runs
+    check script.
+    """
     prog_info = json.loads(module.data)['programming']
     box_id = init_exec_environment()
 
@@ -52,8 +71,9 @@ def evaluate(task, module, user_id, code, reporter):
         res = _run(prog_info, code, box_id, reporter)
         if res["code"] == 0:
             success = _check(os.path.join(EXEC_PATH, box_id),
-                prog_info['check_script'],
-                os.path.join(EXEC_PATH, box_id, "output"), reporter)
+                             prog_info['check_script'],
+                             os.path.join(EXEC_PATH, box_id, "output"),
+                             reporter)
         else:
             success = False
     finally:
@@ -64,8 +84,12 @@ def evaluate(task, module, user_id, code, reporter):
 
 
 def find_free_box_id() -> str:
+    """
+    Returns is of the first available sandbox directory. Searched for
+    non-existing directories in /tmp/box.
+    """
     # Search for free id in EXEC_PATH
-    ids = [ True for i in range(MAX_CONCURRENT_EXEC) ]
+    ids = [True for i in range(MAX_CONCURRENT_EXEC)]
     for d in os.listdir(EXEC_PATH):
         if d.isdigit():
             ids[int(d)] = False
@@ -78,6 +102,9 @@ def find_free_box_id() -> str:
 
 
 def init_exec_environment():
+    """
+    Initializes sandbox.
+    """
     # Create directory for sandbox
     if not os.path.exists(EXEC_PATH):
         os.makedirs(EXEC_PATH)
@@ -88,25 +115,29 @@ def init_exec_environment():
         raise ENoFreeBox("Reached limit of concurrent tasks!")
 
     # Run isolate --init
-    p = subprocess.Popen([ "isolate", "-b", box_id, "--init"])
+    p = subprocess.Popen(["isolate", "-b", box_id, "--init"])
     p.wait()
     if p.returncode != 0:
-        raise EIsolateError("Isolate --init returned code " + str(p.returncode))
+        raise EIsolateError("Isolate --init returned code " +
+                            str(p.returncode))
 
     return box_id
 
 
 def cleanup_exec_environment(box_id):
+    """
+    Cleans up sandbox data.
+    """
     sandbox_root = os.path.join(EXEC_PATH, box_id)
     if os.path.isdir(sandbox_root):
-        p = subprocess.Popen([ "isolate", "-b", box_id, "--cleanup"])
+        p = subprocess.Popen(["isolate", "-b", box_id, "--cleanup"])
         p.wait()
 
 
-"""
-Manages whole process of running participant`s code.
-"""
 def run(module, user_id, code, reporter):
+    """
+    Manages whole process of running participant`s code.
+    """
     # TODO: allow to preserve sandbox files to debug
     prog_info = json.loads(module.data)['programming']
 
@@ -115,11 +146,11 @@ def run(module, user_id, code, reporter):
     except ENotFreeBox as e:
         reporter += str(e) + "\n"
         return {'output': 'Přesáhnut maximální počet zároveň spuštěných úloh,'
-            ' zkuste to později.' }
+                ' zkuste to později.'}
     except EIsolateError as e:
         reporter += str(e) + "\n"
         return {'output': 'Nepovedlo se inicializovat sandbox, kontaktujte'
-            'organizátora.'}
+                'organizátora.'}
 
     try:
         res = _run(prog_info, code, box_id, reporter)
@@ -128,12 +159,13 @@ def run(module, user_id, code, reporter):
 
     return res
 
-"""
-Runs merge and runs the merged file inside of a sandbox. Requires initialized
-sandbox with id \box_id (str). \data is participant`s code.
-This function can throw exceptions, exceptions must be handled.
-"""
+
 def _run(prog_info, code, box_id, reporter):
+    """
+    Runs merge and runs the merged file inside of a sandbox. Requires
+    initialized sandbox with id \box_id (str). \data is participant`s code.
+    This function can throw exceptions, exceptions must be handled.
+    """
     # Prepare files with participant`s code
     sandbox_root = os.path.join(EXEC_PATH, box_id)
     raw_code = os.path.join(sandbox_root, 'raw')
@@ -146,16 +178,17 @@ def _run(prog_info, code, box_id, reporter):
 
     # Merge participant`s code
     _merge(sandbox_root, prog_info['merge_script'], raw_code, merged_code,
-        reporter)
+           reporter)
 
-    (return_code, output_path, secret_path, stderr_path) = _exec(sandbox_root,
-        box_id, "/box/run", os.path.abspath(prog_info['stdin']), reporter)
+    (return_code, output_path, secret_path, stderr_path) = _exec(
+        sandbox_root, box_id, "/box/run", os.path.abspath(prog_info['stdin']),
+        reporter)
 
     trigger_data = None
     if ((return_code == 0) and ('post_trigger_script' in prog_info) and
        (prog_info['post_trigger_script'])):
-        trigger_stdout = _post_trigger(sandbox_dir,
-            prog_info['post_trigger_script'], reporter)
+        trigger_stdout = _post_trigger(
+            sandbox_dir, prog_info['post_trigger_script'], reporter)
 
         trigger_data = json.loads(open(trigger_stdout).read())
         output = trigger_data['stdout']
@@ -168,17 +201,17 @@ def _run(prog_info, code, box_id, reporter):
     return {
         'output': output,
         'code': return_code,
-#        'image_output': '/images/codeExecution/%d?file=%s' % (execution.id,
-#            trigger_data['attachments'][0])
-#            if trigger_data and 'attachments' in trigger_data else None
-# TODO: encode image output as base64 image
+        # 'image_output': '/images/codeExecution/%d?file=%s' % (execution.id,
+        #    trigger_data['attachments'][0])
+        #    if trigger_data and 'attachments' in trigger_data else None
+        # TODO: encode image output as base64 image
     }
 
 
-"""
-Runs merge script.
-"""
 def _merge(wd, merge_script, code, code_merged, reporter):
+    """
+    Runs merge script.
+    """
     cmd = [
         os.path.abspath(merge_script),
         os.path.abspath(code),
@@ -214,10 +247,10 @@ def _merge(wd, merge_script, code, code_merged, reporter):
     os.chmod(code_merged, st.st_mode | stat.S_IEXEC)
 
 
-"""
-Executes single file inside a sandbox.
-"""
 def _exec(sandbox_dir, box_id, filename, stdin, reporter):
+    """
+    Executes single file inside a sandbox.
+    """
     # TODO: default timeout
     timeout = 10
 
@@ -249,7 +282,8 @@ def _exec(sandbox_dir, box_id, filename, stdin, reporter):
     try:
         start_time = datetime.datetime.now()
         p = subprocess.Popen(cmd, stdin=open(stdin, 'r'),
-            stdout=open(stdout_path, 'w'), stderr=open(stderr_path, 'w'))
+                             stdout=open(stdout_path, 'w'),
+                             stderr=open(stderr_path, 'w'))
         p.wait()
 
         reporter += "Return code: %d\n" % (p.returncode)
@@ -283,7 +317,8 @@ def _exec(sandbox_dir, box_id, filename, stdin, reporter):
             f.write(''.join(data))
 
         # Post process stderr
-        #_parse_stderr(stderr_path, timeout, datetime.datetime.now()-start_time, heaplimit)
+        # _parse_stderr(stderr_path, timeout,
+        #   datetime.datetime.now()-start_time, heaplimit)
 
     except:
         reporter += "Sandbox error:\n" + traceback.format_exc()
@@ -291,22 +326,31 @@ def _exec(sandbox_dir, box_id, filename, stdin, reporter):
 
     return (p.returncode, output_path, secret_path, stderr_path)
 
+
 def _parse_stderr(filename, timeout, elapsed, heaplimit):
-    with open(filename, "r") as f: content = f.read()
+    with open(filename, "r") as f:
+        content = f.read()
 
     killed = re.search(r"\[Subprocess killed by SIGTERM\]", content)
     memory = re.search(r"MemoryError", content)
     if killed or memory:
-        report = "Program byl ukončen z důvodu vyčerpání přidělených prostředků.\n"
-        report += "Časový limit: %d s, limit paměti: %s, čas běhu programu: %.2f s\n" % (timeout, format_size(heaplimit) if heaplimit else "-", elapsed.total_seconds())
-        if elapsed.total_seconds() >= timeout: report += "Program překročil maximální čas běhu.\n"
-        with codecs.open(filename, "a", "utf-8") as f: f.write(report)
+        report = ("Program byl ukončen z důvodu vyčerpání "
+                  "přidělených prostředků.\n")
+        report += ("Časový limit: %d s, limit paměti: %s, čas běhu programu:"
+                   " %.2f s\n" % (timeout, format_size(heaplimit)
+                                  if heaplimit else "-",
+                                  elapsed.total_seconds()))
+
+        if elapsed.total_seconds() >= timeout:
+            report += "Program překročil maximální čas běhu.\n"
+        with codecs.open(filename, "a", "utf-8") as f:
+            f.write(report)
 
 
-"""
-Runs post trigger script.
-"""
 def _post_trigger(sandbox_dir, trigger_script, reporter):
+    """
+    Runs post trigger script.
+    """
     cmd = [
         os.path.abspath(trigger_script),
         os.path.abspath(sandbox_dir),
@@ -327,7 +371,8 @@ def _post_trigger(sandbox_dir, trigger_script, reporter):
         p.wait()
 
         if p.returncode != 0:
-            raise EPostTriggerError("Post trigger returned code %d" % (p.returncode))
+            raise EPostTriggerError("Post trigger returned code %d" %
+                                    (p.returncode))
     except Exception as e:
         reporter += str(e) + "\n"
         raise
@@ -335,10 +380,10 @@ def _post_trigger(sandbox_dir, trigger_script, reporter):
     return stdout_path
 
 
-"""
-Runs check script.
-"""
 def _check(sandbox_dir, check_script, sandbox_stdout, reporter):
+    """
+    Runs check script.
+    """
     cmd = [
         os.path.abspath(check_script),
         os.path.abspath(sandbox_dir),

@@ -81,8 +81,6 @@ def evaluate(task, module, user_id, data):
         return ('incorrect', report, '')
 
 def find_free_exec_id() -> str:
-    return "0" #TODO: remove this
-
     # Search for free id in EXEC_PATH
     ids = [ True for i in range(MAX_CONCURRENT_EXEC) ]
     for d in os.listdir(EXEC_PATH):
@@ -96,9 +94,6 @@ def find_free_exec_id() -> str:
     return None
 
 def run(module, user_id, data):
-    programming = json.loads(module.data)['programming']
-    report = ''
-
     if not os.path.exists(EXEC_PATH):
         os.makedirs(EXEC_PATH)
 
@@ -106,6 +101,19 @@ def run(module, user_id, data):
     if exec_id is None:
         return ({'output': 'Přesáhnut maximální počet zároveň spuštěných úloh,'
             ' zkuste to později.' }, report)
+
+    res = _run(module, user_id, data, exec_id)
+
+    sandbox_root = os.path.join(EXEC_PATH, exec_id)
+    if os.path.isdir(sandbox_root):
+        p = subprocess.Popen([ "isolate", "-b", exec_id, "--cleanup"])
+        p.wait()
+
+    return res
+
+def _run(module, user_id, data, exec_id):
+    programming = json.loads(module.data)['programming']
+    report = ''
 
     # Initialize sandbox
     p = subprocess.Popen([ "isolate", "-b", exec_id, "--init"])
@@ -126,7 +134,7 @@ def run(module, user_id, data):
         return ({ 'output': 'Selhalo uložení řešitelova kódu, kontaktujte '
             'organizátora.' }, report)
 
-    # Megger participant`s code
+    # Merge participant`s code
     success, rep = _merge(sandbox_root, programming['merge_script'], raw_code,
         merged_code)
     report += rep + "\n"

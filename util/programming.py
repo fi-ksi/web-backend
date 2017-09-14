@@ -75,16 +75,17 @@ def evaluate(task, module, user_id, code, reporter):
     box_id = init_exec_environment()
 
     try:
-        res = _run(prog_info, code, box_id, reporter)
-        if res["code"] == 0:
-            success = _check(os.path.join(EXEC_PATH, box_id),
-                             prog_info['check_script'],
-                             os.path.join(EXEC_PATH, box_id, "output"),
-                             reporter)
-        else:
-            success = False
-
-        store_exec(box_id, user_id, module.id)
+        try:
+            res = _run(prog_info, code, box_id, reporter)
+            if res["code"] == 0:
+                success = _check(os.path.join(EXEC_PATH, box_id),
+                                 prog_info['check_script'],
+                                 os.path.join(EXEC_PATH, box_id, "output"),
+                                 reporter)
+            else:
+                success = False
+        finally:
+            store_exec(box_id, user_id, module.id)
     finally:
         cleanup_exec_environment(box_id)
 
@@ -176,8 +177,10 @@ def run(module, user_id, code, reporter):
                 'organizátora.'}
 
     try:
-        res = _run(prog_info, code, box_id, reporter)
-        store_exec(box_id, user_id, module.id)
+        try:
+            res = _run(prog_info, code, box_id, reporter)
+        finally:
+            store_exec(box_id, user_id, module.id)
     finally:
         cleanup_exec_environment(box_id)
 
@@ -211,8 +214,9 @@ def _run(prog_info, code, box_id, reporter):
     trigger_data = None
     if ((return_code == 0) and ('post_trigger_script' in prog_info) and
        (prog_info['post_trigger_script'])):
-        trigger_stdout = _post_trigger(
-            sandbox_dir, prog_info['post_trigger_script'], reporter)
+        trigger_stdout = _post_trigger(sandbox_root,
+                                       prog_info['post_trigger_script'],
+                                       reporter)
 
         with open(trigger_stdout) as f:
             trigger_data = json.loads(f.read())
@@ -377,10 +381,13 @@ def _post_trigger(sandbox_dir, trigger_script, reporter):
     reporter += ' * stderr: %s\n' % stderr_path
 
     with open(stdout_path, 'w') as stdout,  open(stderr_path, 'w') as stderr:
-        p = subprocess.Popen(cmd, cwd=wd, stdout=stdout, stderr=stderr)
+        p = subprocess.Popen(cmd, cwd=sandbox_dir, stdout=stdout, stderr=stderr)
         p.wait()
 
     if p.returncode != 0:
+        reporter += "Post trigger script returned nonempty stderr:\n"
+        with open(stderr_path, 'r') as f:
+            reporter += f.read()
         raise EPostTriggerError("Post trigger returned code %d" %
                                 (p.returncode))
 

@@ -51,7 +51,7 @@ class EvalCode(object):
             STDOUT_PATH = os.path.join(eval_dir, 'stdout')
             STDERR_PATH = os.path.join(eval_dir, 'stderr')
             MERGE_STDOUT = os.path.join(eval_dir, 'merge.stdout')
-            MERGE_STDERR = os.path.join(eval_dir, 'merge.stderr')
+            CHECK_STDOUT = os.path.join(eval_dir, 'check.stdout')
 
             req.context['result'] = {
                 'evalCode': {
@@ -61,7 +61,7 @@ class EvalCode(object):
                     'stdout': self._file_or_error(STDOUT_PATH),
                     'stderr': self._file_or_error(STDERR_PATH),
                     'merge_stdout': self._file_or_error(MERGE_STDOUT),
-                    'check_stdout': self._file_or_error(MERGE_STDERR),
+                    'check_stdout': self._file_or_error(CHECK_STDOUT),
                 }
             }
         except SQLAlchemyError:

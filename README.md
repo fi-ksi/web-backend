@@ -15,10 +15,11 @@
  2. Run `init-makedirs.sh`.
  3. Install virtualenv & packages into `ksi-py3-venv` directory.
  4. Enter db url into `config.py` file. Format:
+    ```
+    SQL_ALCHEMY_URI = 'mysql://username:password@server/db_name?charset=utf8'
+    ```
 
-	SQL_ALCHEMY_URI = 'mysql://username:password@server/db_name?charset=utf8'
-
- 5. Uncomment part of the `app.py`, which created database structure.
+ 5. Uncomment part of the `app.py`, which creates database structure.
  6. Run the server, comment the database-create-section in `run.py`
  7. Install `isolate`.
  8. Optional: make `/tmp` tmpfs.

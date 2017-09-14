@@ -265,6 +265,7 @@ def _exec(sandbox_dir, box_id, filename, stdin, reporter):
         box_id,
         "--dir=/etc=" + os.path.join(sandbox_dir, "etc"),
         "--env=LANG=C.UTF-8",
+        "-Mmeta",
         "--run",
         filename,
     ]

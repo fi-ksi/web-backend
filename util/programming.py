@@ -14,6 +14,7 @@ import util
 """
 Specifikace \data v databazi modulu pro "programming":
         "programming": {
+            "version": Text, <- default: 1.0
             "default_code": Text,
             "merge_script": Text (path/to/merge/script.py),
             "stdin": Text,
@@ -27,7 +28,7 @@ Specifikace \data v databazi modulu pro "programming":
 
 MODULE_LIB_PATH = 'data/module_lib/'
 EXEC_PATH = '/tmp/box/'
-MAX_CONCURRENT_EXEC = 10
+MAX_CONCURRENT_EXEC = 3
 STORE_PATH = 'data/exec/'
 
 # Default quotas for sandbox.
@@ -72,7 +73,18 @@ def evaluate(task, module, user_id, code, reporter):
     check script.
     """
     prog_info = json.loads(module.data)['programming']
-    box_id = init_exec_environment()
+    if ("version" not in prog_info or
+       _parse_version(prog_info["version"])[0] < 2):
+        reporter += "Unsupported programming version %s\n"
+        return (False, 'Opravení této úlohy není webovým systémem '
+                'podporováno.')
+
+    try:
+        box_id = init_exec_environment()
+    except ENoFreeBox:
+        reporter += "Reached limit of concurrent tasks!\n"
+        return (False, 'Přesáhnut maximální počet zároveň spuštěných opravení,'
+                ' zkuste to později.')
 
     try:
         try:
@@ -158,12 +170,21 @@ def store_exec(box_id, user_id, module_id):
     shutil.copytree(src_path, dst_path)
 
 
+def _parse_version(version):
+    v = version.split(".")
+    return (int(v[0]), int(v[1]))
+
+
 def run(module, user_id, code, reporter):
     """
     Manages whole process of running participant`s code.
     """
-    # TODO: allow to preserve sandbox files to debug
     prog_info = json.loads(module.data)['programming']
+    if ("version" not in prog_info or
+       _parse_version(prog_info["version"])[0] < 2):
+        reporter += "Unsupported programming version %s\n"
+        return {'output': 'Opravení této úlohy není webovým systémem '
+                'podporováno.'}
 
     try:
         box_id = init_exec_environment()
@@ -171,10 +192,6 @@ def run(module, user_id, code, reporter):
         reporter += str(e) + "\n"
         return {'output': 'Přesáhnut maximální počet zároveň spuštěných úloh,'
                 ' zkuste to později.'}
-    except EIsolateError as e:
-        reporter += str(e) + "\n"
-        return {'output': 'Nepovedlo se inicializovat sandbox, kontaktujte'
-                'organizátora.'}
 
     try:
         try:
@@ -381,7 +398,8 @@ def _post_trigger(sandbox_dir, trigger_script, reporter):
     reporter += ' * stderr: %s\n' % stderr_path
 
     with open(stdout_path, 'w') as stdout,  open(stderr_path, 'w') as stderr:
-        p = subprocess.Popen(cmd, cwd=sandbox_dir, stdout=stdout, stderr=stderr)
+        p = subprocess.Popen(cmd, cwd=sandbox_dir, stdout=stdout,
+                             stderr=stderr)
         p.wait()
 
     if p.returncode != 0:

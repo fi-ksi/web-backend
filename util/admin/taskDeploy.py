@@ -454,6 +454,8 @@ def process_module_programming(module, lines, specific, source_path):
     #data['programming'] = old_data['programming'] if (old_data) and ('programming' in old_data) else {}
     data['programming'] = {}
     data['programming']['default_code'] = code
+    if 'version' in specific:
+        data['programming']['version'] = specific['version']
 
     # Zkopirujeme skripty do prislusnych adresaru
     target_path = "data/modules/" + str(module.id) + "/"

@@ -2,12 +2,16 @@
 
 import falcon, json, sys
 from datetime import datetime, timedelta
+import os
+import shutil
+import subprocess
 
 import copy
 import model
 import endpoint
 from db import engine, session
 from util import UserInfo
+import util
 from sqlalchemy import func, desc
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -124,6 +128,16 @@ api.req_options.auto_parse_form_urlencoded = True
 
 # Odkomentovat pro vytvoreni tabulek v databazi
 #model.Base.metadata.create_all(engine)
+
+# Create /tmp/box with proper permissions (for sandbox)
+if os.path.isdir(util.programming.EXEC_PATH):
+    shutil.rmtree(util.programming.EXEC_PATH)
+os.makedirs(util.programming.EXEC_PATH)
+
+p = subprocess.Popen(["setfacl", "-d", "-m", "group:ksi:rwx", util.programming.EXEC_PATH])
+p.wait()
+if p.returncode != 0:
+    raise Exception("Cannot change umask to %s!" % (util.programming.EXEC_PATH))
 
 api.add_route('/robots.txt', endpoint.Robots())
 api.add_route('/csp', endpoint.CSP())

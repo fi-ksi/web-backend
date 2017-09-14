@@ -28,6 +28,7 @@ Specifikace \data v databazi modulu pro "programming":
 MODULE_LIB_PATH = 'data/module_lib/'
 EXEC_PATH = '/tmp/box/'
 MAX_CONCURRENT_EXEC = 10
+STORE_PATH = 'data/exec/'
 
 
 class ENoFreeBox(Exception):
@@ -76,9 +77,10 @@ def evaluate(task, module, user_id, code, reporter):
                              reporter)
         else:
             success = False
+
+        store_exec(box_id, user_id, module.id)
     finally:
         cleanup_exec_environment(box_id)
-        pass
 
     return (success, res["output"])
 
@@ -134,6 +136,21 @@ def cleanup_exec_environment(box_id):
         p.wait()
 
 
+def store_exec(box_id, user_id, module_id):
+    """
+    Saves execution permanently to STORE_PATH directory.
+    """
+    src_path = os.path.abspath(os.path.join(EXEC_PATH, box_id))
+    dst_path = os.path.abspath(os.path.join(STORE_PATH,
+                                            "module_"+str(module_id),
+                                            "user_"+str(user_id)))
+
+    if os.path.isdir(dst_path):
+        shutil.rmtree(dst_path)
+
+    shutil.copytree(src_path, dst_path)
+
+
 def run(module, user_id, code, reporter):
     """
     Manages whole process of running participant`s code.
@@ -154,6 +171,7 @@ def run(module, user_id, code, reporter):
 
     try:
         res = _run(prog_info, code, box_id, reporter)
+        store_exec(box_id, user_id, module.id)
     finally:
         cleanup_exec_environment(box_id)
 
@@ -284,7 +302,8 @@ def _exec(sandbox_dir, box_id, filename, stdin, reporter):
         start_time = datetime.datetime.now()
         p = subprocess.Popen(cmd, stdin=open(stdin, 'r'),
                              stdout=open(stdout_path, 'w'),
-                             stderr=open(stderr_path, 'w'))
+                             stderr=open(stderr_path, 'w'),
+                             cwd=sandbox_dir)
         p.wait()
 
         reporter += "Return code: %d\n" % (p.returncode)

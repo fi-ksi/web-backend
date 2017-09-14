@@ -195,7 +195,9 @@ class Tasks(object):
                 newLock.acquire(60) # Timeout zamku je 1 minuta
 
                 try:
-                    git_commit = util.admin.task.createGit(data['git_path'], data['git_branch'], data['author'], data['title'])
+                    git_commit = util.admin.task.createGit(
+                        data['git_path'], data['git_branch'],
+                        int(data['author']), data['title'])
                 except:
                     raise
                 finally:

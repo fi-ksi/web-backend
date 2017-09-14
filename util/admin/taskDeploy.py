@@ -459,19 +459,19 @@ def process_module_programming(module, lines, specific, source_path):
 
     # Zkopirujeme skripty do prislusnych adresaru
     target_path = "data/modules/" + str(module.id) + "/"
-    files = [ "eval.py", "merge.py", "post.py", "stdin.txt" ]
+    files = [ "eval", "merge", "post", "stdin.txt" ]
     if 'available' in specific: files.extend(specific['available'])
     if not os.path.isdir(target_path): os.makedirs(target_path)
     for f in files:
         if os.path.isfile(source_path+"/"+f):
             shutil.copy2(source_path+"/"+f, target_path+f)
 
-    data['programming']['merge_script'] = target_path + "merge.py"
+    data['programming']['merge_script'] = target_path + "merge"
     data['programming']['stdin'] = target_path + "stdin.txt"
     if not os.path.isfile(source_path+"/stdin.txt"):
         open(target_path + "stdin.txt", "a").close() # create empty stdin
-    if os.path.isfile(source_path+"/post.py"): data['programming']['post_trigger_script'] = target_path + "post.py"
-    data['programming']['check_script'] = target_path + "eval.py"
+    if os.path.isfile(source_path+"/post"): data['programming']['post_trigger_script'] = target_path + "post"
+    data['programming']['check_script'] = target_path + "eval"
 
     # direktivy z module.json
     if 'timeout' in specific: data['programming']['timeout'] = specific['timeout']
@@ -614,8 +614,8 @@ def process_module_text(module, lines, specific, path, task):
         # Zkopirujeme eval skript
         target_path = "data/modules/" + str(module.id) + "/"
         if not os.path.isdir(target_path): os.makedirs(target_path)
-        shutil.copy2(path+"/eval.py", target_path+"eval.py")
-        text_data['eval_script'] = target_path+"eval.py"
+        shutil.copy2(path+"/eval", target_path+"eval")
+        text_data['eval_script'] = target_path+"eval"
 
     module.data = json.dumps({ 'text': text_data }, indent=2)
     return lines[:text_end]

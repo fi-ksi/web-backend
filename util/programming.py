@@ -214,13 +214,18 @@ def _run(prog_info, code, box_id, reporter):
         trigger_stdout = _post_trigger(
             sandbox_dir, prog_info['post_trigger_script'], reporter)
 
-        trigger_data = json.loads(open(trigger_stdout).read())
+        with open(trigger_stdout) as f:
+            trigger_data = json.loads(f.read())
+
         output = trigger_data['stdout']
     else:
         if return_code == 0:
-            output = open(output_path).read()
+            with open(output_path, 'r') as f:
+                output = f.read()
         else:
-            output = open(output_path).read() + open(stderr_path).read()
+            with open(output_path, 'r') as output,\
+                 open(stderr_path, 'r') as stderr:
+                output = output.read() + stderr.read()
 
     return {
         'output': output,
@@ -251,12 +256,12 @@ def _merge(wd, merge_script, code, code_merged, reporter):
     reporter += ' * stderr: %s\n' % stderr_path
 
     try:
-        stdout = open(stdout_path, 'w')
-        stderr = open(stderr_path, 'w')
-        process = subprocess.Popen(cmd, stdout=stdout, stderr=stderr, cwd=wd)
-        process.wait()
+        with open(stdout_path, 'w') as stdout,\
+             open(stderr_path, 'w') as stderr:
+            p = subprocess.Popen(cmd, stdout=stdout, stderr=stderr, cwd=wd)
+            p.wait()
 
-        if process.returncode != 0:
+        if p.returncode != 0:
             status = 'n'
     except BaseException:
         reporter += '\n __ Error report: __\n%s\n' % traceback.format_exc()
@@ -271,13 +276,10 @@ def _merge(wd, merge_script, code, code_merged, reporter):
     os.chmod(code_merged, st.st_mode | stat.S_IEXEC)
 
 
-def _exec(sandbox_dir, box_id, filename, stdin, reporter):
+def _exec(sandbox_dir, box_id, filename, stdin_path, reporter):
     """
     Executes single file inside a sandbox.
     """
-    # TODO: default timeout
-    timeout = 10
-
     stdout_path = os.path.join(sandbox_dir, "stdout")
     stderr_path = os.path.join(sandbox_dir, "stderr")
     output_path = os.path.join(sandbox_dir, "output")
@@ -309,19 +311,19 @@ def _exec(sandbox_dir, box_id, filename, stdin, reporter):
     reporter += ' * stderr: %s\n' % stderr_path
 
     try:
-        start_time = datetime.datetime.now()
-        p = subprocess.Popen(cmd, stdin=open(stdin, 'r'),
-                             stdout=open(stdout_path, 'w'),
-                             stderr=open(stderr_path, 'w'),
-                             cwd=sandbox_dir)
+        with open(stdin_path, 'r') as stdin, open(stdout_path, 'w') as stdout,\
+              open(stderr_path, 'w') as stderr:
+            start_time = datetime.datetime.now()
+            p = subprocess.Popen(cmd, stdin=stdin, stdout=stdout,
+                                 stderr=stderr, cwd=sandbox_dir)
         p.wait()
 
         reporter += "Return code: %d\n" % (p.returncode)
         if p.returncode != 0:
-            reporter += "Stdout: " +\
-                open(stdout_path, 'r').read() + "\n"
-            reporter += "Stderr: " +\
-                open(stderr_path, 'r').read() + "\n"
+            with open(stdout_path, 'r') as stdout:
+                reporter += "Stdout: " + stdout.read() + "\n"
+            with open(stderr_path, 'r') as stderr:
+                reporter += "Stderr: " + stderr.read() + "\n"
 
         # Post process stdout
         with open(stdout_path, 'r') as f:
@@ -357,26 +359,6 @@ def _exec(sandbox_dir, box_id, filename, stdin, reporter):
     return (p.returncode, output_path, secret_path, stderr_path)
 
 
-def _parse_stderr(filename, timeout, elapsed, heaplimit):
-    with open(filename, "r") as f:
-        content = f.read()
-
-    killed = re.search(r"\[Subprocess killed by SIGTERM\]", content)
-    memory = re.search(r"MemoryError", content)
-    if killed or memory:
-        report = ("Program byl ukončen z důvodu vyčerpání "
-                  "přidělených prostředků.\n")
-        report += ("Časový limit: %d s, limit paměti: %s, čas běhu programu:"
-                   " %.2f s\n" % (timeout, format_size(heaplimit)
-                                  if heaplimit else "-",
-                                  elapsed.total_seconds()))
-
-        if elapsed.total_seconds() >= timeout:
-            report += "Program překročil maximální čas běhu.\n"
-        with codecs.open(filename, "a", "utf-8") as f:
-            f.write(report)
-
-
 def _post_trigger(sandbox_dir, trigger_script, reporter):
     """
     Runs post trigger script.
@@ -394,18 +376,13 @@ def _post_trigger(sandbox_dir, trigger_script, reporter):
     reporter += ' * stdout: %s\n' % stdout_path
     reporter += ' * stderr: %s\n' % stderr_path
 
-    try:
-        stdout = open(stdout_path, 'w')
-        stderr = open(stderr_path, 'w')
+    with open(stdout_path, 'w') as stdout,  open(stderr_path, 'w') as stderr:
         p = subprocess.Popen(cmd, cwd=wd, stdout=stdout, stderr=stderr)
         p.wait()
 
-        if p.returncode != 0:
-            raise EPostTriggerError("Post trigger returned code %d" %
-                                    (p.returncode))
-    except Exception as e:
-        reporter += str(e) + "\n"
-        raise
+    if p.returncode != 0:
+        raise EPostTriggerError("Post trigger returned code %d" %
+                                (p.returncode))
 
     return stdout_path
 
@@ -428,14 +405,15 @@ def _check(sandbox_dir, check_script, sandbox_stdout, reporter):
     reporter += ' * stdout: %s\n' % stdout_path
     reporter += ' * stderr: %s\n' % stderr_path
 
-    stdout = open(stdout_path, 'w')
-    stderr = open(stderr_path, 'w')
-    p = subprocess.Popen(cmd, stdout=stdout, stderr=stderr, cwd=sandbox_dir)
-    p.wait()
+    with open(stdout_path, 'w') as stdout, open(stderr_path, 'w') as stderr:
+        p = subprocess.Popen(cmd, stdout=stdout, stderr=stderr,
+                             cwd=sandbox_dir)
+        p.wait()
 
     if os.path.getsize(stderr_path) > 0:
         reporter += "Check script returned nonempty stderr:\n"
-        reporter += open(stderr_path, 'r').read()
+        with open(stderr_path, 'r') as f:
+            reporter += f.read()
         raise ECheckError("Check script returned non-empty stderr!")
 
     return p.returncode == 0

@@ -30,6 +30,12 @@ EXEC_PATH = '/tmp/box/'
 MAX_CONCURRENT_EXEC = 10
 STORE_PATH = 'data/exec/'
 
+# Default quotas for sandbox.
+QUOTA_MEM = 5 * 10**7
+QUOTA_WALL_TIME = 10
+QUOTA_BLOCKS = 1000
+QUOTA_INODES = 100
+
 
 class ENoFreeBox(Exception):
     pass
@@ -284,6 +290,10 @@ def _exec(sandbox_dir, box_id, filename, stdin, reporter):
         "--dir=/etc=" + os.path.join(sandbox_dir, "etc"),
         "--env=LANG=C.UTF-8",
         "-Mmeta",
+        "-m" + str(QUOTA_MEM),
+        "-w" + str(QUOTA_WALL_TIME),
+        "-q" + str(QUOTA_BLOCKS) + "," + str(QUOTA_INODES),
+        "-c/box",
         "--run",
         filename,
     ]

@@ -14,6 +14,11 @@
  1. Clone this repository.
  2. Run `init-makedirs.sh`.
  3. Install virtualenv & packages into `ksi-py3-venv` directory.
+    ```
+    virtualenv -p python3 ksi-py3-venv
+    source ksi-py3-venv/bin/activate
+    pip3 install -r requirements.txt
+    ```
  4. Enter db url into `config.py` file. Format:
     ```
     SQL_ALCHEMY_URI = 'mysql://username:password@server/db_name?charset=utf8'

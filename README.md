@@ -1,25 +1,24 @@
-# Backend pro KSI web
+# Backend for KSI web
 
-## Potřebný software
+[https://ksi.fi.muni.cz](https://ksi.fi.muni.cz/)
+
+## Software needed
 
  * Python 3.5
  * virtualenv
- * balíčky viz `requirements.txt`
+ * packages from `requirements.txt`
+ * [isolate](https://github.com/cms-dev/isolate)
 
-## První instalace
+## Installation
 
- 1. Naklonovat repo.
- 2. Spustit `init-makedirs.sh`, který vytvoří potřebné adresáře v kořenu
-    projektu.
- 3. Do adresáře `ksi-py3-venv` nainstalovat virtualenv s balíčky z
-    `requirements.txt`
- 4. Naplnit soubor `config.py` přístupovými údaji k databázi:
+ 1. Clone this repository.
+ 2. Run `init-makedirs.sh`.
+ 3. Install virtualenv & packages into `ksi-py3-venv` directory.
+ 4. Enter db url into `config.py` file. Format:
 
 	SQL_ALCHEMY_URI = 'mysql://username:password@server/db_name?charset=utf8'
 
- 5. Odkomentovat kód v `app.py`, který vytvoří tabulky v databázi.
- 6. Spustit server, vytvoří se tabulky, kód vytvořující tabulky opět
-    zakomentovat.
-
-TODO: pypy
-
+ 5. Uncomment part of the `app.py`, which created database structure.
+ 6. Run the server, comment the database-create-section in `run.py`
+ 7. Install `isolate`.
+ 8. Optional: make `/tmp` tmpfs.

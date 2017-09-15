@@ -463,12 +463,13 @@ def process_module_programming(module, lines, specific, source_path):
         shutil.rmtree(target_path)
     shutil.copytree(source_path, target_path)
 
-    data['programming']['merge_script'] = target_path + "merge"
-    data['programming']['stdin'] = target_path + "stdin.txt"
-    if not os.path.isfile(source_path+"/stdin.txt"):
-        open(target_path + "stdin.txt", "a").close() # create empty stdin
-    if os.path.isfile(source_path+"/post"): data['programming']['post_trigger_script'] = target_path + "post"
-    data['programming']['check_script'] = target_path + "eval"
+    data['programming']['merge_script'] = os.path.join(target_path, "merge")
+    data['programming']['stdin'] = os.path.join(target_path, "stdin.txt")
+    if not os.path.isfile(os.path.join(source_path, "/stdin.txt")):
+        open(os.path.join(target_path, "stdin.txt"), "a").close() # create empty stdin
+    if os.path.isfile(os.path.join(source_path, "post")):
+        data['programming']['post_trigger_script'] = os.path.join(target_path, "post")
+    data['programming']['check_script'] = os.path.join(target_path, "eval")
 
     # direktivy z module.json
     if 'timeout' in specific: data['programming']['timeout'] = specific['timeout']

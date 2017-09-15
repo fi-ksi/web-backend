@@ -457,14 +457,11 @@ def process_module_programming(module, lines, specific, source_path):
     if 'version' in specific:
         data['programming']['version'] = specific['version']
 
-    # Zkopirujeme skripty do prislusnych adresaru
-    target_path = "data/modules/" + str(module.id) + "/"
-    files = [ "eval", "merge", "post", "stdin.txt" ]
-    if 'available' in specific: files.extend(specific['available'])
-    if not os.path.isdir(target_path): os.makedirs(target_path)
-    for f in files:
-        if os.path.isfile(source_path+"/"+f):
-            shutil.copy2(source_path+"/"+f, target_path+f)
+    # Copy whole module directory into data/modules
+    target_path = os.path.join("data", "modules", str(module.id))
+    if os.path.isdir(target_path):
+        shutil.rmtree(target_path)
+    shutil.copytree(source_path, target_path)
 
     data['programming']['merge_script'] = target_path + "merge"
     data['programming']['stdin'] = target_path + "stdin.txt"

@@ -276,17 +276,13 @@ def _merge(wd, merge_script, code, code_merged, reporter):
     reporter += ' * stdout: %s\n' % stdout_path
     reporter += ' * stderr: %s\n' % stderr_path
 
-    try:
-        with open(stdout_path, 'w') as stdout,\
-             open(stderr_path, 'w') as stderr:
-            p = subprocess.Popen(cmd, stdout=stdout, stderr=stderr, cwd=wd)
-            p.wait()
+    with open(stdout_path, 'w') as stdout,\
+         open(stderr_path, 'w') as stderr:
+        p = subprocess.Popen(cmd, stdout=stdout, stderr=stderr, cwd=wd)
+        p.wait()
 
-        if p.returncode != 0:
-            status = 'n'
-    except BaseException:
-        reporter += '\n __ Error report: __\n%s\n' % traceback.format_exc()
-        raise
+    if p.returncode != 0:
+        status = 'n'
 
     if not os.path.exists(code_merged):
         reporter += '\n Error: merge script did not create merged file!\n'
@@ -331,51 +327,46 @@ def _exec(sandbox_dir, box_id, filename, stdin_path, reporter):
     reporter += ' * stdout: %s\n' % stdout_path
     reporter += ' * stderr: %s\n' % stderr_path
 
-    try:
-        with open(stdin_path, 'r') as stdin, open(stdout_path, 'w') as stdout,\
-              open(stderr_path, 'w') as stderr:
-            start_time = datetime.datetime.now()
-            p = subprocess.Popen(cmd, stdin=stdin, stdout=stdout,
-                                 stderr=stderr, cwd=sandbox_dir)
-        p.wait()
+    with open(stdin_path, 'r') as stdin, open(stdout_path, 'w') as stdout,\
+         open(stderr_path, 'w') as stderr:
+        start_time = datetime.datetime.now()
+        p = subprocess.Popen(cmd, stdin=stdin, stdout=stdout,
+                             stderr=stderr, cwd=sandbox_dir)
+    p.wait()
 
-        reporter += "Return code: %d\n" % (p.returncode)
-        if p.returncode != 0:
-            with open(stdout_path, 'r') as stdout:
-                reporter += "Stdout: " + stdout.read() + "\n"
-            with open(stderr_path, 'r') as stderr:
-                reporter += "Stderr: " + stderr.read() + "\n"
+    reporter += "Return code: %d\n" % (p.returncode)
+    if p.returncode != 0:
+        with open(stdout_path, 'r') as stdout:
+            reporter += "Stdout: " + stdout.read() + "\n"
+        with open(stderr_path, 'r') as stderr:
+            reporter += "Stderr: " + stderr.read() + "\n"
 
-        # Post process stdout
-        with open(stdout_path, 'r') as f:
-            lines = f.readlines()
+    # Post process stdout
+    with open(stdout_path, 'r') as f:
+        lines = f.readlines()
 
-        out = []
-        data = []
+    out = []
+    data = []
 
-        found = False
-        for line in lines:
-            if found:
-                data.append(line)
+    found = False
+    for line in lines:
+        if found:
+            data.append(line)
+        else:
+            if '#KSI_META_OUTPUT_0a859a#' in line:
+                found = True
             else:
-                if '#KSI_META_OUTPUT_0a859a#' in line:
-                    found = True
-                else:
-                    out.append(line)
+                out.append(line)
 
-        with open(output_path, 'w') as f:
-            f.write(''.join(out))
+    with open(output_path, 'w') as f:
+        f.write(''.join(out))
 
-        with open(secret_path, 'w') as f:
-            f.write(''.join(data))
+    with open(secret_path, 'w') as f:
+        f.write(''.join(data))
 
-        # Post process stderr
-        # _parse_stderr(stderr_path, timeout,
-        #   datetime.datetime.now()-start_time, heaplimit)
-
-    except:
-        reporter += "Sandbox error:\n" + traceback.format_exc()
-        raise
+    # Post process stderr
+    # _parse_stderr(stderr_path, timeout,
+    #   datetime.datetime.now()-start_time, heaplimit)
 
     return (p.returncode, output_path, secret_path, stderr_path)
 

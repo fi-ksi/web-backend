@@ -28,3 +28,5 @@
  6. Run the server, comment the database-create-section in `run.py`
  7. Install `isolate`.
  8. Optional: make `/tmp` tmpfs.
+ 9. Optional: ensure the server will be started after system boots up
+    (run ./runner start).

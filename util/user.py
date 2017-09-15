@@ -1,23 +1,31 @@
-# -*- coding: utf-8 -*-
-
 import os
 from sqlalchemy import func, or_
+
 from db import session
 import model
 import util
 
 PROFILE_PICTURE_URL = '/images/profile/%d'
 
-# Vrati achievementy uzivatele.
-# Achievementy v rocniku se vraci jen v rocniku, globalni achievementy se vraci ve vsech rocnicich.
-def achievements(user_id, year_id):
-    return session.query(model.Achievement).\
-        join(model.UserAchievement, model.UserAchievement.achievement_id == model.Achievement.id).\
-        filter(model.UserAchievement.user_id == user_id).\
-        filter(or_(model.Achievement.year == None, model.Achievement.year == year_id)).all()
 
-# Vraci [(year_id)] pro vsechny roky, v nichz je aktivni uzivatel \user_id
+def achievements(user_id, year_id):
+    """Vrati achievementy uzivatele.
+    Achievementy v rocniku se vraci jen v rocniku, globalni achievementy se
+    vraci ve vsech rocnicich.
+    """
+    return session.query(model.Achievement).\
+        join(model.UserAchievement,
+             model.UserAchievement.achievement_id == model.Achievement.id).\
+        filter(model.UserAchievement.user_id == user_id).\
+        filter(or_(model.Achievement.year is None,
+                   model.Achievement.year == year_id)).\
+        all()
+
+
 def active_years(user_id):
+    """Vraci [(year_id)] pro vsechny roky, v nichz je aktivni uzivatel
+    'user_id'
+    """
     if user_id is None:
         return []
 
@@ -30,6 +38,7 @@ def active_years(user_id):
         group_by(model.Year).all()
     return a
 
+
 def active_years_org(user_id):
     if user_id is None:
         return []
@@ -41,8 +50,8 @@ def active_years_org(user_id):
     return a
 
 
-# Vraci [(user,year)] pro vsechny roky v nichz je aktivni uzivatel user
 def active_years_all():
+    """Vraci [(user,year)] pro vsechny roky v nichz je aktivni uzivatel user"""
     return session.query(model.User, model.Year).\
         join(model.Evaluation, model.Evaluation.user == model.User.id).\
         join(model.Module, model.Module.id == model.Evaluation.module).\
@@ -51,14 +60,18 @@ def active_years_all():
         join(model.Year, model.Wave.year == model.Year.id).\
         group_by(model.User, model.Year).all()
 
-# predpoklada query, ve kterem se vyskytuje model User
-# pozadavek profiltruje na ty uzivatele, kteri jsou aktivni v roce \year_id
+
 def active_in_year(query, year_id):
-    return query.join(model.Evaluation, model.Evaluation.user == model.User.id).\
+    """predpoklada query, ve kterem se vyskytuje model User
+    pozadavek profiltruje na ty uzivatele, kteri jsou aktivni v roce 'year'_id
+    """
+    return query.join(model.Evaluation,
+                      model.Evaluation.user == model.User.id).\
         join(model.Module, model.Module.id == model.Evaluation.module).\
         join(model.Task, model.Task.id == model.Module.task).\
         join(model.Wave, model.Wave.id == model.Task.wave).\
         filter(model.Wave.year == year_id)
+
 
 def any_task_submitted(user_id, year_id):
     if user_id is None:
@@ -71,13 +84,16 @@ def any_task_submitted(user_id, year_id):
         join(model.Wave, model.Wave.id == model.Task.wave).\
         filter(model.Wave.year == year_id).count() > 0
 
+
 def points_per_task(user_id):
     tasks = session.query(model.Task)
 
-    return { task: util.task.points(task.id, user_id) for task in tasks }
+    return {task: util.task.points(task.id, user_id) for task in tasks}
+
 
 def sum_points(user_id, year_id):
-    points = session.query(model.Evaluation.module, func.max(model.Evaluation.points).label('points')).\
+    points = session.query(model.Evaluation.module,
+                           func.max(model.Evaluation.points).label('points')).\
         filter(model.Evaluation.user == user_id, model.Evaluation.ok).\
         join(model.Module, model.Evaluation.module == model.Module.id).\
         join(model.Task, model.Task.id == model.Module.task).\
@@ -86,12 +102,15 @@ def sum_points(user_id, year_id):
         filter(model.Wave.year == year_id).\
         group_by(model.Evaluation.module).all()
 
-    return sum([ item.points for item in points if item.points is not None ])
+    return sum([item.points for item in points if item.points is not None])
+
 
 def percentile(user_id, year_id):
     query = session.query(model.User).filter(model.User.role == 'participant')
     count = query.count()
-    user_points = { user.id: sum_points(user.id, year_id) for user in query.all() }
+    user_points = {
+        user.id: sum_points(user.id, year_id) for user in query.all()
+    }
     points_order = sorted(list(user_points.values()), reverse=True)
 
     if user_id not in user_points:
@@ -100,15 +119,20 @@ def percentile(user_id, year_id):
     rank = 0.0
     for points in points_order:
         if points == user_points[user_id]:
-                return round((1 - (rank / count)) * 100)
+            return round((1 - (rank / count)) * 100)
         rank += 1
 
     return 0
 
-# vraci seznam [(user,points)] uspesnych v danem rocniku
+
 def successful_participants(year_obj):
-    max_points = util.task.sum_points(year_obj.id, bonus=False) + year_obj.point_pad
-    points_per_module = session.query(model.User.id.label('user'), model.Evaluation.module, func.max(model.Evaluation.points).label('points')).\
+    """vraci seznam [(user,points)] uspesnych v danem rocniku"""
+    max_points = util.task.sum_points(year_obj.id, bonus=False) +\
+        year_obj.point_pad
+    points_per_module = session.query(model.User.id.label('user'),
+                                      model.Evaluation.module,
+                                      func.max(model.Evaluation.points).
+                                      label('points')).\
         join(model.Evaluation, model.Evaluation.user == model.User.id).\
         filter(model.Evaluation.ok).\
         join(model.Module, model.Evaluation.module == model.Module.id).\
@@ -118,24 +142,44 @@ def successful_participants(year_obj):
         filter(model.Wave.year == year_obj.id).\
         group_by(model.User.id, model.Evaluation.module).subquery()
 
-    results = session.query(model.User, func.sum(points_per_module.c.points).label('sum_points')).\
+    results = session.query(model.User,
+                            func.sum(points_per_module.c.points).
+                            label('sum_points')).\
         join(points_per_module, points_per_module.c.user == model.User.id).\
         group_by(model.User).all()
-    return [user_points1 for user_points1 in results if user_points1[1] >= 0.6*max_points]
+    return [
+        user_points1 for user_points1 in results
+        if user_points1[1] >= 0.6 * max_points
+    ]
+
 
 def get_profile_picture(user):
-    return PROFILE_PICTURE_URL % user.id if user.profile_picture and os.path.isfile(user.profile_picture) else None
+    return (PROFILE_PICTURE_URL % (user.id)
+        if user.profile_picture and os.path.isfile(user.profile_picture)
+        else None)
 
-# Spoustu atributu pro serializaci lze teto funkci predat za ucelem
-# minimalizace SQL dotazu. Toho se vyuziva napriklad pri vypisovani vysledkovky.
-# Pokud jsou tyto atributy None, provedou se klasicke dotazy.
-# \users_tasks je [model.Task]
-# \users_co_tasks je [model.Task]
+
 def to_json(user, year_obj, total_score=None, tasks_cnt=None, profile=None,
-        achs=None, seasons=None, users_tasks=None, admin_data=False, org_seasons=None,
-        max_points=None, users_co_tasks=None):
-    data = { 'id': user.id, 'first_name': user.first_name, 'last_name': user.last_name, 'profile_picture': get_profile_picture(user), 'gender': user.sex }
-    if admin_data: data['email'] = user.email
+            achs=None, seasons=None, users_tasks=None, admin_data=False,
+            org_seasons=None, max_points=None, users_co_tasks=None):
+    """Spoustu atributu pro serializaci lze teto funkci predat za ucelem
+    minimalizace SQL dotazu. Toho se vyuziva napriklad pri vypisovani
+    vysledkovky.
+    Pokud jsou tyto atributy None, provedou se klasicke dotazy.
+    'users_tasks' je [model.Task]
+    'users'_co_tasks je [model.Task]
+    """
+
+    data = {
+        'id': user.id,
+        'first_name': user.first_name,
+        'last_name': user.last_name,
+        'profile_picture': get_profile_picture(user),
+        'gender': user.sex
+    }
+
+    if admin_data:
+        data['email'] = user.email
 
     # skryty resitel je pro potreby frontendu normalni resitel
     if user.role == 'participant_hidden':
@@ -143,36 +187,52 @@ def to_json(user, year_obj, total_score=None, tasks_cnt=None, profile=None,
     else:
         data['role'] = user.role
 
-    if total_score is None: total_score = sum_points(user.id, year_obj.id)
+    if total_score is None:
+        total_score = sum_points(user.id, year_obj.id)
 
     data['score'] = float(format(total_score, '.1f'))
-    data['tasks_num'] = tasks_cnt if tasks_cnt is not None else len(util.task.fully_submitted(user.id, year_obj.id))
-    data['achievements'] = achs if achs is not None else list(util.achievement.ids_set(achievements(user.id, year_obj.id)))
+    data['tasks_num'] = tasks_cnt if tasks_cnt is not None\
+        else len(util.task.fully_submitted(user.id,
+                                           year_obj.id))
+    data['achievements'] = achs if achs is not None\
+        else list(util.achievement.ids_set(achievements(user.id, year_obj.id)))
     data['enabled'] = user.enabled
     data['nick_name'] = user.nick_name
 
     if user.role == 'participant' or user.role == 'participant_hidden':
-        if profile is None: profile = session.query(model.Profile).get(user.id)
-        if max_points is None: max_points = util.task.sum_points(year_obj.id, bonus=False) + year_obj.point_pad
+        if profile is None:
+            profile = session.query(model.Profile).get(user.id)
+        if max_points is None:
+            max_points = util.task.sum_points(year_obj.id, bonus=False)\
+                + year_obj.point_pad
+
         data['addr_country'] = profile.addr_country
         data['school_name'] = profile.school_name
-        data['seasons'] = seasons if seasons is not None else [ key for (key,) in active_years(user.id) ]
-        data['successful'] = total_score >= (0.6*max_points)
+        data['seasons'] = seasons if seasons is not None\
+            else [key for (key,) in active_years(user.id)]
+        data['successful'] = total_score >= (0.6 * max_points)
+
     elif user.role == 'org' or user.role == 'admin':
         if users_tasks is None:
             users_tasks = session.query(model.Task).\
                 join(model.Wave, model.Wave.id == model.Task.wave).\
-                filter(model.Task.author == user.id, model.Wave.year == year_obj.id).all()
+                filter(model.Task.author == user.id,
+                       model.Wave.year == year_obj.id).\
+                all()
 
         if users_co_tasks is None:
             users_co_tasks = session.query(model.Task).\
                 join(model.Wave, model.Wave.id == model.Task.wave).\
-                filter(model.Task.co_author == user.id, model.Wave.year == year_obj.id).all()
+                filter(model.Task.co_author == user.id,
+                       model.Wave.year == year_obj.id).\
+                all()
 
-        data['tasks'] = [ task.id for task in users_tasks ]
-        data['co_tasks'] = [ task.id for task in users_co_tasks ]
+        data['tasks'] = [task.id for task in users_tasks]
+        data['co_tasks'] = [task.id for task in users_co_tasks]
         data['short_info'] = user.short_info
-        data['seasons'] = org_seasons if org_seasons is not None else [ key for (key,) in active_years_org(user.id) ]
+        data['seasons'] = org_seasons if org_seasons is not None\
+            else [key for (key,) in active_years_org(user.id)]
+
     elif user.role == 'tester':
         data['nick_name'] = user.nick_name
         data['short_info'] = user.short_info

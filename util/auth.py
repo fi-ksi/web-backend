@@ -1,8 +1,8 @@
-# -*- coding: utf-8 -*-
+import datetime
 
 from db import session
 import model
-import datetime
+
 
 class UserInfo:
 
@@ -30,10 +30,15 @@ class UserInfo:
 
 def update_tokens():
     try:
-        # refresh token nechavame v databazi jeste den, aby se uzivatel mohl znovu prihlasit automaticky
-        # (napriklad po uspani pocitace)
+        # refresh token nechavame v databazi jeste den, aby se uzivatel mohl
+        # znovu prihlasit automaticky (napriklad po uspani pocitace)
         tokens = session.query(model.Token).all()
-        tokens = [token for token in tokens if datetime.datetime.utcnow() > token.expire+datetime.timedelta(days=1)]
+        tokens = [
+            token
+            for token in tokens
+            if (datetime.datetime.utcnow() >
+                token.expire+datetime.timedelta(days=1))
+        ]
         for token in tokens:
             session.delete(token)
         session.commit()

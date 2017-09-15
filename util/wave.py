@@ -1,10 +1,11 @@
-# -*- coding: utf-8 -*-
-
 from db import session
-import model, util
+import model
+import util
+
 
 def to_json(wave, sum_points=None):
-    if sum_points is None: sum_points = util.task.max_points_wave_dict()[wave.id]
+    if sum_points is None:
+        sum_points = util.task.max_points_wave_dict()[wave.id]
 
     return {
         'id': wave.id,
@@ -17,4 +18,3 @@ def to_json(wave, sum_points=None):
         'sum_points': sum_points[0],
         'tasks_cnt': sum_points[1]
     }
-

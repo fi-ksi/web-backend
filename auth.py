@@ -1,6 +1,6 @@
-# -*- coding: utf-8 -*-
-
-import string, random, urllib, falcon, bcrypt
+import bcrypt
+import random
+import string
 
 from db import session
 import model
@@ -8,8 +8,13 @@ import datetime
 
 TOKEN_LENGTH = 40
 
+
 def _generate_token():
-    return ''.join( [ random.choice((string.ascii_letters + string.digits)) for x in range(TOKEN_LENGTH) ] )
+    return ''.join([
+        random.choice(string.ascii_letters + string.digits)
+        for x in range(TOKEN_LENGTH)
+    ])
+
 
 class Error:
     INVALID_REQUEST = 'invalid_request'
@@ -24,8 +29,11 @@ class GrantType:
 def get_hashed_password(plain_text_password):
     return bcrypt.hashpw(plain_text_password.encode('utf-8'), bcrypt.gensalt())
 
+
 def check_password(plain_text_password, hashed_password):
-    return bcrypt.checkpw(plain_text_password.encode('utf-8'), hashed_password.encode('utf-8'))
+    return bcrypt.checkpw(plain_text_password.encode('utf-8'),
+                          hashed_password.encode('utf-8'))
+
 
 class OAuth2Token(object):
     def __init__(self, client_id):
@@ -52,6 +60,7 @@ class OAuth2Token(object):
         return {
             'access_token': self.value,
             'token_type': self.kind,
-            'expires_in': int((self.expire-datetime.datetime.utcnow()).total_seconds()),
+            'expires_in': int((self.expire-datetime.datetime.utcnow()).
+                              total_seconds()),
             'refresh_token': self.refresh
         }

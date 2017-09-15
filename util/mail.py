@@ -1,8 +1,12 @@
-# -*- coding: utf-8 -*-
-
 from email.mime.text import MIMEText
 from email import charset as Charset
-import sys, copy, threading, random, model, smtplib, queue
+import sys
+import copy
+import threading
+import random
+import model
+import smtplib
+import queue
 
 from db import session
 from util import config
@@ -13,16 +17,22 @@ queueLock = threading.Lock()    # Zamek fronty emailQueue
 emailQueue = queue.Queue()      # Fronta emailu k odeslani
 emailThread = None              # Vlakno pro odesilani emailu
 
-# Jeden zaznam fronty emailu
+
 class emailData():
+    """Jeden zaznam fronty emailu"""
+
     def __init__(self, frm, to, msg):
         self.frm = frm
         self.to = to
         self.msg = msg
 
-# Vlakno odesilajici postupne emaily.
-# Vlakno bere emaily z fronty emailQueue, jakmile je fronta prazdna, vlakno konci.
+
 class sendThread(threading.Thread):
+    """Vlakno odesilajici postupne emaily.
+    Vlakno bere emaily z fronty emailQueue, jakmile je fronta prazdna, vlakno
+    konci.
+    """
+
     def run(self):
         queueLock.acquire()
         try:
@@ -35,16 +45,20 @@ class sendThread(threading.Thread):
 
                 queueLock.acquire()
         finally:
-            if s: s.quit()
+            if s:
+                s.quit()
             queueLock.release()
+
 
 def easteregg():
     rand = random.randrange(0, session.query(model.MailEasterEgg).count())
     egg = session.query(model.MailEasterEgg).all()[rand]
-    return "<hr><p>PS: "  + egg.body + "</p>"
+    return "<hr><p>PS: " + egg.body + "</p>"
 
-# Odeslani emailu.
+
 def send(to, subject, text, params={}, bcc=[], cc=[]):
+    """Odeslani emailu."""
+
     global emailThread
 
     Charset.add_charset('utf-8', Charset.QP, Charset.QP, 'utf-8')
@@ -54,15 +68,18 @@ def send(to, subject, text, params={}, bcc=[], cc=[]):
 
     msg['Subject'] = subject
     msg['From'] = config.mail_sender()
-    if not 'Sender' in msg: msg['Sender'] = config.get('return_path')
+    if 'Sender' not in msg:
+        msg['Sender'] = config.get('return_path')
     msg['To'] = (','.join(to)) if isinstance(to, (list)) else to
-    if len(cc) > 0: msg['Cc'] = (','.join(cc)) if isinstance(cc, (list)) else cc
+    if len(cc) > 0:
+        msg['Cc'] = (','.join(cc)) if isinstance(cc, (list)) else cc
 
-    for key in list(params.keys()): msg[key] = params[key]
+    for key in list(params.keys()):
+        msg[key] = params[key]
 
-    send_to = set((to if isinstance(to, (list)) else [ to ]) +\
-              (cc if isinstance(cc, (list)) else [ cc ]) +\
-              (bcc if isinstance(bcc, (list)) else [ bcc ]))
+    send_to = set((to if isinstance(to, (list)) else [to]) +
+                  (cc if isinstance(cc, (list)) else [cc]) +
+                  (bcc if isinstance(bcc, (list)) else [bcc]))
 
     # Vlozime email do fronty
     queueLock.acquire()
@@ -74,8 +91,10 @@ def send(to, subject, text, params={}, bcc=[], cc=[]):
         emailThread = sendThread()
         emailThread.start()
 
-# Odeslani hromadnych emailu
+
 def send_multiple(to, subject, text, params={}, bcc=[]):
+    """Odeslani hromadnych emailu"""
+
     bcc_params = copy.deepcopy(params)
     bcc_params['To'] = 'ksi-resitele@fi.muni.cz'
     bcc.append(config.ksi_conf())
@@ -86,8 +105,9 @@ def send_multiple(to, subject, text, params={}, bcc=[]):
     for recipient in to:
         send(recipient, subject, text, params)
 
+
 def send_feedback(text, addr_from):
     addr_reply = addr_from if len(addr_from) > 0 else None
-    params = { 'Reply-To': addr_reply }
-    send(config.feedback(), '[KSI-WEB] Zpetna vazba', '<p>'+text.decode('utf-8')+'</p>' + easteregg(), params)
-
+    params = {'Reply-To': addr_reply}
+    send(config.feedback(), '[KSI-WEB] Zpetna vazba', '<p>' +
+         text.decode('utf-8') + '</p>' + easteregg(), params)

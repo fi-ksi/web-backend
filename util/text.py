@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import json
 import os
 
@@ -19,28 +17,37 @@ Specifikace \data v databazi modulu pro "text":
 Kazdy modul muze mit jen jeden text (s vice inputy).
 """
 
+
 def to_json(db_dict, user_id):
-    if not 'questions' in db_dict['text']:
+    if 'questions' not in db_dict['text']:
         # Stary format textoveho modulu (bez textu otazek) -> vytvorit texty
         # otazek.
-        return { 'questions': [ 'Otázka '+str(i+1) for i in range(db_dict['text']['inputs']) ] }
+        return {
+            'questions': [
+                'Otázka ' + str(i + 1)
+                for i in range(db_dict['text']['inputs'])
+            ]
+        }
     else:
         # Novy format vcetne textu otazek -> vratime texty otazek.
-        return { 'questions': db_dict['text']['questions'] }
+        return {'questions': db_dict['text']['questions']}
+
 
 def eval_text(eval_script, data, report):
     cmd = ['/usr/bin/python', eval_script] + data
     f = open('/tmp/eval.txt', 'w')
     process = subprocess.Popen(cmd, stdout=f, stderr=subprocess.STDOUT)
     process.wait()
-    f.close();
+    f.close()
     f = open('/tmp/eval.txt', 'r')
     report += f.read()
 
     return (process.returncode == 0, report)
 
+
 def evaluate(task, module, data):
-    report = '=== Evaluating text id \'%s\' for task id \'%s\' ===\n\n' % (module.id, task)
+    report = '=== Evaluating text id \'%s\' for task id \'%s\' ===\n\n' % (
+             module.id, task)
     report += ' Raw data: ' + json.dumps(data) + '\n'
     report += ' Evaluation:\n'
 

@@ -1,8 +1,11 @@
-# -*- coding: utf-8 -*-
+import shutil
+import json
+import git
 
-import util, git, shutil, os, json
+import util
 
 LOCKFILE = '/var/lock/ksi-task-new'
+
 
 def createGit(git_path, git_branch, author_id, title):
     repo = git.Repo(util.git.GIT_SEMINAR_PATH)
@@ -15,7 +18,8 @@ def createGit(git_path, git_branch, author_id, title):
     # Zkopirujeme vzorovou ulohu do adresare s ulohou
     # Cilovy adresar nesmi existovat (to vyzaduje copytree)
     target_path = util.git.GIT_SEMINAR_PATH + git_path
-    shutil.copytree(util.git.GIT_SEMINAR_PATH + util.git.TASK_MOOSTER_PATH, target_path)
+    shutil.copytree(util.git.GIT_SEMINAR_PATH + util.git.TASK_MOOSTER_PATH,
+                    target_path)
 
     # Predzpracovani dat v repozitari
     with open(target_path+'/task.json', 'r') as f:
@@ -31,11 +35,10 @@ def createGit(git_path, git_branch, author_id, title):
         f.write(s.encode('UTF-8'))
 
     # Commit
-    repo.index.add([ git_path ])
+    repo.index.add([git_path])
     repo.index.commit("Nova uloha: "+title)
 
     # Push
     # Netusim, jak udelat push -u, tohle je trosku prasarna:
     g = git.Git(util.git.GIT_SEMINAR_PATH)
     g.execute(["git", "push", "-u", "origin", git_branch+':'+git_branch])
-

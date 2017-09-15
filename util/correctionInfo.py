@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import datetime
 from sqlalchemy import func, distinct, or_, and_, not_, desc
 from sqlalchemy.dialects import mysql
@@ -7,6 +5,7 @@ from sqlalchemy.dialects import mysql
 from db import session
 import model
 import util
+
 
 def user_to_json(user):
     return {
@@ -18,15 +17,22 @@ def user_to_json(user):
         'gender': user.sex
     }
 
+
 def _task_corr_state(task):
-    if task.evaluation_public: return "published"
-    if task.id in util.correction.tasks_corrected(): return "corrected"
+    if task.evaluation_public:
+        return "published"
+    if task.id in util.correction.tasks_corrected():
+        return "corrected"
+
     evals = session.query(model.Evaluation, model.Module).\
         join(model.Module, model.Module.id == model.Evaluation.module).\
         join(model.Task, model.Task.id == model.Module.task).\
         filter(model.Task.id == task.id)
-    if evals.filter(model.Evaluation.evaluator != None).count() > 0: return "working"
+
+    if evals.filter(model.Evaluation.evaluator is not None).count() > 0:
+        return "working"
     return "base"
+
 
 def task_to_json(task):
     q = session.query(model.User.id).\
@@ -34,7 +40,7 @@ def task_to_json(task):
         join(model.Module, model.Module.id == model.Evaluation.module).\
         join(model.Task, model.Module.task == model.Task.id).\
         filter(model.Task.id == task.id).group_by(model.User).all()
-    solvers = [ r for (r, ) in q ]
+    solvers = [r for (r, ) in q]
 
     return {
         'id': task.id,

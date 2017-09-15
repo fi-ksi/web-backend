@@ -76,7 +76,7 @@ def evaluate(task, module, user_id, code, reporter):
     """
     prog_info = json.loads(module.data)['programming']
     if ("version" not in prog_info or
-       _parse_version(prog_info["version"])[0] < 2):
+            _parse_version(prog_info["version"])[0] < 2):
         reporter += "Unsupported programming version %s\n"
         return (False, 'Opravení této úlohy není webovým systémem '
                 'podporováno.')
@@ -163,8 +163,8 @@ def store_exec(box_id, user_id, module_id):
     """
     src_path = os.path.abspath(os.path.join(EXEC_PATH, box_id))
     dst_path = os.path.abspath(os.path.join(STORE_PATH,
-                                            "module_"+str(module_id),
-                                            "user_"+str(user_id)))
+                                            "module_" + str(module_id),
+                                            "user_" + str(user_id)))
 
     if os.path.isdir(dst_path):
         shutil.rmtree(dst_path)
@@ -183,7 +183,7 @@ def run(module, user_id, code, reporter):
     """
     prog_info = json.loads(module.data)['programming']
     if ("version" not in prog_info or
-       _parse_version(prog_info["version"])[0] < 2):
+            _parse_version(prog_info["version"])[0] < 2):
         reporter += "Unsupported programming version %s\n"
         return {'output': 'Opravení této úlohy není webovým systémem '
                 'podporováno.'}
@@ -232,7 +232,7 @@ def _run(prog_info, code, box_id, reporter):
 
     trigger_data = None
     if ((return_code == 0) and ('post_trigger_script' in prog_info) and
-       (prog_info['post_trigger_script'])):
+            (prog_info['post_trigger_script'])):
         trigger_stdout = _post_trigger(sandbox_root,
                                        prog_info['post_trigger_script'],
                                        reporter)
@@ -248,7 +248,7 @@ def _run(prog_info, code, box_id, reporter):
 
         else:
             with open(output_path, 'r') as output,\
-                 open(stderr_path, 'r') as stderr:
+                    open(stderr_path, 'r') as stderr:
                 output = output.read(OUTPUT_MAX_LEN) + "\n" +\
                          stderr.read(OUTPUT_MAX_LEN)
 
@@ -284,7 +284,7 @@ def _merge(wd, merge_script, code, code_merged, reporter):
     reporter += ' * stderr: %s\n' % stderr_path
 
     with open(stdout_path, 'w') as stdout,\
-         open(stderr_path, 'w') as stderr:
+            open(stderr_path, 'w') as stderr:
         p = subprocess.Popen(cmd, stdout=stdout, stderr=stderr, cwd=wd)
         p.wait()
 
@@ -329,14 +329,14 @@ def _exec(sandbox_dir, box_id, filename, stdin_path, reporter):
     if not os.path.isdir(os.path.join(sandbox_dir, "etc")):
         os.mkdir(os.path.join(sandbox_dir, "etc"))
     with open(os.path.join(sandbox_dir, "etc", "passwd"), 'w') as f:
-        f.write("tester:x:"+str(60000+int(box_id))+":0:Tester:/:\n")
+        f.write("tester:x:" + str(60000 + int(box_id)) + ":0:Tester:/:\n")
 
     reporter += 'Running sandbox: %s\n' % (" ".join(cmd))
     reporter += ' * stdout: %s\n' % stdout_path
     reporter += ' * stderr: %s\n' % stderr_path
 
     with open(stdin_path, 'r') as stdin, open(stdout_path, 'w') as stdout,\
-         open(stderr_path, 'w') as stderr:
+            open(stderr_path, 'w') as stderr:
         start_time = datetime.datetime.now()
         p = subprocess.Popen(cmd, stdin=stdin, stdout=stdout,
                              stderr=stderr, cwd=sandbox_dir)
@@ -396,7 +396,7 @@ def _post_trigger(sandbox_dir, trigger_script, reporter):
     reporter += ' * stdout: %s\n' % stdout_path
     reporter += ' * stderr: %s\n' % stderr_path
 
-    with open(stdout_path, 'w') as stdout,  open(stderr_path, 'w') as stderr:
+    with open(stdout_path, 'w') as stdout, open(stderr_path, 'w') as stderr:
         p = subprocess.Popen(cmd, cwd=sandbox_dir, stdout=stdout,
                              stderr=stderr)
         p.wait()

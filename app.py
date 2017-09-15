@@ -1,25 +1,24 @@
-# -*- coding: utf-8 -*-
-
-import falcon, json, sys
-from datetime import datetime, timedelta
+import copy
+import falcon
+import json
 import os
 import shutil
 import subprocess
-
-import copy
-import model
-import endpoint
-from db import engine, session
-from util import UserInfo
-import util
+import sys
+from datetime import datetime, timedelta
 from sqlalchemy import func, desc
 from sqlalchemy.exc import SQLAlchemyError
 
-# Cache aktualniho rocniku
+import model
+import endpoint
+import util
+from db import engine, session
+from util import UserInfo
+
+# Cache of the current year.
 c_year = None
 c_year_update = None
 
-###############################################################################
 
 class JSONTranslator(object):
 
@@ -42,13 +41,17 @@ class Authorizer(object):
                 token = session.query(model.Token).get(token_str)
 
                 if token is not None:
-                    if req.relative_uri != '/auth' and token.expire < datetime.utcnow():
+                    if (req.relative_uri != '/auth' and
+                       token.expire < datetime.utcnow()):
                         # user timeouted
                         req.context['user'] = UserInfo()
                         return
 
                     try:
-                        req.context['user'] = UserInfo(session.query(model.User).get(token.user), token_str)
+                        req.context['user'] = UserInfo(
+                            session.query(model.User).get(token.user),
+                            token_str
+                        )
                         return
                     except AttributeError:
                         pass
@@ -58,19 +61,23 @@ class Authorizer(object):
 
         req.context['user'] = UserInfo()
 
+
 class Year_fill(object):
 
     # This middleware has 2 purposes:
     #  1) Get current year.
     #  2) Test connection with db. (this is very important!)
     def process_request(self, req, resp):
-        if req.method == 'OPTIONS': return
+        if req.method == 'OPTIONS':
+            return
         try:
             if ('YEAR' in req.headers):
                 req.context['year'] = req.headers['YEAR']
-                req.context['year_obj'] = session.query(model.Year).get(req.context['year'])
+                req.context['year_obj'] = session.query(model.Year).\
+                                          get(req.context['year'])
             else:
-                year_obj = session.query(model.Year).order_by(desc(model.Year.id)).first()
+                year_obj = session.query(model.Year).\
+                           order_by(desc(model.Year.id)).first()
                 req.context['year_obj'] = year_obj
                 req.context['year'] = year_obj.id
         except SQLAlchemyError:
@@ -78,14 +85,17 @@ class Year_fill(object):
             try:
                 if ('YEAR' in req.headers):
                     req.context['year'] = req.headers['YEAR']
-                    req.context['year_obj'] = session.query(model.Year).get(req.context['year'])
+                    req.context['year_obj'] = session.query(model.Year).\
+                                              get(req.context['year'])
                 else:
-                    year_obj = session.query(model.Year).order_by(desc(model.Year.id)).first()
+                    year_obj = session.query(model.Year).\
+                               order_by(desc(model.Year.id)).first()
                     req.context['year_obj'] = year_obj
                     req.context['year'] = year_obj.id
             except:
                 session.rollback()
                 raise
+
 
 def log(req, resp):
     try:
@@ -93,41 +103,48 @@ def log(req, resp):
     except KeyError:
         ip = req.env['REMOTE_ADDR']
 
-    print('[%s] [%s] [%s] [%s] %s' % (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), ip, req.method, resp.status, req.relative_uri))
+    print('[%s] [%s] [%s] [%s] %s' %
+          (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), ip, req.method,
+           resp.status, req.relative_uri))
     sys.stdout.flush()
+
 
 class Logger(object):
 
     def process_request(self, req, resp):
         log(req, resp)
 
+
 def log_sink(req, resp):
     resp.status = falcon.HTTP_404
 
     # Uncomment this to log sink
-    #log(req, resp)
+    # log(req, resp)
+
 
 class Corser(object):
 
     def process_response(self, request, response, resource):
         origin = request.get_header('Origin')
 
-        if origin in (  'http://localhost:4200',
-                'https://ksi.fi.muni.cz',
-                'https://kyzikos.fi.muni.cz'):
+        if origin in ('http://localhost:4200',
+                      'https://ksi.fi.muni.cz',
+                      'https://kyzikos.fi.muni.cz'):
             response.set_header('Access-Control-Allow-Origin', origin)
 
-        response.set_header('Access-Control-Allow-Headers', 'authorization,content-type,year')
-        response.set_header('Access-Control-Allow-Methods', 'OPTIONS,PUT,POST,GET,DELETE')
-
+        response.set_header('Access-Control-Allow-Headers',
+                            'authorization,content-type,year')
+        response.set_header('Access-Control-Allow-Methods',
+                            'OPTIONS,PUT,POST,GET,DELETE')
 
 
 # Add Logger() to middleware for logging
-api = falcon.API(middleware=[JSONTranslator(), Authorizer(), Year_fill(), Corser()])
+api = falcon.API(middleware=[JSONTranslator(), Authorizer(), Year_fill(),
+                 Corser()])
 api.req_options.auto_parse_form_urlencoded = True
 
 # Odkomentovat pro vytvoreni tabulek v databazi
-#model.Base.metadata.create_all(engine)
+# model.Base.metadata.create_all(engine)
 
 # Create /tmp/box with proper permissions (for sandbox)
 if os.path.isdir(util.programming.EXEC_PATH):
@@ -138,10 +155,12 @@ try:
 except FileExistsError:
     pass
 
-p = subprocess.Popen(["setfacl", "-d", "-m", "group:ksi:rwx", util.programming.EXEC_PATH])
+p = subprocess.Popen(["setfacl", "-d", "-m", "group:ksi:rwx",
+                      util.programming.EXEC_PATH])
 p.wait()
 if p.returncode != 0:
-    raise Exception("Cannot change umask to %s!" % (util.programming.EXEC_PATH))
+    raise Exception("Cannot change umask to %s!" %
+                    (util.programming.EXEC_PATH))
 
 api.add_route('/robots.txt', endpoint.Robots())
 api.add_route('/csp', endpoint.CSP())
@@ -169,10 +188,6 @@ api.add_route('/basicProfile/', endpoint.BasicProfile())
 api.add_route('/images/{context}/{id}', endpoint.Image())
 api.add_route('/content', endpoint.Content())
 api.add_route('/taskContent/{id}', endpoint.TaskContent())
-    # This endpoint contains: (defined in endpoint/content.py, see also ./gunicorn_cfg.py)
-        # /taskContent/{id}/zadani/{file_path}
-        # /taskContent/{id}/reseni/{file_path}
-        # /taskContent/[id]/icon/{file_name}
 api.add_route('/task-content/{id}/{view}', endpoint.TaskContent())
 api.add_route('/registration', endpoint.Registration())
 api.add_route('/auth', endpoint.Authorize())
@@ -186,6 +201,13 @@ api.add_route('/waves/{id}', endpoint.Wave())
 api.add_route('/years', endpoint.Years())
 api.add_route('/years/{id}', endpoint.Year())
 
+"""
+task-content endpoint contains: (defined in endpoint/content.py, see also
+./gunicorn_cfg.py)
+ * /taskContent/{id}/zadani/{file_path}
+ * /taskContent/{id}/reseni/{file_path}
+ * /taskContent/[id]/icon/{file_name}
+"""
 
 api.add_route('/admin/evaluations/{id}', endpoint.admin.Evaluation())
 api.add_route('/admin/corrections', endpoint.admin.Corrections())

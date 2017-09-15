@@ -1,41 +1,46 @@
-# -*- coding: utf-8 -*-
-
 from model import PrerequisiteType
 
-# Prerekvizity uloh maji omezeni:
-# OR nemuze byt vnitrni po AND
-# (13 && 12) || (15 && 16) validni
-# (13 || 12) || (15 && 16) validni
-# (13 || 12) && (15 && 16) NEvalidni
+"""
+Prerekvizity uloh maji omezeni:
+ * OR nemuze byt vnitrni po AND
+  -> (13 && 12) || (15 && 16) validni
+  -> (13 || 12) || (15 && 16) validni
+  -> (13 || 12) && (15 && 16) NEvalidni
+"""
+
 
 class orList(list):
     def __init__(self, *args, **kwargs):
         super(orList, self).__init__(args[0])
 
+
 class andList(list):
     def __init__(self, *args, **kwargs):
         super(andList, self).__init__(args[0])
 
+
 def to_json(prereq):
-    if(prereq.type == PrerequisiteType.ATOMIC):
-        return [ [ prereq.task ] ]
+    if prereq.type == PrerequisiteType.ATOMIC:
+        return [[prereq.task]]
 
-    if(prereq.type == PrerequisiteType.AND):
-        return [ _to_json2(prereq) ]
+    if prereq.type == PrerequisiteType.AND:
+        return [_to_json2(prereq)]
 
-    if(prereq.type == PrerequisiteType.OR):
+    if prereq.type == PrerequisiteType.OR:
         return _to_json2(prereq)
 
-def _to_json2(prereq):
-    if(prereq.type == PrerequisiteType.ATOMIC):
-        return [ prereq.task ]
 
-    elif(prereq.type == PrerequisiteType.AND):
+def _to_json2(prereq):
+    if prereq.type == PrerequisiteType.ATOMIC:
+        return [prereq.task]
+
+    elif prereq.type == PrerequisiteType.AND:
         l = []
-        for child in prereq.children: l.extend(_to_json2(child))
+        for child in prereq.children:
+            l.extend(_to_json2(child))
         return l
 
-    elif(prereq.type == PrerequisiteType.OR):
+    elif prereq.type == PrerequisiteType.OR:
         # Propagujeme ORy nahoru
         l = []
         for child in prereq.children:
@@ -48,6 +53,7 @@ def _to_json2(prereq):
 
     else:
         return []
+
 
 class PrerequisitiesEvaluator:
 
@@ -63,26 +69,28 @@ class PrerequisitiesEvaluator:
         if prereq is None:
             return None
 
-        if(prereq.type == PrerequisiteType.ATOMIC):
+        if prereq.type == PrerequisiteType.ATOMIC:
             return prereq.task
 
-        if(prereq.type == PrerequisiteType.AND):
-            return andList([ self._parse_expression(child) for child in prereq.children ])
+        if prereq.type == PrerequisiteType.AND:
+            return andList([self._parse_expression(child)
+                            for child in prereq.children])
 
-        if(prereq.type == PrerequisiteType.OR):
-            return orList([ self._parse_expression(child) for child in prereq.children ])
+        if prereq.type == PrerequisiteType.OR:
+            return orList([self._parse_expression(child)
+                           for child in prereq.children])
 
     def _evaluation_step(self, expr):
         if expr is None:
             return True
 
-        if type(expr) is andList:
+        if isinstance(expr, andList):
             val = True
             for item in expr:
                 val = val and self._evaluation_step(item)
             return val
 
-        if type(expr) is orList:
+        if isinstance(expr, orList):
             val = False
             for item in expr:
                 val = val or self._evaluation_step(item)

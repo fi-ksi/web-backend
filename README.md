@@ -30,3 +30,10 @@
  8. Optional: make `/tmp` tmpfs.
  9. Optional: ensure the server will be started after system boots up
     (run ./runner start).
+
+## Server control
+
+ * To start server run: `./runner start`.
+ * To stop server run: `./runner stop`.
+ * The `runner` script must be executed in server`s root directory.
+ * Logs are stored in `/var/log/gunicorn/*`.

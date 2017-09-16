@@ -36,6 +36,7 @@ QUOTA_MEM = 5 * 10**7
 QUOTA_WALL_TIME = 10
 QUOTA_BLOCKS = 1000
 QUOTA_INODES = 100
+QUOTA_FILE_SIZE = 50000  # in kilobytes
 
 
 class ENoFreeBox(Exception):
@@ -311,6 +312,7 @@ def _exec(sandbox_dir, box_id, filename, stdin_path, reporter):
         "-Mmeta",
         "-m" + str(QUOTA_MEM),
         "-w" + str(QUOTA_WALL_TIME),
+        "--fsize=" + str(QUOTA_FILE_SIZE),
         "-q" + str(QUOTA_BLOCKS) + "," + str(QUOTA_INODES),
         "-c/box",
         "--run",

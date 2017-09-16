@@ -37,6 +37,7 @@ QUOTA_WALL_TIME = 10
 QUOTA_BLOCKS = 1000
 QUOTA_INODES = 100
 QUOTA_FILE_SIZE = 50000  # in kilobytes
+OUTPUT_MAX_LEN = 5000  # in bytes
 
 
 class ENoFreeBox(Exception):
@@ -243,11 +244,12 @@ def _run(prog_info, code, box_id, reporter):
     else:
         if return_code == 0:
             with open(output_path, 'r') as f:
-                output = f.read()
+                output = f.read(OUTPUT_MAX_LEN)
         else:
             with open(output_path, 'r') as output,\
                  open(stderr_path, 'r') as stderr:
-                output = output.read() + stderr.read()
+                output = output.read(OUTPUT_MAX_LEN) + "\n" +\
+                         stderr.read(OUTPUT_MAX_LEN)
 
     return {
         'output': output,

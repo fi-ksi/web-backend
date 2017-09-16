@@ -10,7 +10,7 @@ import falcon, util, json, sys, traceback
 class CSP(object):
 
     def on_post(self, req, resp):
-        data = json.loads(req.stream.read().decode('utf-8').decode('utf-8'))
+        data = json.loads(req.stream.read().decode('utf-8'))
 
         # Ignore "about" violations caused by Disconnect plugin
         if "csp-report" not in data:

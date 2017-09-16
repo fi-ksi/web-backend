@@ -238,18 +238,22 @@ def _run(prog_info, code, box_id, reporter):
                                        reporter)
 
         with open(trigger_stdout) as f:
-            trigger_data = json.loads(f.read())
+            trigger_data = json.loads(f.read(OUTPUT_MAX_LEN))
 
         output = trigger_data['stdout']
     else:
         if return_code == 0:
             with open(output_path, 'r') as f:
                 output = f.read(OUTPUT_MAX_LEN)
+
         else:
             with open(output_path, 'r') as output,\
                  open(stderr_path, 'r') as stderr:
                 output = output.read(OUTPUT_MAX_LEN) + "\n" +\
                          stderr.read(OUTPUT_MAX_LEN)
+
+    if len(output) >= OUTPUT_MAX_LEN:
+        output += "\nOutput too long, stripped!\n"
 
     return {
         'output': output,

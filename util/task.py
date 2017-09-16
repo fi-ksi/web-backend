@@ -33,7 +33,7 @@ def fully_submitted(user_id, year_id=None):
 
     # {task.id : task.max_modules_count}
     max_modules_count = {task.id: task.modules for task in q.filter(
-        model.Module.bonus is False).all()}
+        model.Module.bonus == False).all()}
 
     # {task.id, task.fully_submitted_modules_count}
     real_modules_count = {
@@ -41,7 +41,7 @@ def fully_submitted(user_id, year_id=None):
             task.modules for task in
             q.join(model.Evaluation).
             filter(model.Evaluation.user == user_id,
-                   or_(model.Module.autocorrect is not True,
+                   or_(model.Module.autocorrect != True,
                        model.Evaluation.ok)).
             group_by(model.Task.id).
             all()
@@ -91,7 +91,7 @@ def max_points(task_id, bonus=False):
     """Vraci maximalni pocet bodu za ulohu (bez bonusovych bodu)"""
     points = session.query(func.sum(model.Module.max_points).label('points'))
     if not bonus:
-        points = points.filter(model.Module.bonus is False)
+        points = points.filter(model.Module.bonus == False)
     points = points.filter(model.Module.task == task_id).first().points
 
     return float(points) if points else 0
@@ -109,7 +109,7 @@ def max_points_dict(bonus=False):
 
     if not bonus:
         points_per_task = points_per_task.filter(
-            or_(model.Module.id is None, model.Module.bonus is False))
+            or_(model.Module.id is None, model.Module.bonus == False))
     points_per_task = points_per_task.group_by(model.Task).all()
 
     return {
@@ -125,7 +125,7 @@ def _max_points_per_wave(bonus=False):
     points_per_task = session.query(model.Module.task.label(
         'id'), func.sum(model.Module.max_points).label('points'))
     if not bonus:
-        points_per_task = points_per_task.filter(model.Module.bonus is False)
+        points_per_task = points_per_task.filter(model.Module.bonus == False)
     points_per_task = points_per_task.group_by(model.Module.task).subquery()
 
     # points_per_wave
@@ -198,7 +198,7 @@ def sum_points(year_id, bonus):
         join(model.Wave, model.Wave.id == model.Task.wave).\
         filter(model.Wave.year == year_id)
     if not bonus:
-        q = q.filter(model.Module.bonus is False)
+        q = q.filter(model.Module.bonus == False)
     val = q.scalar()
     return val if val is not None else 0
 
@@ -231,14 +231,14 @@ def autocorrected_full(user_id):
     q = session.query(model.Task.id.label('task_id'),
                       func.count(distinct(model.Module.id)).label('mod_cnt')).\
         join(model.Module, model.Module.task == model.Task.id).\
-        filter(model.Module.bonus is False).group_by(model.Task)
+        filter(model.Module.bonus == False).group_by(model.Task)
 
     max_modules_count = q.subquery()
 
     real_modules_count = q.join(model.Evaluation,
                                 model.Evaluation.module == model.Module.id).\
         filter(model.Evaluation.user == user_id,
-               or_(model.Module.autocorrect is not True,
+               or_(model.Module.autocorrect != True,
                    model.Evaluation.ok)).\
         subquery()
 

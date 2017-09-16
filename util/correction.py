@@ -16,14 +16,14 @@ def tasks_corrected():
             (func.count(model.Evaluation.id) > 0).label('notcorrected')).\
         join(model.Module, model.Module.task == model.Task.id).\
         join(model.Evaluation, model.Module.id == model.Evaluation.module).\
-        filter(model.Evaluation.evaluator is None,
+        filter(model.Evaluation.evaluator == None,
                not_(model.Module.autocorrect)).\
         group_by(model.Task).subquery()
 
     return [r for (r, ) in session.query(model.Task.id).
         outerjoin(task_corrected, task_corrected.c.task_id == model.Task.id).
-        filter(or_(task_corrected.c.notcorrected is False,
-                   task_corrected.c.notcorrected is None))]
+        filter(or_(task_corrected.c.notcorrected == False,
+                   task_corrected.c.notcorrected == None))]
 
 
 # Pomocny vypocet toho, jestli je dane hodnoceni opravene / neopravene
@@ -32,8 +32,8 @@ def corr_corrected(task_id, user_id):
         join(model.Module, model.Evaluation.module == model.Module.id).\
         filter(model.Evaluation.user == user_id,
                model.Module.task == task_id).\
-        filter(or_(model.Module.autocorrect is True,
-                   model.Evaluation.evaluator is not None)).count() > 0
+        filter(or_(model.Module.autocorrect == True,
+                   model.Evaluation.evaluator != None)).count() > 0
 
 
 # \files je nepovinny seznam souboru pro zmenseni poctu SQL dotazu

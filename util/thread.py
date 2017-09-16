@@ -27,7 +27,7 @@ def details_to_json(thread, root_posts=None):
         root_posts = [
             post.id for post in session.query(model.Post).
             filter(model.Post.thread == thread.id,
-                   model.Post.parent is None)
+                   model.Post.parent == None)
         ]
 
     return {

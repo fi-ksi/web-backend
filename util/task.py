@@ -109,7 +109,7 @@ def max_points_dict(bonus=False):
 
     if not bonus:
         points_per_task = points_per_task.filter(
-            or_(model.Module.id is None, model.Module.bonus == False))
+            or_(model.Module.id == None, model.Module.bonus == False))
     points_per_task = points_per_task.group_by(model.Task).all()
 
     return {

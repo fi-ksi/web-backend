@@ -140,9 +140,9 @@ def _max_points_per_wave(bonus=False):
 def max_points_wave_dict(bonus=False):
     """Vraci slovnik s klicem id vlny a hodnotami (max_points, task_count)"""
     return {
-        wave.id: ((wave.points if wave.points else 0.0,
-                   wave.tasks_count if wave.tasks_count else 0)
-                  for wave in _max_points_per_wave(bonus).all())
+        wave.id: (wave.points if wave.points else 0.0,
+                  wave.tasks_count if wave.tasks_count else 0)
+        for wave in _max_points_per_wave(bonus).all()
     }
 
 
@@ -163,7 +163,7 @@ def max_points_year_dict(bonus=False):
     return {
         year.id: (year.points if year.points else 0.0,
                   year.tasks_count if year.tasks_count else 0)
-                  for year in points_per_year
+        for year in points_per_year
     }
 
 
@@ -271,10 +271,10 @@ def status(task, user, adeadline=None, fsubmitted=None, wave=None, corr=None,
     # pokud neni prihlasen zadny uzivatel, otevreme jen ulohu bez prerekvizit
     # = prvvni uloha
     if user is None or user.id is None:
-        return (TaskStatus.BASE 
-            if ((task.prerequisite is None) or
-                (task.id in adeadline)) and wave.public
-        else TaskStatus.LOCKED)
+        return (TaskStatus.BASE
+                if ((task.prerequisite is None) or
+                    (task.id in adeadline)) and wave.public
+                else TaskStatus.LOCKED)
 
     # pokud uloha neni v otevrene vlne, je LOCKED
     # vyjimkou jsou uzivatele s rolemi 'org' a 'admin', tem se zobrazuji
@@ -310,7 +310,7 @@ def status(task, user, adeadline=None, fsubmitted=None, wave=None, corr=None,
     return TaskStatus.BASE if (util.PrerequisitiesEvaluator(
             task.prerequisite_obj, currently_active).evaluate() or
             user.role in ('org', 'admin', 'tester'))\
-    else TaskStatus.LOCKED
+        else TaskStatus.LOCKED
 
 
 def solution_public(status, task, user):
@@ -332,7 +332,7 @@ def to_json(task, prereq_obj, user=None, adeadline=None, fsubmitted=None,
         task_max_points = max_points(task.id)
     tstatus = status(task, user, adeadline, fsubmitted, wave, corr, acfull)
     pict_base = (task.picture_base if task.picture_base is not None
-    else "/taskContent/" + str(task.id) + "/icon/")
+                 else "/taskContent/" + str(task.id) + "/icon/")
 
     if not wave:
         wave = session.query(model.Wave).get(task.wave)

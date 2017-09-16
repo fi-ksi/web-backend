@@ -17,7 +17,7 @@ def achievements(user_id, year_id):
         join(model.UserAchievement,
              model.UserAchievement.achievement_id == model.Achievement.id).\
         filter(model.UserAchievement.user_id == user_id).\
-        filter(or_(model.Achievement.year is None,
+        filter(or_(model.Achievement.year == None,
                    model.Achievement.year == year_id)).\
         all()
 

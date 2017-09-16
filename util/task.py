@@ -396,15 +396,9 @@ def best_scores(task_id):
 
 
 def best_score_to_json(best_score):
-    achievements = session.query(model.UserAchievement).filter(
-        model.UserAchievement.user_id == best_score.User.id).all()
-
     return {
         'id': best_score.User.id,
         'user': best_score.User.id,
-        'achievements': [
-            achievement.achievement_id for achievement in achievements
-        ],
         'score': float(format(best_score.sum, '.1f'))
     }
 

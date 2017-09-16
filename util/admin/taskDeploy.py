@@ -9,6 +9,7 @@ import git
 import sys
 import traceback
 import datetime
+import time
 import pyparsing as pp
 import dateutil.parser
 from humanfriendly import parse_size

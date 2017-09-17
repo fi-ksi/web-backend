@@ -52,6 +52,7 @@ class WaveDiff(object):
                     task.deploy_status = 'default'
 
             session.commit()
+            req.context['result'] = {}
         except SQLAlchemyError:
             session.rollback()
             req.context['result'] = 'Nastala vyjimka backendu'

@@ -196,9 +196,9 @@ class PictureUploader(object):
                 print('Unable to remove temporary file %s' % tmpfile.name)
 
             user.profile_picture = new_picture
-
-            session.add(user)
             session.commit()
+
+            req.context['result'] = {}
         except SQLAlchemyError:
             session.rollback()
             raise

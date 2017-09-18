@@ -34,13 +34,15 @@ def to_json(db_dict, user_id):
 
 
 def eval_text(eval_script, data, report):
-    cmd = ['/usr/bin/python', eval_script] + data
-    f = open('/tmp/eval.txt', 'w')
+    STDOUT_PATH = '/tmp/eval.txt'
+    cmd = [eval_script] + data
+    f = open(STDOUT_PATH, 'w')
     process = subprocess.Popen(cmd, stdout=f, stderr=subprocess.STDOUT)
     process.wait()
     f.close()
-    f = open('/tmp/eval.txt', 'r')
+    f = open(STDOUT_PATH, 'r')
     report += f.read()
+    os.remove(STDOUT_PATH)
 
     return (process.returncode == 0, report)
 

@@ -555,14 +555,8 @@ def process_module_programming(module, lines, specific, source_path):
     data['programming']['check_script'] = os.path.join(target_path, "eval")
 
     # direktivy z module.json
-    if 'timeout' in specific:
-        data['programming']['timeout'] = specific['timeout']
-    if 'args' in specific:
-        data['programming']['args'] = specific['args']
-    if 'heaplimit' in specific:
-        data['programming']['heaplimit'] = parse_size(specific['heaplimit'])
-        log("Heaplimit parsed as " +
-            str(data['programming']['heaplimit']) + " bytes")
+    if 'limits' in specific:
+        data['programming']['limits'] = specific['limits']
 
     module.data = json.dumps(data, indent=2)
     return lines[:line]

@@ -1,5 +1,5 @@
 import datetime
-from humanfriendly import format_size
+from humanfriendly import format_size, parse_timespan, parse_size
 import json
 import os
 import shutil
@@ -32,11 +32,11 @@ MAX_CONCURRENT_EXEC = 3
 STORE_PATH = 'data/exec/'
 
 # Default quotas for sandbox.
-QUOTA_MEM = 5 * 10**7
-QUOTA_WALL_TIME = 10
-QUOTA_BLOCKS = 1000
+QUOTA_MEM = "50M"
+QUOTA_WALL_TIME = "5s"
+QUOTA_BLOCKS = 100
 QUOTA_INODES = 100
-QUOTA_FILE_SIZE = 50000  # in kilobytes
+QUOTA_FILE_SIZE = "50M"
 OUTPUT_MAX_LEN = 5000  # in bytes
 
 
@@ -108,6 +108,7 @@ def evaluate(task, module, user_id, code, reporter):
 
 def find_free_box_id() -> str:
     """
+    limits = prog_info["limits"] if "limits" in prog_info else {}
     Returns is of the first available sandbox directory. Searched for
     non-existing directories in /tmp/box.
     """
@@ -226,9 +227,11 @@ def _run(prog_info, code, box_id, reporter):
     _merge(sandbox_root, prog_info['merge_script'], raw_code, merged_code,
            reporter)
 
+    limits = prog_info["limits"] if "limits" in prog_info else {}
+
     (return_code, output_path, secret_path, stderr_path) = _exec(
         sandbox_root, box_id, "/box/run", os.path.abspath(prog_info['stdin']),
-        reporter)
+        reporter, limits)
 
     trigger_data = None
     if ((return_code == 0) and ('post_trigger_script' in prog_info) and
@@ -300,7 +303,7 @@ def _merge(wd, merge_script, code, code_merged, reporter):
     os.chmod(code_merged, st.st_mode | stat.S_IEXEC)
 
 
-def _exec(sandbox_dir, box_id, filename, stdin_path, reporter):
+def _exec(sandbox_dir, box_id, filename, stdin_path, reporter, limits):
     """
     Executes single file inside a sandbox.
     """
@@ -309,6 +312,21 @@ def _exec(sandbox_dir, box_id, filename, stdin_path, reporter):
     output_path = os.path.join(sandbox_dir, "output")
     secret_path = os.path.join(sandbox_dir, "secret")
 
+    if "mem" not in limits:
+        limits["mem"] = QUOTA_MEM
+
+    if "total_time" not in limits:
+        limits["total_time"] = QUOTA_WALL_TIME
+
+    if "file_size" not in limits:
+        limits["file_size"] = QUOTA_FILE_SIZE
+
+    if "blocks" not in limits:
+        limits["blocks"] = QUOTA_BLOCKS
+
+    if "inodes" not in limits:
+        limits["inodes"] = QUOTA_INODES
+
     cmd = [
         "isolate",
         "-b",
@@ -316,10 +334,19 @@ def _exec(sandbox_dir, box_id, filename, stdin_path, reporter):
         "--dir=/etc=" + os.path.join(sandbox_dir, "etc"),
         "--env=LANG=C.UTF-8",
         "-Mmeta",
-        "-m" + str(QUOTA_MEM),
-        "-w" + str(QUOTA_WALL_TIME),
-        "--fsize=" + str(QUOTA_FILE_SIZE),
-        "-q" + str(QUOTA_BLOCKS) + "," + str(QUOTA_INODES),
+        "-m" + str(parse_size(limits["mem"])),
+        "-w" + str(parse_timespan(limits["total_time"])),
+        "--fsize=" + str(parse_size(limits["file_size"])//1000),
+        "-q" + str(limits["blocks"]) + "," + str(limits["inodes"]),
+    ]
+
+    if "cpu_time" in limits:
+        cmd.append("-t" + str(parse_timespan(limits["cpu_time"])))
+
+    if "stack" in limits:
+        cmd.append("-k" + str(parse_size(limits["stack"])//1000))
+
+    cmd += [
         "-c/box",
         "--run",
         filename,

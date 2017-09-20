@@ -32,7 +32,7 @@ def createGit(git_path, git_branch, author_id, title):
         s = title + ".\n\n" + \
             "# " + title + "\n\n" + \
             "Název úlohy musí být uvozen `#`, nikoliv podtrhnut rovnítky.\n\n"
-        f.write(s.encode('UTF-8'))
+        f.write(s)
 
     # Commit
     repo.index.add([git_path])

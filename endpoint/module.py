@@ -11,6 +11,24 @@ import model
 import util
 import traceback
 
+# index = number of previous submissions
+SUBMIT_DELAYS = [
+    datetime.timedelta(),
+    datetime.timedelta(),
+    datetime.timedelta(),
+    datetime.timedelta(minutes=1),
+    datetime.timedelta(minutes=2),
+    datetime.timedelta(minutes=3),
+    datetime.timedelta(minutes=4),
+    datetime.timedelta(minutes=5),
+    datetime.timedelta(minutes=10),
+    datetime.timedelta(minutes=15),
+    datetime.timedelta(minutes=30),
+    datetime.timedelta(hours=1),
+    datetime.timedelta(hours=2),
+    datetime.timedelta(hours=4),
+    datetime.timedelta(hours=8),
+]
 
 class Module(object):
 
@@ -173,12 +191,15 @@ class ModuleSubmit(object):
             evaluation.ok = success
             evaluation.full_report += str(datetime.datetime.now()) + " : " + reporter.report + '\n'
             session.commit()
-            req.context['result'] = {'result': result, 'score': points, 'output': output}
+
+            req.context['result'] = {
+                'result': result,
+                'score': points,
+                'output': output,
+            }
         except SQLAlchemyError:
             session.rollback()
             raise
-        finally:
-            session.close()
 
     def on_post(self, req, resp, id):
         try:
@@ -205,42 +226,69 @@ class ModuleSubmit(object):
                 return
 
             # Kontrola poctu odevzdani
+            cnt = None
             if not user.is_org():
-                subm_in_last_day = session.query(model.Evaluation).\
-                    filter(model.Evaluation.user == user.id, model.Evaluation.module == id,
-                        model.Evaluation.time >= datetime.datetime.utcnow()-datetime.timedelta(days=1)).count()
+                (cnt, last_dt) = (
+                    session.query(func.count(model.Evaluation.id),
+                                  func.max(model.Evaluation.time)).\
+                    filter(model.Evaluation.user == user.id,
+                           model.Evaluation.module == id).\
+                    one())
 
-                if subm_in_last_day >= 20:
+                if cnt >= len(SUBMIT_DELAYS):
+                    delay = SUBMIT_DELAYS[-1]
+                else:
+                    delay = SUBMIT_DELAYS[cnt]
+
+                if (last_dt is not None and
+                    datetime.datetime.utcnow() < last_dt + delay):
                     req.context['result'] = {
                         'result': 'error',
-                        'error': 'Překročen limit odevzdání (20 odevzdání / 24 hodin).'
+                        'error': 'Úlohu teď není možné odevzdat.',
                     }
+
+                    if delay > datetime.timedelta():
+                        req.context['result']['next'] = \
+                                    str(last_dt + delay)
+
                     return
 
             data = json.loads(req.stream.read().decode('utf-8'))['content']
 
             if module.type == ModuleType.PROGRAMMING:
                 self._evaluate_code(req, module, user.id, resp, data)
-                # ToDo: Auto actions
-                return
-
-            if module.type == ModuleType.QUIZ:
+            elif module.type == ModuleType.QUIZ:
                 ok, report = util.quiz.evaluate(module.task, module, data)
             elif module.type == ModuleType.SORTABLE:
                 ok, report = util.sortable.evaluate(module.task, module, data)
             elif module.type == ModuleType.TEXT:
                 ok, report = util.text.evaluate(module.task, module, data)
 
+            if module.type != ModuleType.PROGRAMMING:
+                if "action" in report:
+                    util.module.perform_action(module, user)
 
-            points = module.max_points if ok else 0
-            evaluation = model.Evaluation(user=user.id, module=module.id, points=points, full_report=report, ok=ok)
-            req.context['result'] = {'result': 'correct' if ok else 'incorrect', 'score': points}
+                points = module.max_points if ok else 0
+                evaluation = model.Evaluation(user=user.id, module=module.id, points=points, full_report=report, ok=ok)
+                req.context['result'] = {
+                    'result': 'correct' if ok else 'incorrect',
+                    'score': points
+                }
+                session.add(evaluation)
+                session.commit()
 
-            if "action" in report:
-                util.module.perform_action(module, user)
+            if cnt is not None:
+                last_dt = datetime.datetime.utcnow()
+                cnt += 1
 
-            session.add(evaluation)
-            session.commit()
+                if cnt >= len(SUBMIT_DELAYS):
+                    delay = SUBMIT_DELAYS[-1]
+                else:
+                    delay = SUBMIT_DELAYS[cnt]
+
+                if delay > datetime.timedelta():
+                    req.context['result']['next'] = \
+                                str(datetime.datetime.utcnow() + delay)
         except SQLAlchemyError:
             session.rollback()
             raise

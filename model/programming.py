@@ -6,6 +6,7 @@ from . import Base
 from .module import Module
 from .user import User
 
+
 class CodeExecution(Base):
     __tablename__ = 'code_executions'
     __table_args__ = {
@@ -14,9 +15,12 @@ class CodeExecution(Base):
     }
 
     id = Column(Integer, primary_key=True)
-    module = Column(Integer, ForeignKey(Module.id, ondelete='CASCADE'), nullable=False)
-    user = Column(Integer, ForeignKey(User.id, ondelete='CASCADE'), nullable=False)
+    module = Column(Integer, ForeignKey(Module.id, ondelete='CASCADE'),
+                    nullable=False)
+    user = Column(Integer, ForeignKey(User.id, ondelete='CASCADE'),
+                  nullable=False)
     code = Column(Text)
     result = Column(Enum('ok', 'error'))
-    time = Column(TIMESTAMP, default=datetime.datetime.utcnow(), server_default=text('CURRENT_TIMESTAMP'))
+    time = Column(TIMESTAMP, default=datetime.datetime.utcnow(),
+                  server_default=text('CURRENT_TIMESTAMP'))
     report = Column(Text)

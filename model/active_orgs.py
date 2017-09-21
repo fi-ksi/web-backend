@@ -4,6 +4,7 @@ from . import Base
 from .user import User
 from .year import Year
 
+
 class ActiveOrg(Base):
     __tablename__ = 'active_orgs'
     __table_args__ = {
@@ -11,5 +12,12 @@ class ActiveOrg(Base):
         'mysql_charset': 'utf8'
     }
 
-    org = Column(Integer, ForeignKey(User.id, ondelete='CASCADE'), primary_key=True, nullable=False)
-    year = Column(Integer, ForeignKey(Year.id, ondelete='CASCADE'), primary_key=True, nullable=False)
+    org = Column(Integer,
+                 ForeignKey(User.id, ondelete='CASCADE'),
+                 primary_key=True,
+                 nullable=False)
+
+    year = Column(Integer,
+                  ForeignKey(Year.id, ondelete='CASCADE'),
+                  primary_key=True,
+                  nullable=False)

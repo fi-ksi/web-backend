@@ -1,10 +1,11 @@
 import datetime
 
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, Enum, Text, text
+from sqlalchemy import Column, Integer, String, Boolean, Enum, Text, text
 from sqlalchemy.types import TIMESTAMP
 from sqlalchemy.orm import relationship
 
 from . import Base
+
 
 class User(Base):
     __tablename__ = 'users'
@@ -23,10 +24,12 @@ class User(Base):
     password = Column(String(255), nullable=False)
     short_info = Column(Text, nullable=False)
     profile_picture = Column(String(255))
-    role = Column(Enum('admin', 'org', 'participant', 'participant_hidden', 'tester'), nullable=False, default='participant', server_default='participant')
+    role = Column(
+        Enum('admin', 'org', 'participant', 'participant_hidden', 'tester'),
+        nullable=False, default='participant', server_default='participant')
     enabled = Column(Boolean, nullable=False, default=True, server_default='1')
-    registered = Column(TIMESTAMP, nullable=False, default=datetime.datetime.utcnow, server_default=text('CURRENT_TIMESTAMP'))
+    registered = Column(TIMESTAMP, nullable=False,
+                        default=datetime.datetime.utcnow,
+                        server_default=text('CURRENT_TIMESTAMP'))
 
     tasks = relationship("Task", primaryjoin='User.id == Task.author')
-
-    #child = relationship('Token', uselist=False, backref='owner')

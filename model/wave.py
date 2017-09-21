@@ -1,11 +1,12 @@
 import datetime
 
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, Boolean, DateTime
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
 from sqlalchemy.ext.hybrid import hybrid_property, hybrid_method
 
 from . import Base
 from .year import Year
 from .user import User
+
 
 class Wave(Base):
     __tablename__ = 'waves'
@@ -19,9 +20,9 @@ class Wave(Base):
     index = Column(Integer, nullable=False)
     caption = Column(String(100), nullable=True)
     garant = Column(Integer, ForeignKey(User.id), nullable=False)
-    time_published = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
-    
+    time_published = Column(DateTime, default=datetime.datetime.utcnow,
+                            nullable=False)
+
     @hybrid_property
     def public(self):
         return self.time_published <= datetime.datetime.utcnow()
-

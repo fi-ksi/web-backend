@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String
 
 from . import Base
 
+
 class FeedbackRecipient(Base):
     __tablename__ = 'feedback_recipients'
     __table_args__ = {
@@ -10,4 +11,3 @@ class FeedbackRecipient(Base):
     }
 
     email = Column(String(200), primary_key=True)
-

@@ -1,15 +1,18 @@
-# -*- coding: utf-8 -*-
-
-import os, time, uuid, magic, multipart
+import os
+import magic
+import multipart
 import falcon
+
 import util
+
 
 class Content(object):
 
     # Smaze adresarovou strukturu rekurzivne od nejvic zanoreneho
     #  dokud jsou adresare prazdne.
     def _delete_tree(self, path):
-        if os.listdir(path) != []: return
+        if os.listdir(path) != []:
+            return
         try:
             os.rmdir(path)
             self._delete_tree(os.path.dirname(path))
@@ -27,11 +30,15 @@ class Content(object):
         filePath = 'data/content/' + shortPath
 
         if os.path.isdir(filePath):
-            req.context['result'] = { 'content': util.content.dir_to_json(shortPath) }
+            req.context['result'] = {
+                'content': util.content.dir_to_json(shortPath)
+            }
             return
 
         if not os.path.isfile(filePath):
-            req.context['result'] = { 'content': util.content.empty_content(shortPath) }
+            req.context['result'] = {
+                'content': util.content.empty_content(shortPath)
+            }
             return
 
         resp.content_type = magic.Magic(mime=True).from_file(filePath)
@@ -42,7 +49,13 @@ class Content(object):
         user = req.context['user']
 
         if (not user.is_logged_in()) or (not user.is_org()):
-            req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized', 'detail': 'Upravovat content může pouze organizátor.' } ] }
+            req.context['result'] = {
+                'errors': [{
+                    'status': '401',
+                    'title': 'Unauthorized',
+                    'detail': 'Upravovat content může pouze organizátor.'
+                }]
+            }
             resp.status = falcon.HTTP_400
             return
 
@@ -61,16 +74,21 @@ class Content(object):
             return
 
         files = multipart.MultiDict()
-        content_type, options = multipart.parse_options_header(req.content_type)
+        content_type, options = multipart.parse_options_header(
+            req.content_type)
         boundary = options.get('boundary', '')
 
         if not boundary:
-            raise multipart.MultipartError("No boundary for multipart/form-data.")
+            raise multipart.MultipartError(
+                "No boundary for multipart/form-data.")
 
         try:
-            if not os.path.isdir(dirPath): os.makedirs(dirPath)
+            if not os.path.isdir(dirPath):
+                os.makedirs(dirPath)
 
-            for part in multipart.MultipartParser(req.stream, boundary, req.content_length, 2**30, 2**20, 2**18, 2**16, 'utf-8'):
+            for part in multipart.MultipartParser(
+                    req.stream, boundary, req.content_length,
+                    2**30, 2**20, 2**18, 2**16, 'utf-8'):
                 path = '%s/%s' % (dirPath, part.filename)
                 part.save_as(path)
         except:
@@ -113,7 +131,7 @@ class TaskContent(object):
     def on_get(self, req, resp, id, view):
         user = req.context['user']
 
-        if not view in ['zadani', 'reseni', 'icon']:
+        if view not in ['zadani', 'reseni', 'icon']:
             resp.status = falcon.HTTP_400
             return
 
@@ -122,7 +140,8 @@ class TaskContent(object):
             resp.status = falcon.HTTP_400
             return
 
-        filePath = 'data/task-content/' + id + '/' + view + '/' + path_param.replace('..', '')
+        filePath = 'data/task-content/' + id + '/' + view + '/' + \
+                   path_param.replace('..', '')
 
         if not os.path.isfile(filePath):
             resp.status = falcon.HTTP_404

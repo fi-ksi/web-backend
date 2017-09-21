@@ -1,16 +1,16 @@
-# -*- coding: utf-8 -*-
-
 import falcon
-
 from sqlalchemy.exc import SQLAlchemyError
+
 from db import session
 import auth
 import model
 import util
 
+
 class Error:
     INVALID_REQUEST = 'invalid_request'
     UNAUTHORIZED_CLIENT = 'unauthorized_client'
+
 
 class Authorize(object):
 
@@ -22,7 +22,8 @@ class Authorize(object):
             challenge = session.query(model.User).filter(
                 model.User.email == username, model.User.enabled).first()
 
-            if username and password and challenge and auth.check_password(password, challenge.password):
+            if (username and password and challenge and
+                    auth.check_password(password, challenge.password)):
                 req.context['result'] = auth.OAuth2Token(challenge.id).data
             else:
                 req.context['result'] = {'error': Error.UNAUTHORIZED_CLIENT}
@@ -66,6 +67,7 @@ class Authorize(object):
         finally:
             session.close()
 
+
 class Logout(object):
 
     def on_get(self, req, resp):
@@ -73,7 +75,9 @@ class Logout(object):
             if not req.context['user'].is_logged_in():
                 return
 
-            token = session.query(model.Token).filter(model.Token.access_token == req.context['user'].token).first()
+            token = session.query(model.Token).\
+                filter(model.Token.access_token == req.context['user'].token).\
+                first()
 
             if not token:
                 return
@@ -85,4 +89,3 @@ class Logout(object):
             raise
         finally:
             session.close()
-

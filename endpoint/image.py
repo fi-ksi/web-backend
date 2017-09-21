@@ -1,21 +1,22 @@
-# -*- coding: utf-8 -*-
-
-import os, time, uuid, magic
-
+import os
+import magic
 import falcon
-from .profile import ALLOWED_MIME_TYPES
-
-from db import session
 from sqlalchemy.exc import SQLAlchemyError
+
+from .profile import ALLOWED_MIME_TYPES
+from db import session
 import model
 import util
+
 
 class Image(object):
 
     def on_get(self, req, resp, context, id):
         if context == 'profile':
             try:
-                user = session.query(model.User).filter(model.User.id == int(id)).first()
+                user = session.query(model.User).\
+                    filter(model.User.id == int(id)).\
+                    first()
             except SQLAlchemyError:
                 session.rollback()
                 raise
@@ -40,7 +41,9 @@ class Image(object):
                 resp.status = falcon.HTTP_400
                 return
 
-            image = os.path.join(util.programming.code_execution_dir(execution.id), os.path.basename(req.get_param('file')))
+            image = os.path.join(
+                util.programming.code_execution_dir(execution.id),
+                os.path.basename(req.get_param('file')))
         else:
             resp.status = falcon.HTTP_400
             return

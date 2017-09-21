@@ -1,11 +1,15 @@
-# -*- coding: utf-8 -*-
+import falcon
+import json
+import sys
+import traceback
 
-import falcon, util, json, sys, traceback
+import util
 
 # Content-security policy reports of frontend
 # Every CSP report is forwarded to ksi-admin@fi.muni.cz.
 # This is testing solution, if a lot of spam occurs, some intelligence should
 # be added to this endpoint.
+
 
 class CSP(object):
 
@@ -33,8 +37,8 @@ class CSP(object):
             pass
         except:
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            traceback.print_exception(exc_type, exc_value, exc_traceback, file=sys.stderr)
+            traceback.print_exception(exc_type, exc_value, exc_traceback,
+                                      file=sys.stderr)
 
         req.context['result'] = {}
         resp.status = falcon.HTTP_200
-

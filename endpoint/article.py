@@ -1,15 +1,15 @@
-# -*- coding: utf-8 -*-
-
-from db import session
-import model
 import json
 from sqlalchemy import desc
 from sqlalchemy.exc import SQLAlchemyError
 import falcon
 import dateutil.parser
+
+import model
 import util
+from db import session
 
 DEFAULT_IMAGE = 'img/box-ksi.svg'
+
 
 def _artice_to_json(inst):
     return {
@@ -24,6 +24,7 @@ def _artice_to_json(inst):
         'year': inst.year
     }
 
+
 class Article(object):
 
     # GET clanku
@@ -37,26 +38,46 @@ class Article(object):
             raise
 
         if data is None:
-            req.context['result'] = { 'errors': [ { 'status': '404', 'title': 'Not Found', 'detail': 'Článek s tímto ID neexistuje.' } ] }
+            req.context['result'] = {
+                'errors': [{
+                    'status': '404',
+                    'title': 'Not Found',
+                    'detail': 'Článek s tímto ID neexistuje.'
+                }]
+            }
             resp.status = falcon.HTTP_404
             return
 
         # nezverejneny clanek mohou ziskat jen orgove
-        if (not data.published) and ((not user.is_logged_in()) or (not user.is_org())):
-            req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized', 'detail': 'Přístup odepřen.' } ] }
+        if (not data.published and
+                ((not user.is_logged_in()) or (not user.is_org()))):
+            req.context['result'] = {
+                'errors': [{
+                    'status': '401',
+                    'title': 'Unauthorized',
+                    'detail': 'Přístup odepřen.'
+                }]
+            }
             resp.status = falcon.HTTP_400
             return
 
         req.context['result'] = {
             'article': _artice_to_json(data),
-            'contents': [ util.content.dir_to_json(data.resource) ] if data.resource and user.is_org() else []
+            'contents': ([util.content.dir_to_json(data.resource)]
+                         if data.resource and user.is_org() else [])
         }
 
     # aktualizace existujiciho clanku
     def on_put(self, req, resp, id):
         user = req.context['user']
         if (not user.is_logged_in()) or (not user.is_org()):
-            req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized', 'detail': 'Upravit článek může pouze organizátor.' } ] }
+            req.context['result'] = {
+                'errors': [{
+                    'status': '401',
+                    'title': 'Unauthorized',
+                    'detail': 'Upravit článek může pouze organizátor.'
+                }]
+            }
             resp.status = falcon.HTTP_400
             return
 
@@ -65,7 +86,13 @@ class Article(object):
         try:
             article = session.query(model.Article).get(id)
             if article is None:
-                req.context['result'] = { 'errors': [ { 'status': '404', 'title': 'Not Found', 'detail': 'Článek s tímto ID neexistuje.' } ] }
+                req.context['result'] = {
+                    'errors': [{
+                        'status': '404',
+                        'title': 'Not Found',
+                        'detail': 'Článek s tímto ID neexistuje.'
+                    }]
+                }
                 resp.status = falcon.HTTP_404
                 return
 
@@ -88,14 +115,26 @@ class Article(object):
     def on_delete(self, req, resp, id):
         user = req.context['user']
         if (not user.is_logged_in()) or (not user.is_org()):
-            req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized', 'detail': 'Smazat článek může pouze organizátor.' } ] }
+            req.context['result'] = {
+                'errors': [{
+                    'status': '401',
+                    'title': 'Unauthorized',
+                    'detail': 'Smazat článek může pouze organizátor.'
+                }]
+            }
             resp.status = falcon.HTTP_400
             return
 
         try:
             article = session.query(model.Article).get(id)
             if article is None:
-                req.context['result'] = { 'errors': [ { 'status': '404', 'title': 'Not Found', 'detail': 'Článek s tímto ID neexistuje.' } ] }
+                req.context['result'] = {
+                    'errors': [{
+                        'status': '404',
+                        'title': 'Not Found',
+                        'detail': 'Článek s tímto ID neexistuje.'
+                    }]
+                }
                 resp.status = falcon.HTTP_404
                 return
 
@@ -116,8 +155,11 @@ class Articles(object):
         user = req.context['user']
 
         try:
-            query = session.query(model.Article).filter(model.Article.year == req.context['year'])
-            if user is None or user.id is None or user.role == 'participant' or user.role == 'participant_hidden':
+            query = session.query(model.Article).\
+                filter(model.Article.year == req.context['year'])
+            if (user is None or user.id is None or
+                    user.role == 'participant' or
+                    user.role == 'participant_hidden'):
                 query = query.filter(model.Article.published)
             query = query.order_by(desc(model.Article.time_created))
 
@@ -125,17 +167,21 @@ class Articles(object):
             start = req.get_param_as_int('_start')
             count = query.count()
 
-            data = query.all() if limit is None or start is None else query.slice(start, start + limit)
+            data = (query.all() if limit is None or start is None
+                    else query.slice(start, start + limit))
         except SQLAlchemyError:
             session.rollback()
             raise
 
-        articles = [ _artice_to_json(inst) for inst in data ]
-        resources = [ util.content.dir_to_json(inst.resource) for inst in data if inst.resource is not None ] if user.is_org() else []
+        articles = [_artice_to_json(inst) for inst in data]
+        resources = [
+            util.content.dir_to_json(inst.resource)
+            for inst in data if inst.resource is not None
+        ] if user.is_org() else []
 
         req.context['result'] = {
             'articles': articles,
-            'meta': { 'total': count },
+            'meta': {'total': count},
             'contents': resources
         }
 
@@ -143,7 +189,13 @@ class Articles(object):
     def on_post(self, req, resp):
         user = req.context['user']
         if (not user.is_logged_in()) or (not user.is_org()):
-            req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized', 'detail': 'Přidat článek může pouze organizátor.' } ] }
+            req.context['result'] = {
+                'errors': [{
+                    'status': '401',
+                    'title': 'Unauthorized',
+                    'detail': 'Přidat článek může pouze organizátor.'
+                }]
+            }
             resp.status = falcon.HTTP_400
             return
 
@@ -151,13 +203,13 @@ class Articles(object):
 
         try:
             article = model.Article(
-                author = user.id,
-                title = data['title'],
-                body = data['body'],
-                published = data['published'],
-                year = req.context['year'],
-                time_created = dateutil.parser.parse(data['time_published']),
-                picture = data['picture']
+                author=user.id,
+                title=data['title'],
+                body=data['body'],
+                published=data['published'],
+                year=req.context['year'],
+                time_created=dateutil.parser.parse(data['time_published']),
+                picture=data['picture']
             )
 
             session.add(article)
@@ -169,7 +221,6 @@ class Articles(object):
             session.rollback()
             raise
 
-        req.context['result'] = { 'article': _artice_to_json(article) }
+        req.context['result'] = {'article': _artice_to_json(article)}
 
         session.close()
-

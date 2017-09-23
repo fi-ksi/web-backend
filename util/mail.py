@@ -40,8 +40,11 @@ class sendThread(threading.Thread):
                 data = emailQueue.get()
                 queueLock.release()
 
-                s = smtplib.SMTP('relay.fi.muni.cz')
-                s.sendmail(data.frm, data.to, data.msg)
+                try:
+                    s = smtplib.SMTP('relay.fi.muni.cz')
+                    s.sendmail(data.frm, data.to, data.msg)
+                except Exception as e:
+                    print(str(e))
 
                 queueLock.acquire()
         finally:

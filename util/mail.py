@@ -50,7 +50,8 @@ class sendThread(threading.Thread):
         finally:
             if s:
                 s.quit()
-            queueLock.release()
+            if queueLock.locked():
+                queueLock.release()
 
 
 def easteregg():

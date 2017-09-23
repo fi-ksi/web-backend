@@ -67,6 +67,7 @@ class TaskMerge(object):
 
                 session.commit()
                 resp.status = falcon.HTTP_200
+                req.context['result'] = {}
             finally:
                 mergeLock.release()
         except SQLAlchemyError:

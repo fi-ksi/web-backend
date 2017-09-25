@@ -36,6 +36,7 @@ class RunCode(object):
                 module=module.id,
                 user=user.id,
                 code=data,
+                result='error',
                 time=datetime.utcnow(),
                 report="",
             )
@@ -46,12 +47,15 @@ class RunCode(object):
             try:
                 result = util.programming.run(module, user.id, data,
                                               execution.id, reporter)
+                execution.result = result['result']
                 req.context['result'] = result
             except Exception as e:
                 reporter += traceback.format_exc()
-                req.context['result'] = { 'output': 'Kód se nepodařilo '
-                    'spustit, kontaktujte organizátora.' }
-                print(traceback.format_exc())
+                req.context['result'] = {
+                    'message': 'Kód se nepodařilo '
+                              'spustit, kontaktujte organizátora.',
+                    'result': 'error',
+                }
 
             execution.report = reporter.report
             session.commit()

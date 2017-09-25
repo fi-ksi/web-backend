@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, text
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, text, Enum
 from sqlalchemy.types import TIMESTAMP
 import datetime
 
@@ -17,5 +17,6 @@ class CodeExecution(Base):
     module = Column(Integer, ForeignKey(Module.id, ondelete='CASCADE'), nullable=False)
     user = Column(Integer, ForeignKey(User.id, ondelete='CASCADE'), nullable=False)
     code = Column(Text)
+    result = Column(Enum('ok', 'error'))
     time = Column(TIMESTAMP, default=datetime.datetime.utcnow(), server_default=text('CURRENT_TIMESTAMP'))
     report = Column(Text)

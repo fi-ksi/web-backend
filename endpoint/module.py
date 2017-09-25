@@ -149,31 +149,42 @@ class ModuleSubmit(object):
 
             if not module.autocorrect:
                 session.commit()
-                req.context['result'] = {'result': 'correct'}
+                req.context['result'] = {'result': 'ok'}
                 return
 
             reporter = util.programming.Reporter()
 
-            success = False
             try:
-                (success, output) = util.programming.evaluate(module.task, module,
+                result = util.programming.evaluate(module.task, module,
                     user_id, data, evaluation.id, reporter)
-                result = "correct" if success else "incorrect"
             except util.programming.ENoFreeBox as e:
-                result = "error"
-                output = "Přesáhnut maximální počet souběžně běžících opravení, zkuste to za chvíli."
+                result = {
+                    'result': 'error',
+                    'message': ('Přesáhnut maximální počet souběžně běžících '
+                                'opravení, zkuste to za chvíli.')
+                }
             except Exception as e:
                 reporter += traceback.format_exc()
-                result = "error"
-                output = ""
-                print(traceback.format_exc())
+                result = {
+                    'result': 'error',
+                    'message': ('Nastala chyba při vykonávání kódu, kontaktuj '
+                                'organizátora')
+                }
 
-            points = module.max_points if success else 0
-            evaluation.points = points
-            evaluation.ok = success
+            if result['result'] == 'ok' and 'score' in result:
+                score = result['score']
+            elif result['result'] == 'ok':
+                score = module.max_points
+            else:
+                score = 0
+
+            evaluation.points = score
+            evaluation.ok = (result['result'] == 'ok')
             evaluation.full_report += str(datetime.datetime.now()) + " : " + reporter.report + '\n'
             session.commit()
-            req.context['result'] = {'result': result, 'score': points, 'output': output}
+
+            result['score'] = score
+            req.context['result'] = result
         except SQLAlchemyError:
             session.rollback()
             raise

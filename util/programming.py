@@ -81,15 +81,21 @@ def evaluate(task, module, user_id, code, eval_id, reporter):
     if ("version" not in prog_info or
             _parse_version(prog_info["version"])[0] < 2):
         reporter += "Unsupported programming version %s\n"
-        return (False, 'Opravení této úlohy není webovým systémem '
-                'podporováno.')
+        return {
+            'result': 'error',
+            'message': 'Opravení této úlohy není webovým systémem '
+                       'podporováno.',
+        }
 
     try:
         box_id = init_exec_environment()
     except ENoFreeBox:
         reporter += "Reached limit of concurrent tasks!\n"
-        return (False, 'Přesáhnut maximální počet zároveň spuštěných opravení,'
-                ' zkuste to později.')
+        return {
+            'result': 'error',
+            'message': 'Přesáhnut maximální počet zároveň spuštěných opravení,'
+                       ' zkuste to později.'
+        }
 
     try:
         try:
@@ -109,7 +115,10 @@ def evaluate(task, module, user_id, code, eval_id, reporter):
     finally:
         cleanup_exec_environment(box_id)
 
-    return (success, res["output"])
+    return {
+        'result': 'ok' if success else 'nok',
+        'stdout': res['stdout'],
+    }
 
 
 def find_free_box_id() -> str:
@@ -194,15 +203,21 @@ def run(module, user_id, code, exec_id, reporter):
     if ("version" not in prog_info or
             _parse_version(prog_info["version"])[0] < 2):
         reporter += "Unsupported programming version %s\n"
-        return {'output': 'Opravení této úlohy není webovým systémem '
-                'podporováno.'}
+        return {
+            'message': 'Opravení této úlohy není webovým systémem '
+                       'podporováno.',
+            'result': 'error',
+        }
 
     try:
         box_id = init_exec_environment()
     except ENoFreeBox as e:
         reporter += str(e) + "\n"
-        return {'output': 'Přesáhnut maximální počet zároveň spuštěných úloh,'
-                ' zkuste to později.'}
+        return {
+            'message': 'Přesáhnut maximální počet zároveň spuštěných úloh,'
+                       ' zkuste to později.',
+            'result': 'error',
+        }
 
     try:
         try:
@@ -213,7 +228,10 @@ def run(module, user_id, code, exec_id, reporter):
     finally:
         cleanup_exec_environment(box_id)
 
-    return res
+    return {
+        'stdout': res['stdout'],
+        'result': 'ok',
+    }
 
 
 def _run(prog_info, code, box_id, reporter):
@@ -270,12 +288,8 @@ def _run(prog_info, code, box_id, reporter):
         output += "\nOutput too long, stripped!\n"
 
     return {
-        'output': output,
+        'stdout': output,
         'code': return_code,
-        # 'image_output': '/images/codeExecution/%d?file=%s' % (execution.id,
-        #    trigger_data['attachments'][0])
-        #    if trigger_data and 'attachments' in trigger_data else None
-        # TODO: encode image output as base64 image
     }
 
 

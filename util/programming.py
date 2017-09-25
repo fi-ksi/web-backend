@@ -30,6 +30,7 @@ MODULE_LIB_PATH = 'data/module_lib/'
 EXEC_PATH = '/tmp/box/'
 MAX_CONCURRENT_EXEC = 3
 STORE_PATH = 'data/exec/'
+SOURCE_FILE = 'source'
 
 # Default quotas for sandbox.
 QUOTA_MEM = "50M"
@@ -73,7 +74,9 @@ def evaluate(task, module, user_id, code, reporter):
     """
     Evaluates task. Runs merge, runs code, runs post trigger if necessary, runs
     check script.
+
     """
+
     prog_info = json.loads(module.data)['programming']
     if ("version" not in prog_info or
             _parse_version(prog_info["version"])[0] < 2):
@@ -111,7 +114,9 @@ def find_free_box_id() -> str:
     limits = prog_info["limits"] if "limits" in prog_info else {}
     Returns is of the first available sandbox directory. Searched for
     non-existing directories in /tmp/box.
+
     """
+
     # Search for free id in EXEC_PATH
     ids = [True for i in range(MAX_CONCURRENT_EXEC)]
     for d in os.listdir(EXEC_PATH):
@@ -126,9 +131,8 @@ def find_free_box_id() -> str:
 
 
 def init_exec_environment():
-    """
-    Initializes sandbox.
-    """
+    """ Initializes sandbox. """
+
     # Create directory for sandbox
     if not os.path.exists(EXEC_PATH):
         os.makedirs(EXEC_PATH)
@@ -149,9 +153,8 @@ def init_exec_environment():
 
 
 def cleanup_exec_environment(box_id):
-    """
-    Cleans up sandbox data.
-    """
+    """ Cleans up sandbox data. """
+
     sandbox_root = os.path.join(EXEC_PATH, box_id)
     if os.path.isdir(sandbox_root):
         p = subprocess.Popen(["isolate", "-b", box_id, "--cleanup"])
@@ -159,9 +162,8 @@ def cleanup_exec_environment(box_id):
 
 
 def store_exec(box_id, user_id, module_id):
-    """
-    Saves execution permanently to STORE_PATH directory.
-    """
+    """ Saves execution permanently to STORE_PATH directory. """
+
     src_path = os.path.abspath(os.path.join(EXEC_PATH, box_id))
     dst_path = os.path.abspath(os.path.join(STORE_PATH,
                                             "module_" + str(module_id),
@@ -179,9 +181,8 @@ def _parse_version(version):
 
 
 def run(module, user_id, code, reporter):
-    """
-    Manages whole process of running participant`s code.
-    """
+    """ Manages whole process of running participant`s code. """
+
     prog_info = json.loads(module.data)['programming']
     if ("version" not in prog_info or
             _parse_version(prog_info["version"])[0] < 2):
@@ -212,7 +213,9 @@ def _run(prog_info, code, box_id, reporter):
     Runs merge and runs the merged file inside of a sandbox. Requires
     initialized sandbox with id \box_id (str). \data is participant`s code.
     This function can throw exceptions, exceptions must be handled.
+
     """
+
     # Prepare files with participant`s code
     sandbox_root = os.path.join(EXEC_PATH, box_id)
     raw_code = os.path.join(sandbox_root, 'raw')
@@ -269,9 +272,8 @@ def _run(prog_info, code, box_id, reporter):
 
 
 def _merge(wd, merge_script, code, code_merged, reporter):
-    """
-    Runs merge script.
-    """
+    """ Runs merge script. """
+
     cmd = [
         os.path.abspath(merge_script),
         os.path.abspath(code),
@@ -304,9 +306,8 @@ def _merge(wd, merge_script, code, code_merged, reporter):
 
 
 def _exec(sandbox_dir, box_id, filename, stdin_path, reporter, limits):
-    """
-    Executes single file inside a sandbox.
-    """
+    """ Executes single file inside a sandbox. """
+
     stdout_path = os.path.join(sandbox_dir, "stdout")
     stderr_path = os.path.join(sandbox_dir, "stderr")
     output_path = os.path.join(sandbox_dir, "output")
@@ -410,9 +411,8 @@ def _exec(sandbox_dir, box_id, filename, stdin_path, reporter, limits):
 
 
 def _post_trigger(sandbox_dir, trigger_script, reporter):
-    """
-    Runs post trigger script.
-    """
+    """ Runs post trigger script. """
+
     cmd = [
         os.path.abspath(trigger_script),
         os.path.abspath(sandbox_dir),
@@ -442,9 +442,8 @@ def _post_trigger(sandbox_dir, trigger_script, reporter):
 
 
 def _check(sandbox_dir, check_script, sandbox_stdout, reporter):
-    """
-    Runs check script.
-    """
+    """ Runs check script. """
+
     cmd = [
         os.path.abspath(check_script),
         os.path.abspath(sandbox_dir),

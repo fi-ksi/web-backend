@@ -171,19 +171,11 @@ class ModuleSubmit(object):
                                 'organizátora')
                 }
 
-            if result['result'] == 'ok' and 'score' in result:
-                score = result['score']
-            elif result['result'] == 'ok':
-                score = module.max_points
-            else:
-                score = 0
-
-            evaluation.points = score
+            evaluation.points = result['score'] if 'score' in result else 0
             evaluation.ok = (result['result'] == 'ok')
             evaluation.full_report += str(datetime.datetime.now()) + " : " + reporter.report + '\n'
             session.commit()
 
-            result['score'] = score
             req.context['result'] = result
         except SQLAlchemyError:
             session.rollback()

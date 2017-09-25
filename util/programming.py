@@ -31,6 +31,7 @@ EXEC_PATH = '/tmp/box/'
 MAX_CONCURRENT_EXEC = 3
 STORE_PATH = 'data/exec/'
 SOURCE_FILE = 'source'
+RESULT_FILE = 'eval.out'
 
 # Default quotas for sandbox.
 QUOTA_MEM = "50M"
@@ -97,17 +98,23 @@ def evaluate(task, module, user_id, code, eval_id, reporter):
                        ' zkuste to později.'
         }
 
+    check_res = {}
     try:
         try:
             res = _run(prog_info, code, box_id, reporter)
 
             if res["code"] == 0:
-                success = _check(os.path.join(EXEC_PATH, box_id),
-                                 prog_info['check_script'],
-                                 os.path.join(EXEC_PATH, box_id, "output"),
-                                 reporter)
+                check_res = _check(os.path.join(EXEC_PATH, box_id),
+                                   prog_info['check_script'],
+                                   os.path.join(EXEC_PATH, box_id, "output"),
+                                   reporter)
             else:
-                success = False
+                return {
+                    'result': 'nok',
+                    'message': 'Tvůj kód se nepodařilo spustit, oprav si '
+                               'chyby!',
+                    'stdout': res['stdout'],
+                }
         finally:
             store_exec(box_id, user_id, module.id,
                        'evaluation\n' + str(eval_id) + '\n')
@@ -115,10 +122,21 @@ def evaluate(task, module, user_id, code, eval_id, reporter):
     finally:
         cleanup_exec_environment(box_id)
 
-    return {
-        'result': 'ok' if success else 'nok',
+    res = {
+        'result': 'ok' if res['code'] == 0 and check_res['success'] else 'nok',
         'stdout': res['stdout'],
     }
+
+    if 'message' in check_res:
+        res['message'] = check_res['message']
+
+    if ('score' in check_res and check_res['score'] <= module.max_points
+            and check_res['score'] >= 0):
+        res['score'] = check_res['score']
+    else:
+        res['score'] = module.max_points if check_res['result'] == 'ok' else 0
+
+    return res
 
 
 def find_free_box_id() -> str:
@@ -485,10 +503,24 @@ def _check(sandbox_dir, check_script, sandbox_stdout, reporter):
                              cwd=sandbox_dir)
         p.wait()
 
+    res = {'success': (p.returncode == 0)}
+
     if os.path.getsize(stderr_path) > 0:
         reporter += "Check script returned nonempty stderr:\n"
         with open(stderr_path, 'r') as f:
             reporter += f.read()
         raise ECheckError("Check script returned non-empty stderr!")
 
-    return p.returncode == 0
+    # Load results from optional file.
+    result_path = os.path.join(sandbox_dir, RESULT_FILE)
+    if os.path.isfile(result_path):
+        with open(result_path, 'r') as r:
+            data = json.loads(r.read())
+
+        if 'message' in data:
+            res['message'] = data['message']
+
+        if 'score' in data and res['success']:
+            res['score'] = round(data['score'], 1)
+
+    return res

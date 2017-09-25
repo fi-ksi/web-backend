@@ -70,7 +70,7 @@ def to_json(db_dict, user_id):
     return {'default_code': db_dict['programming']['default_code']}
 
 
-def evaluate(task, module, user_id, code, reporter):
+def evaluate(task, module, user_id, code, eval_id, reporter):
     """
     Evaluates task. Runs merge, runs code, runs post trigger if necessary, runs
     check script.
@@ -94,6 +94,7 @@ def evaluate(task, module, user_id, code, reporter):
     try:
         try:
             res = _run(prog_info, code, box_id, reporter)
+
             if res["code"] == 0:
                 success = _check(os.path.join(EXEC_PATH, box_id),
                                  prog_info['check_script'],
@@ -102,7 +103,9 @@ def evaluate(task, module, user_id, code, reporter):
             else:
                 success = False
         finally:
-            store_exec(box_id, user_id, module.id)
+            store_exec(box_id, user_id, module.id,
+                       'evaluation\n' + str(eval_id) + '\n')
+
     finally:
         cleanup_exec_environment(box_id)
 
@@ -161,7 +164,7 @@ def cleanup_exec_environment(box_id):
         p.wait()
 
 
-def store_exec(box_id, user_id, module_id):
+def store_exec(box_id, user_id, module_id, source):
     """ Saves execution permanently to STORE_PATH directory. """
 
     src_path = os.path.abspath(os.path.join(EXEC_PATH, box_id))
@@ -174,13 +177,17 @@ def store_exec(box_id, user_id, module_id):
 
     shutil.copytree(src_path, dst_path)
 
+    # Write evaluation id so we can recognize it in the future
+    with open(os.path.join(dst_path, SOURCE_FILE), 'w') as s:
+        s.write(source)
+
 
 def _parse_version(version):
     v = version.split(".")
     return (int(v[0]), int(v[1]))
 
 
-def run(module, user_id, code, reporter):
+def run(module, user_id, code, exec_id, reporter):
     """ Manages whole process of running participant`s code. """
 
     prog_info = json.loads(module.data)['programming']
@@ -201,7 +208,8 @@ def run(module, user_id, code, reporter):
         try:
             res = _run(prog_info, code, box_id, reporter)
         finally:
-            store_exec(box_id, user_id, module.id)
+            store_exec(box_id, user_id, module.id,
+                       'execution\n' + str(exec_id) + '\n')
     finally:
         cleanup_exec_environment(box_id)
 

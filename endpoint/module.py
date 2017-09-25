@@ -157,7 +157,7 @@ class ModuleSubmit(object):
             success = False
             try:
                 (success, output) = util.programming.evaluate(module.task, module,
-                    user_id, data, reporter)
+                    user_id, data, evaluation.id, reporter)
                 result = "correct" if success else "incorrect"
             except util.programming.ENoFreeBox as e:
                 result = "error"

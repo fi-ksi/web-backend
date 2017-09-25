@@ -39,10 +39,13 @@ class RunCode(object):
                 time=datetime.utcnow(),
                 report="",
             )
+            session.add(execution)
+            session.commit()
 
             reporter = util.programming.Reporter()
             try:
-                result = util.programming.run(module, user.id, data, reporter)
+                result = util.programming.run(module, user.id, data,
+                                              execution.id, reporter)
                 req.context['result'] = result
             except Exception as e:
                 reporter += traceback.format_exc()
@@ -51,7 +54,6 @@ class RunCode(object):
                 print(traceback.format_exc())
 
             execution.report = reporter.report
-            session.add(execution)
             session.commit()
 
         except SQLAlchemyError:

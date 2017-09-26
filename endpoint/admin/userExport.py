@@ -87,7 +87,7 @@ class UserExport(object):
                 join(tasks_per_user, model.User.id == tasks_per_user.c.user).\
                 join(model.Profile, model.User.id == model.Profile.user_id).\
                 filter(model.User.role == 'participant').\
-                filter(text("tasks_cnt"), text("tasks_cnt") > 0).\
+                filter(text("tasks_cnt"), text("tasks_cnt > 0")).\
                 group_by(model.User).order_by(desc("total_score"), model.User.last_name, model.User.first_name)
 
             year_end = util.year.year_end(year_obj)
@@ -129,8 +129,8 @@ class UserExport(object):
 
             resp.set_header('Content-Disposition', "inline; filename=\"resitele_" + str(req.context['year']) + ".csv\"")
             resp.content_type = "text/csv"
-            resp.stream_len = inMemoryOutputFile.len
             resp.body = inMemoryOutputFile.getvalue()
+            resp.stream_len = len(resp.body)
 
             inMemoryOutputFile.close()
         except SQLAlchemyError:

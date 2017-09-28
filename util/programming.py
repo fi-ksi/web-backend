@@ -346,6 +346,9 @@ def _exec(sandbox_dir, box_id, filename, stdin_path, reporter, limits):
     if "stack" in limits:
         cmd.append("-k" + str(parse_size(limits["stack"])//1000))
 
+    if "processes" in limits:
+        cmd.append("-p" + str(limits["processes"]))
+
     cmd += [
         "-c/box",
         "--run",

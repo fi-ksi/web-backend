@@ -164,18 +164,18 @@ class ModuleSubmit(object):
 
         req.context['result'] = {'result': 'correct'}
 
-    def _evaluate_code(self, req, module, user_id, resp, data):
+    def _evaluate_code(self, req, module, user, resp, data):
         try:
             # Pokud neni modul autocorrrect, pridavame submitted_files
             # k jednomu evaluation.
             # Pokud je autocorrect, pridavame evaluation pro kazde vyhodnoceni
             # souboru.
-            existing = util.module.existing_evaluation(module.id, user_id)
+            existing = util.module.existing_evaluation(module.id, user.id)
             if (not module.autocorrect) and (len(existing) > 0):
                 evaluation = session.query(model.Evaluation).get(existing[0])
                 evaluation.time = datetime.datetime.utcnow()
             else:
-                evaluation = model.Evaluation(user=user_id, module=module.id,
+                evaluation = model.Evaluation(user=user.id, module=module.id,
                                               full_report="", ok=False)
                 session.add(evaluation)
                 session.commit()
@@ -193,7 +193,7 @@ class ModuleSubmit(object):
 
             try:
                 result = util.programming.evaluate(
-                    module.task, module, user_id, data, evaluation.id, reporter
+                    module.task, module, user.id, data, evaluation.id, reporter
                 )
             except util.programming.ENoFreeBox as e:
                 result = {
@@ -214,6 +214,9 @@ class ModuleSubmit(object):
             evaluation.full_report += (str(datetime.datetime.now()) + " : " +
                                        reporter.report + '\n')
             session.commit()
+
+            if user.is_org():
+                result['report'] = reporter.report
 
             req.context['result'] = result
         except SQLAlchemyError:
@@ -274,7 +277,7 @@ class ModuleSubmit(object):
             data = json.loads(req.stream.read().decode('utf-8'))['content']
 
             if module.type == ModuleType.PROGRAMMING:
-                self._evaluate_code(req, module, user.id, resp, data)
+                self._evaluate_code(req, module, user, resp, data)
                 # ToDo: Auto actions
                 return
 

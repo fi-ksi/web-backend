@@ -101,7 +101,6 @@ class Users(object):
             per_user = session.query(model.Evaluation.user.label('user'),
                                      func.max(model.Evaluation.points).
                                      label('points')).\
-                filter(model.Evaluation.ok).\
                 join(model.Module,
                      model.Evaluation.module == model.Module.id).\
                 join(model.Task, model.Task.id == model.Module.task).\

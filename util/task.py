@@ -173,8 +173,7 @@ def points_per_module(task_id, user_id):
                          model.Evaluation.evaluator.label('evaluator')).\
         join(model.Evaluation, model.Evaluation.module == model.Module.id).\
         filter(model.Module.task == task_id,
-               model.Evaluation.user == user_id,
-               model.Evaluation.ok).\
+               model.Evaluation.user == user_id).\
         join(model.Task, model.Task.id == model.Module.task).\
         filter(model.Task.evaluation_public).\
         group_by(model.Evaluation.module).all()
@@ -377,8 +376,7 @@ def best_scores(task_id):
                                 func.max(model.Evaluation.points).
                                 label('points')).\
         join(model.Evaluation, model.Evaluation.user == model.User.id).\
-        filter(model.Module.task == task_id,
-               'points' is not None, model.Evaluation.ok).\
+        filter(model.Module.task == task_id, 'points' is not None).\
         join(model.Module, model.Evaluation.module == model.Module.id).\
         join(model.Task, model.Task.id == model.Module.task).\
         filter(model.Task.evaluation_public).\

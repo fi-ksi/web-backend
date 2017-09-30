@@ -1,11 +1,11 @@
-# -*- coding: utf-8 -*-
-
-from db import session
-from sqlalchemy.exc import SQLAlchemyError
-import model
-import util
 import falcon
 import json
+from sqlalchemy.exc import SQLAlchemyError
+
+from db import session
+import model
+import util
+
 
 class Wave(object):
 
@@ -18,7 +18,8 @@ class Wave(object):
                 resp.status = falcon.HTTP_404
                 return
 
-            req.context['result'] = { 'wave': util.wave.to_json(wave) }
+            req.context['result'] = {'wave': util.wave.to_json(wave)}
+
         except SQLAlchemyError:
             session.rollback()
             raise
@@ -48,7 +49,8 @@ class Wave(object):
 
             wave.index = data['index']
             wave.caption = data['caption']
-            if data['time_published']: wave.time_published = data['time_published']
+            if data['time_published']:
+                wave.time_published = data['time_published']
             wave.garant = data['garant']
 
             session.commit()
@@ -76,7 +78,10 @@ class Wave(object):
                 return
 
             # Smazat lze jen neprazdnou vlnu.
-            tasks_cnt = session.query(model.Task).filter(model.Task.wave == wave.id).count()
+            tasks_cnt = session.query(model.Task).\
+                filter(model.Task.wave == wave.id).\
+                count()
+
             if tasks_cnt > 0:
                 resp.status = falcon.HTTP_403
                 return
@@ -84,13 +89,13 @@ class Wave(object):
             session.delete(wave)
             session.commit()
             req.context['result'] = {}
+
         except SQLAlchemyError:
             session.rollback()
             raise
         finally:
             session.close()
 
-###############################################################################
 
 class Waves(object):
 
@@ -102,7 +107,13 @@ class Waves(object):
 
             max_points = util.task.max_points_wave_dict()
 
-            req.context['result'] = { 'waves': [ util.wave.to_json(wave, max_points[wave.id]) for wave in waves ] }
+            req.context['result'] = {
+                'waves': [
+                    util.wave.to_json(wave, max_points[wave.id])
+                    for wave in waves
+                ]
+            }
+
         except SQLAlchemyError:
             session.rollback()
             raise
@@ -123,19 +134,18 @@ class Waves(object):
             data = json.loads(req.stream.read().decode('utf-8'))['wave']
 
             wave = model.Wave(
-                year = year,
-                index = data['index'],
-                caption = data['caption'],
-                garant = data['garant'],
-                time_published = data['time_published']
+                year=year,
+                index=data['index'],
+                caption=data['caption'],
+                garant=data['garant'],
+                time_published=data['time_published']
             )
 
             session.add(wave)
             session.commit()
-            req.context['result'] = { 'wave': util.wave.to_json(wave) }
+            req.context['result'] = {'wave': util.wave.to_json(wave)}
         except SQLAlchemyError:
             session.rollback()
             raise
         finally:
             session.close()
-

@@ -1,14 +1,13 @@
-# -*- coding: utf-8 -*-
-
 import falcon
 import json
 from datetime import datetime
+from sqlalchemy.exc import SQLAlchemyError
+import traceback
 
 from db import session
-from sqlalchemy.exc import SQLAlchemyError
 import model
 import util
-import traceback
+
 
 class RunCode(object):
 
@@ -26,7 +25,8 @@ class RunCode(object):
                 resp.status = falcon.HTTP_400
                 return
 
-            task_status = util.task.status(session.query(model.Task).get(module.task), user)
+            task_status = util.task.status(session.query(model.Task).
+                                           get(module.task), user)
 
             if task_status == util.TaskStatus.LOCKED:
                 resp.status = falcon.HTTP_400
@@ -52,8 +52,8 @@ class RunCode(object):
             except Exception as e:
                 reporter += traceback.format_exc()
                 req.context['result'] = {
-                    'message': 'Kód se nepodařilo '
-                              'spustit, kontaktujte organizátora.',
+                    'message': ('Kód se nepodařilo '
+                                'spustit, kontaktujte organizátora.'),
                     'result': 'error',
                 }
 
@@ -66,4 +66,3 @@ class RunCode(object):
 
         finally:
             session.close()
-

@@ -18,14 +18,14 @@ class Email(object):
             "Body": String,
             "Sender": String,
             "Reply-To": String,
-            "To": [] | [year_id_1, year_id_2, ...] (bud vsem resitelum, nebo
-                resitelum v danych rocnicich),
+            "To": [year_id_1, year_id_2, ...] (resitelum v danych rocnicich),
             "Bcc": [String],
             "Gender": (both|male|female) - pokud neni vyplneno, je automaticky
                 povazovano za "both",
             "KarlikSign": (true|false),
             "Easteregg": (true|false),
-            "Successful": (true|false)
+            "Successful": (true|false),
+            "Category": ("hs", "other", "both")
         }
 
         Backend edpovida:
@@ -45,7 +45,18 @@ class Email(object):
             data = json.loads(req.stream.read().decode('utf-8'))['e-mail']
 
             # Filtrovani uzivatelu
-            if data['To'] != []:
+            if ('Successful' in data) and (data['Successful']):
+                to = set()
+                for year in data['To']:
+                    year_obj = session.query(model.Year).get(year)
+                    to |= set([
+                        user_points[0]
+                        for user_points in util.user.successful_participants(
+                            year_obj
+                        )
+                    ])
+
+            else:
                 active = util.user.active_years_all()
                 active = [
                     user
@@ -60,31 +71,30 @@ class Email(object):
                     active = [
                         user for user in active if user.sex == data['Gender']
                     ]
-                to = active
-            else:
-                query = session.query(model.User).\
-                    filter(model.User.role == 'participant')
-                if ('Gender' in data) and (data['Gender'] != 'both'):
-                    query = query.filter(model.User.sex == data['Gender'])
-                to = query.all()
+                to = set(active)
 
-            if ("Successful" in data) and (data['Successful']):
-                succ = set()
-                for year in data['To']:
-                    year_obj = session.query(model.Year).get(year)
-                    succ |= set([
-                        user_points[0].id
-                        for user_points in util.user.successful_participants(
-                            year_obj
-                        )
-                    ])
-                to = [user for user in to if user.id in succ]
+            if 'Category' in data and data['Category'] != 'both':
+                min_year = session.query(model.Year).get(min(data['To'])).year
+                max_year = session.query(model.Year).get(max(data['To'])).year
+
+                finish = {
+                    id: year
+                    for (id, year) in
+                    session.query(model.Profile.id,
+                                  model.Profile.school_finish).
+                    all()
+                }
+
+                if data['Category'] == 'hs':
+                    to = filter(lambda user: finish[user.id] >= min_year, to)
+                elif data['Category'] == 'other':
+                    to = filter(lambda user: finish[user.id] < max_year, to)
 
             to = set([user.email for user in to])
 
             params = {
                 'Reply-To': data['Reply-To'],
-                'Sender': data['Sender']
+                'Sender': data['Sender'],
             }
 
             body = data['Body']

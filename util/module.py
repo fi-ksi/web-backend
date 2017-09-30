@@ -32,7 +32,7 @@ def to_json(module, user_id):
     module_json = _info_to_json(module)
 
     # Ziskame nejlepsi evaluation.
-    (best, task) = session.query(
+    best = session.query(
         model.Evaluation,
         model.Task
     ).\
@@ -40,13 +40,17 @@ def to_json(module, user_id):
                model.Evaluation.module == module.id).\
         join(model.Module, model.Module.id == model.Evaluation.module).\
         join(model.Task, model.Task.id == model.Module.task).\
-        order_by(desc(model.Evaluation.ok), desc(model.Evaluation.points)).\
+        order_by(desc(model.Evaluation.ok), desc(model.Evaluation.points),
+                 desc(model.Evaluation.time)).\
         first()
+
+    evaluation = best[0] if best is not None else None
+    task = best[1] if best is not None else None
 
     if best is not None:
         # ziskame nejlepsi evaluation a podle toho rozhodneme, jak je na tom
         # resitel
-        module_json['state'] = 'correct' if best.ok else 'incorrect'
+        module_json['state'] = 'correct' if evaluation.ok else 'incorrect'
     else:
         module_json['state'] = 'blank'
 
@@ -54,11 +58,14 @@ def to_json(module, user_id):
         module.id if best is not None and task.evaluation_public else None
 
     try:
-
         if module.type == ModuleType.PROGRAMMING:
-            prog = util.programming.to_json(json.loads(module.data), user_id)
-            module_json['code'] = prog['default_code']
+            prog = util.programming.to_json(
+                json.loads(module.data), user_id, module.id, evaluation
+            )
+            module_json['code'] = prog['code']
             module_json['default_code'] = prog['default_code']
+            if 'last_datetime' in prog:
+                module_json['last_datetime'] = str(prog['last_datetime'])
 
         elif module.type == ModuleType.QUIZ:
             module_json['questions'] = util.quiz.to_json(

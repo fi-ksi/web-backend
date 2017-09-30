@@ -6,6 +6,7 @@ import shutil
 import stat
 import traceback
 import subprocess
+from sqlalchemy import desc
 
 from db import session
 import model
@@ -67,8 +68,32 @@ class Reporter(object):
         return self
 
 
-def to_json(db_dict, user_id):
-    return {'default_code': db_dict['programming']['default_code']}
+def to_json(db_dict, user_id, module_id, last_eval):
+    code = {
+        'default_code': db_dict['programming']['default_code'],
+        'code': db_dict['programming']['default_code'],
+    }
+
+    # Pick last participant`s code and return it to participant.
+    if last_eval is not None:
+        submitted = session.query(model.SubmittedCode).\
+            filter(model.SubmittedCode.evaluation == last_eval.id).\
+            first()
+
+        code['code'] = submitted.code
+        code['last_datetime'] = last_eval.time
+    else:
+        execution = session.query(model.CodeExecution).\
+            filter(model.CodeExecution.module == module_id,
+                   model.CodeExecution.user == user_id).\
+            order_by(desc(model.CodeExecution.time)).\
+            first()
+
+        if execution is not None:
+            code['code'] = execution.code
+            code['last_datetime'] = execution.time
+
+    return code
 
 
 def exec_to_json(ex):
@@ -81,6 +106,7 @@ def exec_to_json(ex):
         'time': str(ex.time),
         'report': ex.report,
     }
+
 
 def evaluate(task, module, user_id, code, eval_id, reporter):
     """

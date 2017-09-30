@@ -145,7 +145,7 @@ def evaluate(task, module, user_id, code, eval_id, reporter):
             and check_res['score'] >= 0):
         res['score'] = check_res['score']
     else:
-        res['score'] = module.max_points if check_res['result'] == 'ok' else 0
+        res['score'] = module.max_points if res['result'] == 'ok' else 0
 
     return res
 

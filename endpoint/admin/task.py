@@ -1,13 +1,13 @@
-# -*- coding: utf-8 -*-
-
-from db import session
-from sqlalchemy.exc import SQLAlchemyError
-import model
-import util
 import falcon
 import json
 import datetime
+from sqlalchemy.exc import SQLAlchemyError
 from lockfile import LockFile
+
+from db import session
+import model
+import util
+
 
 class Task(object):
 
@@ -18,24 +18,37 @@ class Task(object):
 
             # task_admin mohou ziskat jen orgove
             if (not user.is_logged_in()) or (not user.is_org()):
-                req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized', 'detail': 'Přístup odepřen.' } ] }
+                req.context['result'] = {
+                    'errors': [{
+                        'status': '401',
+                        'title': 'Unauthorized',
+                        'detail': 'Přístup odepřen.'
+                    }]
+                }
                 resp.status = falcon.HTTP_400
                 return
 
             if task is None:
-                req.context['result'] = { 'errors': [ { 'status': '404', 'title': 'Not Found', 'detail': 'Úloha s tímto ID neexistuje.' } ] }
+                req.context['result'] = {
+                    'errors': [{
+                        'status': '404',
+                        'title': 'Not Found',
+                        'detail': 'Úloha s tímto ID neexistuje.'
+                    }]
+                }
                 resp.status = falcon.HTTP_404
                 return
 
-            req.context['result'] = { 'atask': util.task.admin_to_json(task) }
+            req.context['result'] = {'atask': util.task.admin_to_json(task)}
         except SQLAlchemyError:
             session.rollback()
             raise
         finally:
             session.close()
 
-    # UPDATE ulohy
     def on_put(self, req, resp, id):
+        """ UPDATE ulohy """
+
         try:
             user = req.context['user']
             data = json.loads(req.stream.read().decode('utf-8'))['atask']
@@ -45,7 +58,8 @@ class Task(object):
                 resp.status = falcon.HTTP_404
                 return
 
-            if (not user.is_logged_in()) or ((not user.is_admin()) and (user.id != wave.garant)):
+            if (not user.is_logged_in()) or (not user.is_admin() and
+                                             user.id != wave.garant):
                 resp.status = falcon.HTTP_400
                 return
 
@@ -56,7 +70,8 @@ class Task(object):
 
             # Ulohu lze editovat jen pred casem zverejneni vlny
             wave = session.query(model.Wave).get(task.wave)
-            if (datetime.datetime.utcnow() > wave.time_published) and (not user.is_admin()):
+            if (datetime.datetime.utcnow() > wave.time_published and
+                    not user.is_admin()):
                 resp.status = falcon.HTTP_403
                 return
 
@@ -74,8 +89,9 @@ class Task(object):
 
         self.on_get(req, resp, id)
 
-    # Smazani ulohy
     def on_delete(self, req, resp, id):
+        """ Smazani ulohy """
+
         try:
             user = req.context['user']
 
@@ -116,7 +132,6 @@ class Task(object):
         finally:
             session.close()
 
-###############################################################################
 
 class Tasks(object):
 
@@ -127,11 +142,19 @@ class Tasks(object):
 
             # Zobrazovat task_admin mohou jen orgove
             if (not user.is_logged_in()) or (not user.is_org()):
-                req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized', 'detail': 'Přístup odepřen.' } ] }
+                req.context['result'] = {
+                    'errors': [{
+                        'status': '401',
+                        'title': 'Unauthorized',
+                        'detail': 'Přístup odepřen.'
+                    }]
+                }
                 resp.status = falcon.HTTP_400
                 return
 
-            tasks = session.query(model.Task, model.Wave).join(model.Wave, model.Task.wave == model.Wave.id)
+            tasks = session.query(model.Task, model.Wave).\
+                join(model.Wave, model.Task.wave == model.Wave.id)
+
             if wave is None:
                 tasks = tasks.filter(model.Wave.year == req.context['year'])
             else:
@@ -140,29 +163,41 @@ class Tasks(object):
 
             max_points = util.task.max_points_dict()
 
-            req.context['result'] = { 'atasks': [ util.task.admin_to_json(task.Task, max_points[task.Task.id]) for task in tasks ] }
+            req.context['result'] = {
+                'atasks': [
+                    util.task.admin_to_json(task.Task,
+                                            max_points[task.Task.id])
+                    for task in tasks
+                ]
+            }
         except SQLAlchemyError:
             session.rollback()
             raise
         finally:
             session.close()
 
-    # Vytvoreni nove ulohy
-    """
-    Specifikace POST pozadavku:
-    {
-        "task": {
-            "wave": Integer, <- id vlny
-            "title": String,
-            "author": Integer, <- id autora
-            "git_path": String, <- adresar ulohy v GITu vcetne cele cesty
-            "git_branch": String, <- nazev gitove vetve, ve ktere vytvorit ulohu / ze ktere cerpat data pro deploy
-            "git_commit" String <- hash posledniho commitu, pokud je ?create_git=true, nevyplnuje se
-            "git_create" Bool <- jestli ma dojit k vytvoreni gitovskeho adresare a vetve ulohy
-        }
-    }
-    """
     def on_post(self, req, resp):
+        """
+        Vytvoreni nove ulohy
+
+        Specifikace POST pozadavku:
+        {
+            "task": {
+                "wave": Integer, <- id vlny
+                "title": String,
+                "author": Integer, <- id autora
+                "git_path": String, <- adresar ulohy v GITu vcetne cele cesty
+                "git_branch": String, <- nazev gitove vetve, ve ktere vytvorit
+                    ulohu / ze ktere cerpat data pro deploy
+                "git_commit" String <- hash posledniho commitu, pokud je
+                    ?create_git=true, nevyplnuje se
+                "git_create" Bool <- jestli ma dojit k vytvoreni gitovskeho
+                    adresare a vetve ulohy
+            }
+        }
+
+        """
+
         try:
             user = req.context['user']
             year = req.context['year']
@@ -174,7 +209,8 @@ class Tasks(object):
                 return
 
             # Vytvorit novou ulohu mohou jen admini nebo garanti vlny.
-            if (not user.is_logged_in()) or ((not user.is_admin()) and (user.id != wave.garant)):
+            if (not user.is_logged_in()) or (not user.is_admin() and
+                                             user.id != wave.garant):
                 resp.status = falcon.HTTP_400
                 return
 
@@ -192,46 +228,44 @@ class Tasks(object):
                     return
 
                 newLock = LockFile(util.admin.task.LOCKFILE)
-                newLock.acquire(60) # Timeout zamku je 1 minuta
+                newLock.acquire(60)  # Timeout zamku je 1 minuta
 
                 try:
                     git_commit = util.admin.task.createGit(
                         data['git_path'], data['git_branch'],
                         int(data['author']), data['title'])
-                except:
-                    raise
                 finally:
                     newLock.release()
             else:
-                git_commit = data['git_commit'] if 'git_commit' in data else None
+                git_commit = data['git_commit']\
+                    if 'git_commit' in data else None
 
             # Nejprve vytvorime nove diskuzni vlakno
             taskThread = model.Thread(
-                title = data['title'],
-                public = True,
-                year = req.context['year']
+                title=data['title'],
+                public=True,
+                year=req.context['year']
             )
             session.add(taskThread)
             session.commit()
 
             # Pote vytvorime ulohu
             task = model.Task(
-                wave = data['wave'],
-                title = data['title'],
-                author = data['author'],
-                git_path = data['git_path'],
-                git_branch = data['git_branch'],
-                git_commit = git_commit,
-                thread = taskThread.id
+                wave=data['wave'],
+                title=data['title'],
+                author=data['author'],
+                git_path=data['git_path'],
+                git_branch=data['git_branch'],
+                git_commit=git_commit,
+                thread=taskThread.id
             )
 
             session.add(task)
             session.commit()
 
-            req.context['result'] = { 'atask': util.task.admin_to_json(task) }
+            req.context['result'] = {'atask': util.task.admin_to_json(task)}
         except SQLAlchemyError:
             session.rollback()
             raise
         finally:
             session.close()
-

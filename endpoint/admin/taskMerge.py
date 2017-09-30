@@ -1,20 +1,26 @@
-# -*- coding: utf-8 -*-
+import falcon
+import json
+import git
+from lockfile import LockFile
+from sqlalchemy.exc import SQLAlchemyError
 
 from db import session
-from sqlalchemy.exc import SQLAlchemyError
-import model, util, falcon, json, datetime, git
-from lockfile import LockFile
+import model
+import util
+
 
 class TaskMerge(object):
 
-    """
-    Vraci JSON:
-    {
-        "result": "ok" | "error",
-        "error": String
-    }
-    """
     def on_post(self, req, resp, id):
+        """
+        Vraci JSON:
+        {
+            "result": "ok" | "error",
+            "error": String
+        }
+
+        """
+
         try:
             user = req.context['user']
 
@@ -27,7 +33,8 @@ class TaskMerge(object):
 
             # Kontrola existence git_branch a git_path
             if (task.git_path is None) or (task.git_branch is None):
-                req.context['result'] = 'Uloha nema zadanou gitovskou vetev nebo adresar'
+                req.context['result'] = ('Uloha nema zadanou gitovskou vetev '
+                                         'nebo adresar')
                 resp.status = falcon.HTTP_400
                 return
 
@@ -39,7 +46,8 @@ class TaskMerge(object):
             wave = session.query(model.Wave).get(task.wave)
 
             # Merge mohou provadet pouze administratori a garant vlny
-            if (not user.is_logged_in()) or ((not user.is_admin()) and (user.id != wave.garant)):
+            if (not user.is_logged_in()) or (not user.is_admin() and
+                                             user.id != wave.garant):
                 req.context['result'] = 'Nedostatecna opravneni'
                 resp.status = falcon.HTTP_400
                 return
@@ -47,13 +55,16 @@ class TaskMerge(object):
             # Kontrola zamku
             lock = util.lock.git_locked()
             if lock:
-                req.context['result'] = 'GIT uzamcen zámkem '+lock + "\nNekdo momentalne provadi akci s gitem, opakujte prosim akci za 20 sekund."
+                req.context['result'] = ('GIT uzamcen zámkem '+lock +
+                                         '\nNekdo momentalne provadi akci s '
+                                         'gitem, opakujte prosim akci za 20 '
+                                         'sekund.')
                 resp.status = falcon.HTTP_409
                 return
 
             try:
                 mergeLock = LockFile(util.admin.taskMerge.LOCKFILE)
-                mergeLock.acquire(60) # Timeout zamku je 1 minuta
+                mergeLock.acquire(60)  # Timeout zamku je 1 minuta
 
                 # Fetch repozitare
                 repo = git.Repo(util.git.GIT_SEMINAR_PATH)
@@ -75,4 +86,3 @@ class TaskMerge(object):
             raise
         finally:
             session.close()
-

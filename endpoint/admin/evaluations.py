@@ -1,20 +1,22 @@
-# -*- coding: utf-8 -*-
-
 import falcon
-from sqlalchemy import func, and_, or_,  not_
+from sqlalchemy.exc import SQLAlchemyError
 
 from db import session
-from sqlalchemy.exc import SQLAlchemyError
 import model
 import util
 
+
 class Evaluation(object):
-    """
-    GET pozadavek na konkretni correction se spousti prevazne jako odpoved na POST
-    id je umele id, konstrukce viz util/correction.py
-    Parametry: moduleX_version=Y (X a Y jsou cisla)
-    """
+
     def on_get(self, req, resp, id):
+        """
+        GET pozadavek na konkretni correction se spousti prevazne jako odpoved
+        na POST.
+        id je umele id, konstrukce viz util/correction.py
+        Parametry: moduleX_version=Y (X a Y jsou cisla)
+
+        """
+
         try:
             user = req.context['user']
 
@@ -30,11 +32,11 @@ class Evaluation(object):
             module = session.query(model.Module).get(evaluation.module)
 
             req.context['result'] = {
-                'evaluation': util.correction.corr_eval_to_json(module, evaluation)
+                'evaluation': util.correction.corr_eval_to_json(module,
+                                                                evaluation)
             }
         except SQLAlchemyError:
             session.rollback()
             raise
         finally:
             session.close()
-

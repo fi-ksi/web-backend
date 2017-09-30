@@ -1,20 +1,19 @@
-# -*- coding: utf-8 -*-
-
 import falcon
-
-from db import session
 from sqlalchemy.exc import SQLAlchemyError
-import model
-import util
 from zipfile import ZipFile
 from io import BytesIO
-import unicodedata
 import os
+
+from db import session
+import model
+import util
+
 
 class SubmFilesEval(object):
 
-    # Vraci vsechny soubory daneho hodnoceni.
     def on_get(self, req, resp, eval_id):
+        """ Vraci vsechny soubory daneho hodnoceni. """
+
         try:
             user = req.context['user']
 
@@ -25,8 +24,12 @@ class SubmFilesEval(object):
             inMemoryOutputFile = BytesIO()
             zipFile = ZipFile(inMemoryOutputFile, 'w')
 
-            files = [ r for (r, ) in session.query(model.SubmittedFile.path).\
-                filter(model.SubmittedFile.evaluation == eval_id).distinct() ]
+            files = [
+                r for (r, ) in
+                session.query(model.SubmittedFile.path).
+                filter(model.SubmittedFile.evaluation == eval_id).
+                distinct()
+            ]
 
             for fname in files:
                 if os.path.isfile(fname):
@@ -34,7 +37,8 @@ class SubmFilesEval(object):
 
             zipFile.close()
 
-            resp.set_header('Content-Disposition', "inline; filename=\"eval_" + str(eval_id) + ".zip\"")
+            resp.set_header('Content-Disposition',
+                            'inline; filename="eval_' + str(eval_id) + '.zip"')
             resp.content_type = "application/zip"
             resp.body = inMemoryOutputFile.getvalue()
             resp.stream_len = len(resp.body)
@@ -45,4 +49,3 @@ class SubmFilesEval(object):
             raise
         finally:
             session.close()
-

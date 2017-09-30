@@ -1,11 +1,11 @@
-# -*- coding: utf-8 -*-
-
 import falcon
 from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
+
 from db import session
 import model
 import util
+
 
 class CorrectionInfo(object):
 
@@ -35,17 +35,27 @@ class CorrectionInfo(object):
 
 class CorrectionsInfo(object):
 
-    """
-    Specifikace GET pozadavku:
-    prazdny pozadavek vracici ulohy, vlny a uzivatele pro vyplneni filtru opravovatka
-    """
     def on_get(self, req, resp):
+        """
+        Specifikace GET pozadavku:
+        Prazdny pozadavek vracici ulohy, vlny a uzivatele pro vyplneni filtru
+        opravovatka.
+
+        """
+
         try:
             user = req.context['user']
             year = req.context['year']
 
             if (not user.is_logged_in()) or (not user.is_org()):
-                req.context['result'] = { 'errors': [ { 'status': '401', 'title': 'Unauthorized', 'detail': 'Přístup k opravovátku mají pouze organizátoři.' } ] }
+                req.context['result'] = {
+                    'errors': [{
+                        'status': '401',
+                        'title': 'Unauthorized',
+                        'detail': ('Přístup k opravovátku mají pouze '
+                                   'organizátoři.')
+                    }]
+                }
                 resp.status = falcon.HTTP_400
                 return
 
@@ -59,17 +69,23 @@ class CorrectionsInfo(object):
 
             users = session.query(model.User)
             users = set(util.user.active_in_year(users, year).all())
-            users |= set(session.query(model.User).\
-                join(model.Task, model.Task.author == model.User.id).all())
+            users |= set(session.query(model.User).
+                         join(model.Task,
+                         model.Task.author == model.User.id).all())
 
             req.context['result'] = {
-                'correctionsInfos': [ util.correctionInfo.task_to_json(task) for task in tasks ],
-                'waves': [ util.wave.to_json(wave) for wave in waves ],
-                'users': [ util.correctionInfo.user_to_json(user) for user in users ]
+                'correctionsInfos': [
+                    util.correctionInfo.task_to_json(task) for task in tasks
+                ],
+                'waves': [
+                    util.wave.to_json(wave) for wave in waves
+                ],
+                'users': [
+                    util.correctionInfo.user_to_json(user) for user in users
+                ]
             }
         except SQLAlchemyError:
             session.rollback()
             raise
         finally:
             session.close()
-

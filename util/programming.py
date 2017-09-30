@@ -82,6 +82,7 @@ def to_json(db_dict, user_id, module_id, last_eval):
 
         code['code'] = submitted.code
         code['last_datetime'] = last_eval.time
+        code['last_origin'] = 'evaluation'
     else:
         execution = session.query(model.CodeExecution).\
             filter(model.CodeExecution.module == module_id,
@@ -92,6 +93,7 @@ def to_json(db_dict, user_id, module_id, last_eval):
         if execution is not None:
             code['code'] = execution.code
             code['last_datetime'] = execution.time
+            code['last_origin'] = 'execution'
 
     return code
 

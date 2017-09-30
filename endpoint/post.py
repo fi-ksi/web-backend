@@ -60,7 +60,7 @@ class Post(object):
     def on_get(self, req, resp, id):
         try:
             user = req.context['user']
-            user_id = req.context['user'].get_id()
+            user_id = req.context['user'].get_id()\
                 if req.context['user'].is_logged_in() else None
 
             post = session.query(model.Post).get(id)

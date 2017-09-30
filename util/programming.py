@@ -71,6 +71,17 @@ def to_json(db_dict, user_id):
     return {'default_code': db_dict['programming']['default_code']}
 
 
+def exec_to_json(ex):
+    return {
+        'id': ex.id,
+        'module': ex.module,
+        'user': ex.user,
+        'code': ex.code,
+        'result': ex.result,
+        'time': str(ex.time),
+        'report': ex.report,
+    }
+
 def evaluate(task, module, user_id, code, eval_id, reporter):
     """
     Evaluates task. Runs merge, runs code, runs post trigger if necessary, runs

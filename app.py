@@ -227,5 +227,7 @@ api.add_route('/admin/waves/{id}/diff', endpoint.admin.WaveDiff())
 api.add_route('/admin/achievements/grant', endpoint.admin.AchievementGrant())
 api.add_route('/admin/user-export', endpoint.admin.UserExport())
 api.add_route('/admin/evalCodes/{id}', endpoint.admin.EvalCode())
+api.add_route('/admin/execs', endpoint.admin.Execs())
+api.add_route('/admin/execs/{id}', endpoint.admin.Exec())
 
 api.add_sink(log_sink)

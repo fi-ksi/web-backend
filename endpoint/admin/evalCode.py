@@ -4,6 +4,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from db import session
 import model
+import util
 
 
 class EvalCode(object):
@@ -52,6 +53,22 @@ class EvalCode(object):
             STDERR_PATH = os.path.join(eval_dir, 'stderr')
             MERGE_STDOUT = os.path.join(eval_dir, 'merge.stdout')
             CHECK_STDOUT = os.path.join(eval_dir, 'check.stdout')
+            SOURCE_PATH = os.path.join(eval_dir, util.programming.SOURCE_FILE)
+
+            with open(SOURCE_PATH, 'r') as s:
+                lines = s.read().split('\n')
+
+            if lines[0] != "evaluation" or lines[1] != str(id):
+                req.context['result'] = {
+                    'evalCode': {
+                        'id': evaluation.id,
+                        'code': code.code,
+                        'merged': ('Další záznamy o vyhodnocení už nejsou k '
+                                   'dispozici, byly nahrazeny novým opravením '
+                                   'nebo spuštěním.'),
+                    }
+                }
+                return
 
             req.context['result'] = {
                 'evalCode': {

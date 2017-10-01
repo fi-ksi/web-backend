@@ -281,23 +281,53 @@ class ModuleSubmit(object):
                 # ToDo: Auto actions
                 return
 
-            if module.type == ModuleType.QUIZ:
+            elif module.type == ModuleType.TEXT:
+                reporter = util.programming.Reporter()
+                try:
+                    result = util.text.evaluate(module.task, module, data,
+                                                reporter)
+                except util.text.ECheckError:
+                    result = {
+                        'result': 'error',
+                        'message': ('Při opravování nastala výjimka, kontaktuj'
+                                    ' organizátora!')
+                    }
+
+                result['report'] = reporter.report
+
+            elif module.type == ModuleType.QUIZ:
                 ok, report = util.quiz.evaluate(module.task, module, data)
+                result = {
+                    'result': 'correct' if ok else 'incorrect',
+                    'report': report,
+                }
+
             elif module.type == ModuleType.SORTABLE:
                 ok, report = util.sortable.evaluate(module.task, module, data)
-            elif module.type == ModuleType.TEXT:
-                ok, report = util.text.evaluate(module.task, module, data)
+                result = {
+                    'result': 'correct' if ok else 'incorrect',
+                    'report': report,
+                }
 
-            points = module.max_points if ok else 0
-            evaluation = model.Evaluation(user=user.id, module=module.id,
-                                          points=points, full_report=report,
-                                          ok=ok)
-            req.context['result'] = {
-                'result': 'correct' if ok else 'incorrect',
-                'score': points
-            }
+            if 'score' in result:
+                score = result['score']
+            else:
+                score = module.max_points \
+                        if result['result'] == 'correct' else 0
 
-            if "action" in report:
+            evaluation = model.Evaluation(
+                user=user.id,
+                module=module.id,
+                points=score,
+                full_report=result['report'],
+                ok=(result['result'] == 'correct')
+            )
+
+            req.context['result'] = result
+            if 'report' in req.context['result'] and not user.is_org():
+                del req.context['result']['report']
+
+            if "action" in result['report']:
                 util.module.perform_action(module, user)
 
             session.add(evaluation)

@@ -816,10 +816,10 @@ def ksi_collapse(source):
 
 
 def change_links(task, source):
-    """Nahrazuje odkazy do data/ za odkazy do backendu"""
+    """ Nahrazuje odkazy do ../data/ a data/ za odkazy do backendu. """
 
-    return re.sub(r"data/", util.config.ksi_web() + ":3000/taskContent/" +
-                  str(task.id) + "/zadani/", source)
+    return re.sub(r"(\.\./)*data/", util.config.ksi_web() +
+                  ":3000/taskContent/" + str(task.id) + "/zadani/", source)
 
 
 def add_table_class(source):

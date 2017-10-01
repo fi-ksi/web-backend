@@ -260,6 +260,11 @@ def parse_prereq_logic(logic, prereq):
         session.commit()
 
     elif isinstance(logic, (pp.ParseResults)):
+        if len(logic) > 3:
+            log('WARNING: Wrong format of `prerequisite` string, you can enter'
+                ' at most one operator at each level, ignoring some '
+                'prerequisities!')
+
         # && or ||
         if logic[1] == '||':
             prereq.type = model.PrerequisiteType.OR
@@ -302,7 +307,7 @@ def parse_prereq_logic(logic, prereq):
         parse_prereq_logic(logic[0], children[0])
         parse_prereq_logic(logic[2], children[1])
     else:
-        log("Neznamy typ promenne v prerekvizitach")
+        log('ERROR: Unknown type of variable in prerequisite!')
 
 
 def process_assignment(task, filename):

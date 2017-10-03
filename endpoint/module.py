@@ -162,7 +162,7 @@ class ModuleSubmit(object):
         finally:
             session.close()
 
-        req.context['result'] = {'result': 'correct'}
+        req.context['result'] = {'result': 'ok'}
 
     def _evaluate_code(self, req, module, user, resp, data):
         try:
@@ -298,14 +298,14 @@ class ModuleSubmit(object):
             elif module.type == ModuleType.QUIZ:
                 ok, report = util.quiz.evaluate(module.task, module, data)
                 result = {
-                    'result': 'correct' if ok else 'incorrect',
+                    'result': 'ok' if ok else 'nok',
                     'report': report,
                 }
 
             elif module.type == ModuleType.SORTABLE:
                 ok, report = util.sortable.evaluate(module.task, module, data)
                 result = {
-                    'result': 'correct' if ok else 'incorrect',
+                    'result': 'ok' if ok else 'nok',
                     'report': report,
                 }
 
@@ -313,14 +313,14 @@ class ModuleSubmit(object):
                 score = result['score']
             else:
                 score = module.max_points \
-                        if result['result'] == 'correct' else 0
+                        if result['result'] == 'ok' else 0
 
             evaluation = model.Evaluation(
                 user=user.id,
                 module=module.id,
                 points=score,
                 full_report=result['report'],
-                ok=(result['result'] == 'correct')
+                ok=(result['result'] == 'ok')
             )
 
             req.context['result'] = result

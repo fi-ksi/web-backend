@@ -61,7 +61,7 @@ def eval_text(eval_script, data, reporter):
             )
             p.wait()
 
-        res = {'result': 'correct' if p.returncode == 0 else 'incorrect'}
+        res = {'result': 'ok' if p.returncode == 0 else 'nok'}
 
         reporter += 'Stdout:\n'
         with open(stdout_path, 'r') as f:
@@ -82,7 +82,7 @@ def eval_text(eval_script, data, reporter):
             if 'message' in data:
                 res['message'] = data['message']
 
-            if 'score' in data and res['result'] == 'correct':
+            if 'score' in data and res['result'] == 'ok':
                 res['score'] = round(data['score'], 1)
 
         return res
@@ -116,7 +116,7 @@ def evaluate(task, module, data, reporter):
             result = False
 
         return {
-            'result': 'correct' if result else 'incorrect'
+            'result': 'ok' if result else 'nok'
         }
 
     elif 'eval_script' in text:

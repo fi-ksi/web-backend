@@ -29,7 +29,7 @@ def _task_corr_state(task):
         join(model.Task, model.Task.id == model.Module.task).\
         filter(model.Task.id == task.id)
 
-    if evals.filter(model.Evaluation.evaluator is not None).count() > 0:
+    if evals.filter(model.Evaluation.evaluator != None).count() > 0:
         return "working"
     return "base"
 

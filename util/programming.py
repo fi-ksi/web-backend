@@ -191,7 +191,7 @@ def run(module, user_id, code, reporter):
 
     try:
         box_id = init_exec_environment()
-    except ENotFreeBox as e:
+    except ENoFreeBox as e:
         reporter += str(e) + "\n"
         return {'output': 'Přesáhnut maximální počet zároveň spuštěných úloh,'
                 ' zkuste to později.'}

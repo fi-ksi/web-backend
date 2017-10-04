@@ -36,8 +36,8 @@ class SubmFilesEval(object):
 
             resp.set_header('Content-Disposition', "inline; filename=\"eval_" + str(eval_id) + ".zip\"")
             resp.content_type = "application/zip"
-            resp.stream_len = inMemoryOutputFile.len
             resp.body = inMemoryOutputFile.getvalue()
+            resp.stream_len = len(resp.body)
 
             inMemoryOutputFile.close()
         except SQLAlchemyError:

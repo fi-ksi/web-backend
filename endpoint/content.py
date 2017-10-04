@@ -12,7 +12,7 @@ class Content(object):
         if os.listdir(path) != []: return
         try:
             os.rmdir(path)
-            _delete_tree(os.path.dirname(path))
+            self._delete_tree(os.path.dirname(path))
         except:
             return
 

@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import json, falcon
+import sys
+import traceback
 
 from db import session
 from sqlalchemy.exc import SQLAlchemyError

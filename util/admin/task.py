@@ -42,3 +42,5 @@ def createGit(git_path, git_branch, author_id, title):
     # Netusim, jak udelat push -u, tohle je trosku prasarna:
     g = git.Git(util.git.GIT_SEMINAR_PATH)
     g.execute(["git", "push", "-u", "origin", git_branch+':'+git_branch])
+
+    return repo.head.commit.hexsha

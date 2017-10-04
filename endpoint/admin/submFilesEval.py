@@ -7,7 +7,7 @@ from sqlalchemy.exc import SQLAlchemyError
 import model
 import util
 from zipfile import ZipFile
-from io import StringIO
+from io import BytesIO
 import unicodedata
 import os
 
@@ -22,11 +22,12 @@ class SubmFilesEval(object):
                 resp.status = falcon.HTTP_400
                 return
 
-            inMemoryOutputFile = StringIO()
+            inMemoryOutputFile = BytesIO()
             zipFile = ZipFile(inMemoryOutputFile, 'w')
 
             files = [ r for (r, ) in session.query(model.SubmittedFile.path).\
                 filter(model.SubmittedFile.evaluation == eval_id).distinct() ]
+            print(files)
 
             for fname in files:
                 if os.path.isfile(fname):

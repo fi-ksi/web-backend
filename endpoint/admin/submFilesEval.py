@@ -27,7 +27,6 @@ class SubmFilesEval(object):
 
             files = [ r for (r, ) in session.query(model.SubmittedFile.path).\
                 filter(model.SubmittedFile.evaluation == eval_id).distinct() ]
-            print(files)
 
             for fname in files:
                 if os.path.isfile(fname):

@@ -55,10 +55,13 @@ class EvalCode(object):
             CHECK_STDOUT = os.path.join(eval_dir, 'check.stdout')
             SOURCE_PATH = os.path.join(eval_dir, util.programming.SOURCE_FILE)
 
-            with open(SOURCE_PATH, 'r') as s:
-                lines = s.read().split('\n')
+            lines = []
+            if os.path.isfile(SOURCE_PATH):
+                with open(SOURCE_PATH, 'r') as s:
+                    lines = s.read().split('\n')
 
-            if lines[0] != "evaluation" or lines[1] != str(id):
+            if len(lines) >= 2 and (lines[0] != "evaluation" or
+                                    lines[1] != str(id)):
                 req.context['result'] = {
                     'evalCode': {
                         'id': evaluation.id,

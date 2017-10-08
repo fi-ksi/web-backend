@@ -323,12 +323,12 @@ class ModuleSubmit(object):
                 ok=(result['result'] == 'ok')
             )
 
+            if "action" in result['report']:
+                util.module.perform_action(module, user)
+
             req.context['result'] = result
             if 'report' in req.context['result'] and not user.is_org():
                 del req.context['result']['report']
-
-            if "action" in result['report']:
-                util.module.perform_action(module, user)
 
             session.add(evaluation)
             session.commit()

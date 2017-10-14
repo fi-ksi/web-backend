@@ -98,8 +98,10 @@ class Execs(object):
 
             req.context['result'] = {
                 'execs': [util.programming.exec_to_json(ex) for ex in execs],
-                'total': count,
-                'page': page,
+                'meta': {
+                    'total': count,
+                    'page': page,
+                },
             }
 
         except SQLAlchemyError:

@@ -67,7 +67,7 @@ def to_json(module, user_id):
             if 'last_datetime' in prog:
                 module_json['last_datetime'] = prog['last_datetime'].isoformat()
             if 'last_origin' in prog:
-                module_json['last_origin'] = str(prog['last_origin'])
+                module_json['last_origin'] = prog['last_origin']
 
         elif module.type == ModuleType.QUIZ:
             module_json['questions'] = util.quiz.to_json(

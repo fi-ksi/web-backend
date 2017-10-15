@@ -65,7 +65,7 @@ def to_json(module, user_id):
             module_json['code'] = prog['code']
             module_json['default_code'] = prog['default_code']
             if 'last_datetime' in prog:
-                module_json['last_datetime'] = str(prog['last_datetime'])
+                module_json['last_datetime'] = prog['last_datetime'].isoformat()
             if 'last_origin' in prog:
                 module_json['last_origin'] = str(prog['last_origin'])
 

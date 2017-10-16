@@ -41,12 +41,13 @@ class TaskDeploy(object):
                 resp.status = falcon.HTTP_404
                 return
 
-            # Zverejnene ulohy mohou deployovat pouze admini
+            # Zverejnene ulohy mohou deployovat pouze admini a garant vlny
             wave = session.query(model.Wave).get(task.wave)
             if (datetime.datetime.utcnow() > wave.time_published and
-                    not user.is_admin()):
+                    not user.is_admin() and user.id != wave.garant):
                 req.context['result'] = ('Po zverejneni ulohy muze deploy '
-                                         'provest pouze administrator')
+                                         'provest pouze administrator nebo '
+                                         'garant vlny.')
                 resp.status = falcon.HTTP_404
                 return
 

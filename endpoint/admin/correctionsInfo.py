@@ -73,9 +73,33 @@ class CorrectionsInfo(object):
                          join(model.Task,
                          model.Task.author == model.User.id).all())
 
+            solvers = session.query(model.Task.id, model.Evaluation.user).\
+                join(model.Wave, model.Wave.id == model.Task.wave).\
+                filter(model.Wave.year == year).\
+                join(model.Module, model.Module.task == model.Task.id).\
+                join(model.Evaluation,
+                     model.Module.id == model.Evaluation.module).\
+                group_by(model.Task, model.Evaluation.user).\
+                all()
+
+            evaluating = session.query(model.Task.id).\
+                join(model.Module, model.Module.task == model.Task.id).\
+                filter(model.Evaluation.evaluator != None).\
+                join(model.Evaluation,
+                     model.Evaluation.module == model.Module.id).\
+                all()
+            evaluating = [r for (r,) in evaluating]
+
             req.context['result'] = {
                 'correctionsInfos': [
-                    util.correctionInfo.task_to_json(task) for task in tasks
+                    util.correctionInfo.task_to_json(
+                        task,
+                        list(map(
+                            lambda t: t[1],
+                            filter(lambda t: t[0] == task.id, solvers)
+                        )),
+                        task.id in evaluating
+                    ) for task in tasks
                 ],
                 'waves': [
                     util.wave.to_json(wave) for wave in waves
@@ -84,6 +108,7 @@ class CorrectionsInfo(object):
                     util.correctionInfo.user_to_json(user) for user in users
                 ]
             }
+
         except SQLAlchemyError:
             session.rollback()
             raise

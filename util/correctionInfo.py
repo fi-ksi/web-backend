@@ -18,35 +18,34 @@ def user_to_json(user):
     }
 
 
-def _task_corr_state(task):
+def _task_corr_state(task, evaluating=None):
     if task.evaluation_public:
         return "published"
     if task.id in util.correction.tasks_corrected():
         return "corrected"
 
-    evals = session.query(model.Evaluation, model.Module).\
-        join(model.Module, model.Module.id == model.Evaluation.module).\
-        join(model.Task, model.Task.id == model.Module.task).\
-        filter(model.Task.id == task.id)
+    if evaluating is None:
+        evaluating = session.query(model.Evaluation).\
+            filter(model.Evaluation.evaluator != None).\
+            join(model.Module, model.Module.id == model.Evaluation.module).\
+            filter(model.Module.task == task.id).count() > 0
 
-    if evals.filter(model.Evaluation.evaluator != None).count() > 0:
-        return "working"
-    return "base"
+    return 'working' if evaluating else 'base'
 
 
-def task_to_json(task):
-    q = session.query(model.User.id).\
-        join(model.Evaluation, model.Evaluation.user == model.User.id).\
-        join(model.Module, model.Module.id == model.Evaluation.module).\
-        join(model.Task, model.Module.task == model.Task.id).\
-        filter(model.Task.id == task.id).group_by(model.User).all()
-    solvers = [r for (r, ) in q]
+def task_to_json(task, solvers=None, evaluating=None):
+    if solvers is None:
+        q = session.query(model.User.id).\
+            join(model.Evaluation, model.Evaluation.user == model.User.id).\
+            join(model.Module, model.Module.id == model.Evaluation.module).\
+            filter(model.Module.task == task.id).group_by(model.User).all()
+        solvers = [r for (r, ) in q]
 
     return {
         'id': task.id,
         'title': task.title,
         'wave': task.wave,
         'author': task.author,
-        'corr_state': _task_corr_state(task),
+        'corr_state': _task_corr_state(task, evaluating),
         'solvers': solvers
     }

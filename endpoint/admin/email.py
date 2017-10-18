@@ -74,13 +74,15 @@ class Email(object):
                 to = set(active)
 
             if 'Category' in data and data['Category'] != 'both':
-                min_year = session.query(model.Year).get(min(data['To'])).year
-                max_year = session.query(model.Year).get(max(data['To'])).year
+                min_year = util.year.year_end(session.query(model.Year).\
+                    get(min(data['To'])))
+                max_year = util.year.year_end(session.query(model.Year).\
+                    get(max(data['To'])))
 
                 finish = {
                     id: year
                     for (id, year) in
-                    session.query(model.Profile.id,
+                    session.query(model.Profile.user_id,
                                   model.Profile.school_finish).
                     all()
                 }

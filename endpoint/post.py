@@ -79,9 +79,10 @@ class Post(object):
             # a) K prispevkum v eval vlakne mohou pristoupit jen orgove a
             #    jeden resitel
             # b) K ostatnim neverejnym prispevkum mohou pristoupit jen orgove.
-            if (not thread.public and ((not user.is_logged_in()) or
-                    (not user.is_org() and
-                     not util.thread.is_eval_thread(user.id, thread.id)))):
+            if (not thread.public and
+                ((not user.is_logged_in()) or
+                 (not user.is_org() and
+                  not util.thread.is_eval_thread(user.id, thread.id)))):
                 resp.status = falcon.HTTP_400
                 return
 
@@ -168,7 +169,7 @@ class Posts(object):
                 prog_modules = session.query(model.Module).\
                     filter(model.Module.task == task_thread.id,
                            model.Module.type == model.ModuleType.PROGRAMMING).\
-                           all()
+                    all()
 
             # Podminky pristupu:
             #  1) Do vlakna ulohy neni mozne pristoupit, pokud je uloha pro
@@ -268,7 +269,7 @@ class Posts(object):
                             body,
                             cc=wave_garant_email
                         )
-                    except:
+                    except BaseException:
                         exc_type, exc_value, exc_traceback = sys.exc_info()
                         traceback.print_exception(
                             exc_type, exc_value, exc_traceback,
@@ -277,27 +278,40 @@ class Posts(object):
 
                 elif solution_thread:
                     # Vlakno k oprave -> posilame email autoru opravy
-                    correctors = [r for r, in session.query(distinct(model.User.email)).\
+                    correctors = [
+                        r for r, in
+                        session.query(distinct(model.User.email)).
                         join(model.Evaluation,
-                             model.Evaluation.evaluator == model.User.id).\
+                             model.Evaluation.evaluator == model.User.id).
                         join(model.Module,
-                             model.Evaluation.module == model.Module.id).\
-                        join(model.Task, model.Task.id == model.Module.task).\
-                        filter(model.Task.id == solution_thread.task).all()]
+                             model.Evaluation.module == model.Module.id).
+                        join(model.Task, model.Task.id == model.Module.task).
+                        filter(model.Task.id == solution_thread.task).all()
+                    ]
 
-                    for corr_email in correctors: sent_emails.add(corr_email)
+                    for corr_email in correctors:
+                        sent_emails.add(corr_email)
 
                     if correctors:
                         task = session.query(model.Task).\
                             get(solution_thread.task)
                         try:
-                            util.mail.send(correctors, '[KSI-WEB] Nový komentář k tvé korektuře úlohy ' + task.title, \
-                                '<p>Ahoj,<br/>k tvé <a href="'+ config.ksi_web() + '/admin/opravovani?task_='+str(task.id)+'&participant_='+str(user_class.id)+\
-                                '">korektuře</a> úlohy <a href="' + config.ksi_web() + '/ulohy/' + str(task.id) + '">' + task.title +\
-                                '</a> na <a href="'+ config.ksi_web() + '/">' + config.ksi_web() +'</a> byl přidán nový komentář:<p><p><i>' +\
-                                user_class.first_name + ' ' + user_class.last_name + ':</i></p><p>' + data['body'] +\
-                                config.karlik_img() + util.mail.easteregg())
-                        except:
+                            util.mail.send(
+                                correctors,
+                                '[KSI-WEB] Nový komentář k tvé korektuře úlohy ' + task.title,
+                                '<p>Ahoj,<br/>k tvé <a href="' +
+                                config.ksi_web() + '/admin/opravovani?task_=' +
+                                str(task.id) + '&participant_='+str(user_class.id) +
+                                '">korektuře</a> úlohy <a href="' + config.ksi_web() +
+                                '/ulohy/' + str(task.id) + '">' + task.title +
+                                '</a> na <a href="' + config.ksi_web() + '/">' +
+                                config.ksi_web() +
+                                '</a> byl přidán nový komentář:<p><p><i>' +
+                                user_class.first_name + ' ' +
+                                user_class.last_name + ':</i></p><p>' +
+                                data['body'] + config.karlik_img() +
+                                util.mail.easteregg())
+                        except BaseException:
                             exc_type, exc_value, exc_traceback = sys.exc_info()
                             traceback.print_exception(exc_type, exc_value,
                                                       exc_traceback,
@@ -306,12 +320,19 @@ class Posts(object):
                     # Obecna diskuze -> email na ksi@fi.muni.cz
                     try:
                         sent_emails.add(config.ksi_conf())
-                        util.mail.send(config.ksi_conf(), '[KSI-WEB] Nový příspěvek v obecné diskuzi',
-                            '<p>Ahoj,<br/>do obecné diskuze na <a href="'+ config.ksi_web() + '/">' + config.ksi_web() +'</a> byl přidán nový příspěvek:</p><p><i>' +\
-                            user_class.first_name + ' ' + user_class.last_name + ':</i></p>' + data['body'] +\
-                            '<p><a href='  + config.ksi_web() + '/forum/' + str(thread.id) + '>Přejít do diskuze.</a></p>' +\
-                            config.karlik_img() + util.mail.easteregg())
-                    except:
+                        util.mail.send(
+                            config.ksi_conf(),
+                            '[KSI-WEB] Nový příspěvek v obecné diskuzi',
+                            '<p>Ahoj,<br/>do obecné diskuze na <a href="' +
+                            config.ksi_web() + '/">' + config.ksi_web() +
+                            '</a> byl přidán nový příspěvek:</p><p><i>' +
+                            user_class.first_name + ' ' +
+                            user_class.last_name + ':</i></p>' + data['body'] +
+                            '<p><a href=' + config.ksi_web() + '/forum/' +
+                            str(thread.id) + '>Přejít do diskuze.</a></p>' +
+                            config.karlik_img() + util.mail.easteregg()
+                        )
+                    except BaseException:
                         exc_type, exc_value, exc_traceback = sys.exc_info()
                         traceback.print_exception(exc_type, exc_value,
                                                   exc_traceback,
@@ -331,23 +352,36 @@ class Posts(object):
                 parent_user = session.query(model.User).get(parent.author)
                 parent_profile = session.query(model.Profile).\
                     get(parent.author)
-                if (parent_user.email not in sent_emails) and (parent_profile.notify_response):
+                if (parent_user.email not in sent_emails and
+                        parent_profile.notify_response):
                     try:
                         sent_emails.add(parent_user.email)
 
-                        body = "<p>Ahoj,<br>do diskuze <a href=\"%s\">%s</a> byl přidán nový příspěvek.</p>" % (util.config.ksi_web() + "/forum/" + str(thread.id), thread.title)
+                        body = (
+                            '<p>Ahoj,<br>do diskuze <a href="%s">%s</a> byl '
+                            'přidán nový příspěvek.</p>' %
+                            (util.config.ksi_web() + "/forum/" +
+                             str(thread.id), thread.title)
+                        )
                         body += util.post.to_html(parent, parent_user)
-                        body += "<div style='margin-left: 50px;'>%s</div>" % (util.post.to_html(post))
+                        body += ("<div style='margin-left: 50px;'>%s</div>" %
+                                 (util.post.to_html(post)))
                         body += util.config.karlik_img()
-                        body += "<hr><p style='font-size: 70%%;'>Tuto zprávu dostáváš, protože máš v nastavení na <a href=\"%s\">KSI webu</a> aktivované zasílání notifikací. Pokud nechceš dostávat notifikace, změň si nastavení na webu.</p>" % (util.config.ksi_web())
-
+                        body += (
+                            '<hr><p style="font-size: 70%%;">Tuto zprávu '
+                            'dostáváš, protože máš v nastavení na <a href="%s"'
+                            '>KSI webu</a> aktivované zasílání notifikací. '
+                            'Pokud nechceš dostávat notifikace, změň si '
+                            'nastavení na webu.</p>' % (util.config.ksi_web())
+                        )
 
                         util.mail.send(
                             parent_user.email,
                             ('[KSI-WEB] Nový příspěvek v diskuzi %s' %
-                            (thread.title)), body
+                             (thread.title)),
+                            body
                         )
-                    except:
+                    except BaseException:
                         exc_type, exc_value, exc_traceback = sys.exc_info()
                         traceback.print_exception(exc_type, exc_value,
                                                   exc_traceback,

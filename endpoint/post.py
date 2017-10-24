@@ -164,6 +164,12 @@ class Posts(object):
                        model.SolutionComment.user == user.id).\
                 first()
 
+            if task_thread:
+                prog_modules = session.query(model.Module).\
+                    filter(model.Module.task == task_thread.id,
+                           model.Module.type == model.ModuleType.PROGRAMMING).\
+                           all()
+
             # Podminky pristupu:
             #  1) Do vlakna ulohy neni mozne pristoupit, pokud je uloha pro
             #     uzivatele uzavrena.
@@ -230,12 +236,38 @@ class Posts(object):
                         sent_emails.add(task_co_author_email)
                         recipients.append(task_co_author_email)
                     try:
-                        util.mail.send(recipients, '[KSI-WEB] Nový příspěvek k úloze ' + task_thread.title,
-                            '<p>Ahoj,<br/>k tvé úloze <a href="' + config.ksi_web() + '/ulohy/' + str(task_thread.id) + '">' +\
-                            task_thread.title + '</a> na <a href="'+ config.ksi_web() + '/">' + config.ksi_web() +'</a> byl přidán nový komentář:</p><p><i>' +\
-                            user_class.first_name + ' ' + user_class.last_name + ':</i></p>' + data['body'] +\
-                            '<p><a href="'  + config.ksi_web() + '/ulohy/' + str(task_thread.id) + '/diskuse">Přejít do diskuze.</a></p>' +\
-                            config.karlik_img() + util.mail.easteregg(), cc=wave_garant_email)
+                        body = (
+                            '<p>Ahoj,<br/>k tvé úloze <a href="' +
+                            config.ksi_web() + '/ulohy/' + str(task_thread.id) +
+                            '">' + task_thread.title + '</a> na <a href="' +
+                            config.ksi_web() + '/">' + config.ksi_web() +
+                            '</a> byl přidán nový komentář:</p><p><i>' +
+                            user_class.first_name + ' ' + user_class.last_name +
+                            ':</i></p>' + data['body'] + '<p><a href="' +
+                            config.ksi_web() + '/ulohy/' + str(task_thread.id) +
+                            '/diskuse">Přejít do diskuze.</a> ' + '<a href="' +
+                            config.ksi_web() + '/admin/opravovani?participant_=' +
+                            str(user_class.id) + '&task_=' + str(task_thread.id) +
+                            '">Přejít na opravení.</a>'
+                        )
+
+                        if len(prog_modules) > 0:
+                            body += (' <a href="' + config.ksi_web() +
+                                     '/admin/execs?user=' + str(user_class.id))
+                            if len(prog_modules) == 1:
+                                body += '&module=' + str(prog_modules[0].id)
+
+                            body += '">Přejít na spuštění.</a></p>'
+
+                        body += '</p>'
+                        body += config.karlik_img() + util.mail.easteregg()
+
+                        util.mail.send(
+                            recipients,
+                            '[KSI-WEB] Nový příspěvek k úloze ' + task_thread.title,
+                            body,
+                            cc=wave_garant_email
+                        )
                     except:
                         exc_type, exc_value, exc_traceback = sys.exc_info()
                         traceback.print_exception(

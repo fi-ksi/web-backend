@@ -24,7 +24,7 @@ class Correction(object):
         try:
             user = req.context['user']
             year = req.context['year']
-            task = int(id) / 100000
+            task = int(id) // 100000
             participant = int(id) % 100000
 
             if (not user.is_logged_in()) or (not user.is_org()):

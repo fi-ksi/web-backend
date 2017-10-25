@@ -28,5 +28,9 @@ def mail_sender():
     return get("mail_sender")
 
 
+def backend_url():
+    return get("backend_url")
+
+
 def feedback():
     return [r for r, in session.query(model.FeedbackRecipient.email).all()]

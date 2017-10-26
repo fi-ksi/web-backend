@@ -120,7 +120,7 @@ class Correction(object):
                 try:
                     ach = session.query(model.UserAchievement).\
                         get((corr['user'], a_id))
-                    if ach.task_id == corr['task_id']:
+                    if ach.task_id == int(corr['task_id']):
                         session.delete(ach)
                     session.commit()
                 except SQLAlchemyError:

@@ -197,7 +197,7 @@ class Users(object):
                      model.UserAchievement.achievement_id).\
                 filter(or_(model.Achievement.year == year.id,
                            model.Achievement.year == None)).\
-                group_by(model.User, model.Achievement).\
+                group_by(model.User.id, model.Achievement.id).\
                 all()
 
             # Aktivni roky:
@@ -209,7 +209,7 @@ class Users(object):
                 join(model.Evaluation,
                      model.Evaluation.module == model.Module.id).\
                 join(model.User, model.Evaluation.user == model.User.id).\
-                group_by(model.User, model.Year).\
+                group_by(model.User.id, model.Year.id).\
                 all()
 
             # Aktivni roky orgu:

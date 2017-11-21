@@ -18,10 +18,12 @@ def user_to_json(user):
     }
 
 
-def _task_corr_state(task, evaluating=None):
+def _task_corr_state(task, evaluating=None, tasks_corrected=None):
     if task.evaluation_public:
         return "published"
-    if task.id in util.correction.tasks_corrected():
+    if tasks_corrected is None:
+        tasks_corrected = util.correction.tasks_corrected()
+    if task.id in tasks_corrected:
         return "corrected"
 
     if evaluating is None:
@@ -33,7 +35,7 @@ def _task_corr_state(task, evaluating=None):
     return 'working' if evaluating else 'base'
 
 
-def task_to_json(task, solvers=None, evaluating=None):
+def task_to_json(task, solvers=None, evaluating=None, tasks_corrected=None):
     if solvers is None:
         q = session.query(model.User.id).\
             join(model.Evaluation, model.Evaluation.user == model.User.id).\
@@ -46,6 +48,6 @@ def task_to_json(task, solvers=None, evaluating=None):
         'title': task.title,
         'wave': task.wave,
         'author': task.author,
-        'corr_state': _task_corr_state(task, evaluating),
+        'corr_state': _task_corr_state(task, evaluating, tasks_corrected),
         'solvers': solvers
     }

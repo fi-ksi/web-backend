@@ -79,7 +79,7 @@ class CorrectionsInfo(object):
                 join(model.Module, model.Module.task == model.Task.id).\
                 join(model.Evaluation,
                      model.Module.id == model.Evaluation.module).\
-                group_by(model.Task, model.Evaluation.user).\
+                group_by(model.Task.id, model.Evaluation.user).\
                 all()
 
             evaluating = session.query(model.Task.id).\
@@ -90,6 +90,8 @@ class CorrectionsInfo(object):
                 all()
             evaluating = [r for (r,) in evaluating]
 
+            tasks_corrected = util.correction.tasks_corrected()
+
             req.context['result'] = {
                 'correctionsInfos': [
                     util.correctionInfo.task_to_json(
@@ -98,7 +100,8 @@ class CorrectionsInfo(object):
                             lambda t: t[1],
                             filter(lambda t: t[0] == task.id, solvers)
                         )),
-                        task.id in evaluating
+                        task.id in evaluating,
+                        tasks_corrected
                     ) for task in tasks
                 ],
                 'waves': [

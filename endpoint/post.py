@@ -261,7 +261,7 @@ class Posts(object):
                             body += '">Přejít na spuštění.</a></p>'
 
                         body += '</p>'
-                        body += config.karlik_img() + util.mail.easteregg()
+                        body += config.karlik_img()
 
                         util.mail.send(
                             recipients,
@@ -309,8 +309,7 @@ class Posts(object):
                                 '</a> byl přidán nový komentář:<p><p><i>' +
                                 user_class.first_name + ' ' +
                                 user_class.last_name + ':</i></p><p>' +
-                                data['body'] + config.karlik_img() +
-                                util.mail.easteregg())
+                                data['body'] + config.karlik_img())
                         except BaseException:
                             exc_type, exc_value, exc_traceback = sys.exc_info()
                             traceback.print_exception(exc_type, exc_value,
@@ -330,7 +329,7 @@ class Posts(object):
                             user_class.last_name + ':</i></p>' + data['body'] +
                             '<p><a href=' + config.ksi_web() + '/forum/' +
                             str(thread.id) + '>Přejít do diskuze.</a></p>' +
-                            config.karlik_img() + util.mail.easteregg()
+                            config.karlik_img()
                         )
                     except BaseException:
                         exc_type, exc_value, exc_traceback = sys.exc_info()

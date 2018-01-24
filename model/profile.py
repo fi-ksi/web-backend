@@ -12,7 +12,7 @@ class Profile(Base):
     __tablename__ = 'profiles'
     __table_args__ = {
         'mysql_engine': 'InnoDB',
-        'mysql_charset': 'utf8'
+        'mysql_charset': 'utf8mb4'
     }
 
     countries = Enum('cz', 'sk')

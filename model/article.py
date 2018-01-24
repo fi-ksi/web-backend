@@ -11,7 +11,7 @@ class Article(Base):
     __tablename__ = 'articles'
     __table_args__ = {
         'mysql_engine': 'InnoDB',
-        'mysql_charset': 'utf8'
+        'mysql_charset': 'utf8mb4'
     }
 
     id = Column(Integer, primary_key=True, nullable=False)

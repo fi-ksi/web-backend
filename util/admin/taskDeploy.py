@@ -704,7 +704,7 @@ def process_module_text(module, lines, specific, path, task):
     diff = []
     questions = []
     while line < len(lines):
-        match = re.match(r"^~\s*(.*?)\s*(\*\*(.*?)\*\*|-)", lines[line] + " -")
+        match = re.match(r"^~\s*(.*?)\s*(\*\*(.*?)\*\*)?\s*$", lines[line])
         if not match:
             break
 

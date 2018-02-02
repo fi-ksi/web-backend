@@ -10,7 +10,7 @@ class UserAchievement(Base):
     __tablename__ = 'user_achievement'
     __table_args__ = {
         'mysql_engine': 'InnoDB',
-        'mysql_charset': 'utf8'
+        'mysql_charset': 'utf8mb4'
     }
 
     user_id = Column(Integer, ForeignKey(User.id, ondelete='CASCADE'),

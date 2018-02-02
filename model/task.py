@@ -14,7 +14,7 @@ class Task(Base):
     __tablename__ = 'tasks'
     __table_args__ = {
         'mysql_engine': 'InnoDB',
-        'mysql_charset': 'utf8'
+        'mysql_charset': 'utf8mb4'
     }
 
     id = Column(Integer, primary_key=True)

@@ -13,7 +13,7 @@ class Thread(Base):
     __tablename__ = 'threads'
     __table_args__ = {
         'mysql_engine': 'InnoDB',
-        'mysql_charset': 'utf8'
+        'mysql_charset': 'utf8mb4'
     }
 
     id = Column(Integer, primary_key=True)

@@ -59,6 +59,10 @@ class ECheckError(Exception):
     pass
 
 
+class EMergeError(Exception):
+    pass
+
+
 class Reporter(object):
     def __init__(self):
         self.report = ""
@@ -373,7 +377,11 @@ def _merge(wd, merge_script, code, code_merged, reporter):
         p.wait()
 
     if p.returncode != 0:
-        status = 'n'
+        reporter += '\n Error: Merge script exited with nonzero return code!\n'
+        reporter += 'Stderr:\n'
+        with open(stderr_path, 'r') as stderr:
+            reporter += stderr.read()
+        raise EMergeError("Merge script exited with nonzero return code!")
 
     if not os.path.exists(code_merged):
         reporter += '\n Error: merge script did not create merged file!\n'

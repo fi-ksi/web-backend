@@ -45,12 +45,23 @@ class RunCode(object):
 
             reporter = util.programming.Reporter()
             try:
-                result = util.programming.run(module, user.id, data,
-                                              execution.id, reporter)
-                execution.result = result['result']
-                req.context['result'] = result
+                try:
+                    result = util.programming.run(module, user.id, data,
+                                                  execution.id, reporter)
+                    execution.result = result['result']
+                    req.context['result'] = result
+                except (util.programming.ENoFreeBox,
+                        util.programming.EIsolateError,
+                        util.programming.EPostTriggerError,
+                        util.programming.ECheckError,
+                        util.programming.EMergeError) as e:
+                    reporter += str(e)
+                    raise
+                except Exception as e:
+                    reporter += traceback.format_exc()
+                    raise
+
             except Exception as e:
-                reporter += traceback.format_exc()
                 req.context['result'] = {
                     'message': ('Kód se nepodařilo '
                                 'spustit, kontaktujte organizátora.'),

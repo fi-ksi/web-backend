@@ -377,14 +377,14 @@ def _merge(wd, merge_script, code, code_merged, reporter):
         p.wait()
 
     if p.returncode != 0:
-        reporter += '\n Error: Merge script exited with nonzero return code!\n'
+        reporter += '\nError: Merge script exited with nonzero return code!\n'
         reporter += 'Stderr:\n'
         with open(stderr_path, 'r') as stderr:
             reporter += stderr.read()
         raise EMergeError("Merge script exited with nonzero return code!")
 
     if not os.path.exists(code_merged):
-        reporter += '\n Error: merge script did not create merged file!\n'
+        reporter += '\nError: merge script did not create merged file!\n'
         raise FileNotFoundError("Merge script did not create merged file!")
 
     # Add executable flag to merged code

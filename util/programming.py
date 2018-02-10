@@ -84,9 +84,10 @@ def to_json(db_dict, user_id, module_id, last_eval):
             filter(model.SubmittedCode.evaluation == last_eval.id).\
             first()
 
-        code['code'] = submitted.code
-        code['last_datetime'] = last_eval.time
-        code['last_origin'] = 'evaluation'
+        if submitted is not None:
+            code['code'] = submitted.code
+            code['last_datetime'] = last_eval.time
+            code['last_origin'] = 'evaluation'
     else:
         execution = session.query(model.CodeExecution).\
             filter(model.CodeExecution.module == module_id,

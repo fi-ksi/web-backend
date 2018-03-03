@@ -1,5 +1,5 @@
 import falcon
-from sqlalchemy import func, or_
+from sqlalchemy import func, or_, and_
 from sqlalchemy.orm import aliased
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -46,30 +46,29 @@ class CorrectionsEmail(object):
                 resp.status = falcon.HTTP_400
 
             participant = aliased(model.User)
-            evaluator = aliased(model.User)
+            commenter = aliased(model.User)
             tos = session.query(participant,
                                 model.Profile,
                                 model.Evaluation,
                                 model.Post,
-                                evaluator).\
+                                commenter,
+                                model.SolutionComment).\
                 join(model.Profile, participant.id == model.Profile.user_id).\
                 filter(model.Profile.notify_eval).\
                 join(model.Evaluation,
                      model.Evaluation.user == participant.id).\
                 join(model.Module,
                      model.Module.id == model.Evaluation.module).\
-                join(evaluator, evaluator.id == model.Evaluation.evaluator).\
                 filter(model.Module.task == id).\
                 outerjoin(model.SolutionComment,
-                          model.SolutionComment.user == participant.id).\
-                filter(or_(model.SolutionComment.task == id,
-                           model.SolutionComment.thread == None)).\
+                          and_(model.SolutionComment.user == participant.id,
+                               model.SolutionComment.task == id)).\
                 outerjoin(model.Post,
                           model.Post.thread == model.SolutionComment.thread).\
+                outerjoin(commenter, commenter.id == model.Post.author).\
                 group_by(participant).\
                 all()
 
-            author = session.query(model.User).get(task.author)
             errors = []
 
             for to in tos:
@@ -97,15 +96,26 @@ class CorrectionsEmail(object):
                                  "komentář.</p>")
 
                     body += ("<p>Můžeš si prohlédnout <a href=\"%s\">"
-                             "výsledkovku</a>, podívat se na <a href=\"%s\">"
-                             "vzorové řešení úlohy</a>, nebo <a href=\"%s\">"
-                             "odpovědět na komentář opravujícího</a>.</p>") % (
-                        util.config.ksi_web() + "/vysledky",
-                        util.config.ksi_web() + "/ulohy/" +
-                        str(id) + "/reseni",
-                        util.config.ksi_web() + "/ulohy/" +
-                        str(id) + "/hodnoceni"
+                             "výsledkovku</a>, ") % (
+                        util.config.ksi_web() + "/vysledky"
                     )
+
+                    if to.SolutionComment:
+                        body += ("podívat se na <a href=\"%s\">"
+                                 "vzorové řešení úlohy</a>, nebo <a href=\"%s\">"
+                                 "odpovědět na komentář opravujícího</a>.</p>") % (
+                            util.config.ksi_web() + "/ulohy/" +
+                            str(id) + "/reseni",
+                            util.config.ksi_web() + "/ulohy/" +
+                            str(id) + "/hodnoceni"
+                        )
+                    else:
+                        body += ("nebo se podívat na <a href=\"%s\">"
+                                 "vzorové řešení úlohy</a>.</p>") % (
+                            util.config.ksi_web() + "/ulohy/" +
+                            str(id) + "/reseni"
+                        )
+
                     body += util.config.karlik_img()
 
                     body += ("<hr><p style='font-size: 70%%;'>Tuto zprávu "

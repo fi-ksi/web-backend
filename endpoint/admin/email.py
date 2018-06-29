@@ -74,9 +74,9 @@ class Email(object):
                 to = set(active)
 
             if 'Category' in data and data['Category'] != 'both':
-                min_year = util.year.year_end(session.query(model.Year).\
+                min_year = util.year.year_end(session.query(model.Year).
                     get(min(data['To'])))
-                max_year = util.year.year_end(session.query(model.Year).\
+                max_year = util.year.year_end(session.query(model.Year).
                     get(max(data['To'])))
 
                 finish = {

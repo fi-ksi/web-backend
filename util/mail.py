@@ -72,7 +72,7 @@ def send(to, subject, text, params={}, bcc=[], cc=[]):
 
     msg['Subject'] = subject
     msg['From'] = config.mail_sender()
-    if 'Sender' not in msg:
+    if 'Sender' not in params:
         msg['Sender'] = config.get('return_path')
     msg['To'] = (','.join(to)) if isinstance(to, (list)) else to
     if len(cc) > 0:

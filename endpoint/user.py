@@ -141,9 +141,6 @@ class Users(object):
                 join(model.Profile, model.User.id == model.Profile.user_id).\
                 group_by(model.User)
 
-            if not usr.is_org():
-                users = users.filter(model.User.enabled)
-
             # Filtrovani skupin uzivatelu
             if filt == 'organisators' or filt == 'orgs':
                 users = users.filter(or_(model.User.role == 'org',
@@ -177,8 +174,7 @@ class Users(object):
                     filter(text("tasks_cnt"), text("tasks_cnt > 0"))
             # Razeni uzivatelu
             if sort == 'score':
-                users = users.filter(model.User.enabled).\
-                    order_by(desc("total_score"))
+                users = users.order_by(desc("total_score"))
 
             # Polozime SQL dotaz a ziskame vsechny relevantni uzivatele
             users = users.all()

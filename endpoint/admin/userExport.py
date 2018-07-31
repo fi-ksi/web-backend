@@ -104,7 +104,6 @@ class UserExport(object):
                 func.sum(per_user.c.points).label("total_score"),
                 tasks_per_user.c.tasks_cnt.label('tasks_cnt')
             ).\
-                filter(model.User.enabled).\
                 join(per_user, model.User.id == per_user.c.user).\
                 join(tasks_per_user, model.User.id == tasks_per_user.c.user).\
                 join(model.Profile, model.User.id == model.Profile.user_id).\

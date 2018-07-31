@@ -10,6 +10,7 @@ import util
 class Error:
     INVALID_REQUEST = 'invalid_request'
     UNAUTHORIZED_CLIENT = 'unauthorized_client'
+    ACCOUNT_DISABLED = 'account_disabled'
 
 
 class Authorize(object):
@@ -20,11 +21,19 @@ class Authorize(object):
 
         try:
             challenge = session.query(model.User).filter(
-                model.User.email == username, model.User.enabled).first()
+                model.User.email == username).first()
 
-            if (username and password and challenge and
-                    auth.check_password(password, challenge.password)):
-                req.context['result'] = auth.OAuth2Token(challenge.id).data
+            if username and password and challenge:
+                if not challenge.enabled:
+                    req.context['result'] = {'error': Error.ACCOUNT_DISABLED}
+                    resp.status = falcon.HTTP_400
+                    return
+
+                if auth.check_password(password, challenge.password):
+                    req.context['result'] = auth.OAuth2Token(challenge.id).data
+                else:
+                    req.context['result'] = {'error': Error.UNAUTHORIZED_CLIENT}
+                    resp.status = falcon.HTTP_400
             else:
                 req.context['result'] = {'error': Error.UNAUTHORIZED_CLIENT}
                 resp.status = falcon.HTTP_400

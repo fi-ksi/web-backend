@@ -16,16 +16,6 @@ def _generate_token():
     ])
 
 
-class Error:
-    INVALID_REQUEST = 'invalid_request'
-    UNAUTHORIZED_CLIENT = 'unauthorized_client'
-
-
-class GrantType:
-    CODE = 'password'
-    CODE = 'refresh_token'
-
-
 def get_hashed_password(plain_text_password):
     return bcrypt.hashpw(plain_text_password.encode('utf-8'), bcrypt.gensalt())
 

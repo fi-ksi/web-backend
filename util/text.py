@@ -59,7 +59,7 @@ def eval_text(eval_script, data, reporter):
                 stderr=stderr,
                 cwd=path
             )
-            p.wait()
+            p.wait(timeout=10)  # seconds
 
         res = {'result': 'ok' if p.returncode == 0 else 'nok'}
 

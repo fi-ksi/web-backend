@@ -57,6 +57,6 @@ def _question_to_json(question):
     return {
         'type': question['type'],
         'question': question['question'],
-        'text': question['text'],
+        'text': question['text'] if 'text' in question else '',
         'options': question['options']
     }

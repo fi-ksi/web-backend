@@ -292,17 +292,17 @@ def _apply_custom(module, custom):
     if custom.description is not None:
         module.description = custom.description
     if custom.data is not None:
-        if 'text' in mdata and 'eval_script' in mdata['text'] \
+        mdata = json.loads(module.data)
+
+        if 'text' in mdata and  'eval_script' in mdata['text'] \
             and 'eval_script' not in cdata:
             # Preserve 'eval_script' key
-            mdata = json.loads(module.data)
             cdata = json.loads(custom.data)
             cdata['eval_script'] = mdata['eval_script']
             module.data = json.dumps(cdata, indent=2)
 
         elif 'programming' in mdata:
             # Use all original module data, replace only if needed
-            mdata = json.loads(module.data)
             cdata = json.loads(custom.data)
             mdata.update(cdata)
             module.data = json.dumps(mdata, indent=2)

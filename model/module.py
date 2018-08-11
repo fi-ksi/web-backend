@@ -35,5 +35,6 @@ class Module(Base):
     order = Column(SmallInteger, nullable=False, default=1, server_default='1')
     bonus = Column(Boolean, nullable=False, default=False,
                    server_default=text('FALSE'))
+    custom = Column(Boolean, nullable=False, default=False)
     action = Column(Text)
     data = Column(Text)

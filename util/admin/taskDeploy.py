@@ -431,6 +431,16 @@ def process_module(module, module_path, task):
     """
 
     specific = process_module_json(module, module_path + "/module.json")
+
+    # Copy whole module directory into data/modules
+    log("Copying module data")
+    target_path = os.path.join("data", "modules", str(module.id))
+    if os.path.isdir(target_path):
+        shutil.rmtree(target_path)
+    shutil.copytree(module_path, target_path)
+
+    module.custom = os.path.isfile(os.path.join(target_path, "module-gen.py"))
+
     process_module_md(module, module_path + "/module.md", specific, task)
 
 
@@ -543,12 +553,7 @@ def process_module_programming(module, lines, specific, source_path):
     if 'version' in specific:
         data['programming']['version'] = specific['version']
 
-    # Copy whole module directory into data/modules
     target_path = os.path.join("data", "modules", str(module.id))
-    if os.path.isdir(target_path):
-        shutil.rmtree(target_path)
-    shutil.copytree(source_path, target_path)
-
     data['programming']['merge_script'] = os.path.join(target_path, "merge")
     data['programming']['stdin'] = os.path.join(target_path, "stdin.txt")
     if not os.path.isfile(os.path.join(source_path, "/stdin.txt")):

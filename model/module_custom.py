@@ -27,5 +27,5 @@ class ModuleCustom(Base):
     )
     description = Column(Text, nullable=True)
     description_replace = Column(Text, nullable=True)
-    data = Column(Text)
-    error = Column(Text)
+    data = Column(Text, nullable=True)
+    error = Column(Text, nullable=True)

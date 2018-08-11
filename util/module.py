@@ -3,6 +3,10 @@ import datetime
 import json
 import shutil
 from sqlalchemy import func, desc
+from sqlalchemy.exc import SQLAlchemyError
+import copy
+import subprocess
+import traceback
 
 from db import session
 from model.module import ModuleType
@@ -29,7 +33,12 @@ def existing_evaluation(module_id, user_id):
 
 
 def to_json(module, user_id):
-    module_json = _info_to_json(module)
+    if module.custom:
+        _module = _load_custom(module, user_id)
+    else:
+        _module = module
+
+    module_json = _info_to_json(_module)
 
     # Ziskame nejlepsi evaluation.
     best = session.query(
@@ -55,12 +64,12 @@ def to_json(module, user_id):
         module_json['state'] = 'blank'
 
     module_json['score'] =\
-        module.id if best is not None and task.evaluation_public else None
+        _module.id if best is not None and task.evaluation_public else None
 
     try:
-        if module.type == ModuleType.PROGRAMMING:
+        if _module.type == ModuleType.PROGRAMMING:
             prog = util.programming.to_json(
-                json.loads(module.data), user_id, module.id, evaluation
+                json.loads(_module.data), user_id, _module.id, evaluation
             )
             module_json['code'] = prog['code']
             module_json['default_code'] = prog['default_code']
@@ -69,20 +78,20 @@ def to_json(module, user_id):
             if 'last_origin' in prog:
                 module_json['last_origin'] = prog['last_origin']
 
-        elif module.type == ModuleType.QUIZ:
+        elif _module.type == ModuleType.QUIZ:
             module_json['questions'] = util.quiz.to_json(
-                json.loads(module.data), user_id)
+                json.loads(_module.data), user_id)
 
-        elif module.type == ModuleType.SORTABLE:
+        elif _module.type == ModuleType.SORTABLE:
             module_json['sortable_list'] = util.sortable.to_json(
-                json.loads(module.data), user_id)
+                json.loads(_module.data), user_id)
 
-        elif module.type == ModuleType.GENERAL:
+        elif _module.type == ModuleType.GENERAL:
             submittedFiles = session.query(model.SubmittedFile).\
                 join(model.Evaluation,
                      model.SubmittedFile.evaluation == model.Evaluation.id).\
                 filter(model.Evaluation.user == user_id,
-                       model.Evaluation.module == module.id).\
+                       model.Evaluation.module == _module.id).\
                 all()
 
             submittedFiles = [{'id': inst.id, 'filename': os.path.basename(
@@ -90,8 +99,8 @@ def to_json(module, user_id):
 
             module_json['submitted_files'] = submittedFiles
 
-        elif module.type == ModuleType.TEXT:
-            txt = util.text.to_json(json.loads(module.data), user_id)
+        elif _module.type == ModuleType.TEXT:
+            txt = util.text.to_json(json.loads(_module.data), user_id)
             module_json['fields'] = txt['questions']
     except Exception as e:
         module_json['description'] +=\
@@ -122,7 +131,8 @@ def _info_to_json(module):
         'name': module.name,
         'description': module.description,
         'autocorrect': module.autocorrect,
-        'max_score': module.max_points}
+        'max_score': module.max_points
+    }
 
 
 def _load_questions(module_id):
@@ -193,3 +203,98 @@ def delete_module(module):
     except BaseException:
         session.rollback()
         raise
+
+
+def _load_custom(module, user_id):
+    res = copy.deepcopy(module)
+
+    try:
+        custom = session.query(model.ModuleCustom).get((module.id, user_id))
+        if custom is not None and custom.error is None:
+            # custom assignment already present without error
+            # (regenerate assignment when last time error)
+            return _apply_custom(res, custom)
+
+        p = subprocess.Popen(
+            [
+                os.path.abspath(os.path.join('data', 'modules', str(module.id),
+                                             'module-gen.py')),
+                str(user_id),
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+
+        timeout = False
+        try:
+            p.wait(timeout=10)  # timeout in seconds
+            stdout, stderr = p.communicate()
+            stdout = stdout.decode('utf-8')
+            stderr = stderr.decode('utf-8')
+        except subprocess.TimeoutExpired:
+            stdout = ''
+            stderr = 'Timeout expired!'
+            timeout = True
+
+        if custom is None:
+            custom = model.ModuleCustom(
+                module=module.id,
+                user=user_id,
+            )
+        else:
+            custom.error = None
+
+        try:
+            if p.returncode != 0 or timeout:
+                custom.error = stderr
+                res.description += (
+                    '<div class="alert alert-danger">Chyba při vytváření '
+                    'individuálního zadání, kontaktuj organizátora!</div>'
+                )
+                res.data = ''
+                return res
+
+            data = json.loads(stdout)
+            if 'assignment' in data:
+                custom.description = json.dumps(data['description'], indent=2)
+                del data['description']
+            if 'description_replace' in data:
+                custom.description_replace = json.dumps(
+                    data['description_replace'], indent=2
+                )
+                del data['description_replace']
+            custom.data = json.dumps(data, indent=2)
+
+            return _apply_custom(res, custom)
+        except Exception as e:
+            custom.error = traceback.format_exc()
+            res.description += (
+                '<div class="alert alert-danger">Chyba při vytváření '
+                'individuálního zadání, kontaktuj organizátora!</div>'
+            )
+            res.data = ''
+            return res
+
+    except SQLAlchemyError:
+        session.rollback()
+        raise
+    finally:
+        try:
+            session.add(custom)
+            session.commit()
+        except:
+            session.rollback()
+            raise
+
+
+def _apply_custom(module, custom):
+    """Apply custom module assignment to module."""
+    if custom.description is not None:
+        module.description = custom.description
+    if custom.data is not None:
+        module.data = custom.data
+    if custom.description_replace is not None:
+        data = json.loads(custom.description_replace)
+        for (key, value) in data.items():
+            module.description = module.description.replace(key, value)
+    return module

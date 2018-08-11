@@ -218,7 +218,7 @@ def _load_custom(module, user_id):
         p = subprocess.Popen(
             [
                 os.path.abspath(os.path.join('data', 'modules', str(module.id),
-                                             'module-gen.py')),
+                                             'module-gen')),
                 str(user_id),
             ],
             stdout=subprocess.PIPE,

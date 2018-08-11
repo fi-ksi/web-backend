@@ -151,7 +151,7 @@ def evaluate(task, module, user_id, code, eval_id, reporter):
                 check_res = _check(os.path.join(EXEC_PATH, box_id),
                                    prog_info['check_script'],
                                    os.path.join(EXEC_PATH, box_id, "output"),
-                                   reporter)
+                                   reporter, user_id)
             else:
                 return {
                     'result': 'nok',
@@ -283,7 +283,7 @@ def run(module, user_id, code, exec_id, reporter):
 
     try:
         try:
-            res = _run(prog_info, code, box_id, reporter)
+            res = _run(prog_info, code, box_id, reporter, user_id)
         finally:
             store_exec(box_id, user_id, module.id,
                        'execution\n' + str(exec_id) + '\n')
@@ -296,7 +296,7 @@ def run(module, user_id, code, exec_id, reporter):
     }
 
 
-def _run(prog_info, code, box_id, reporter):
+def _run(prog_info, code, box_id, reporter, user_id):
     """
     Runs merge and runs the merged file inside of a sandbox. Requires
     initialized sandbox with id \box_id (str). \data is participant`s code.
@@ -316,7 +316,7 @@ def _run(prog_info, code, box_id, reporter):
 
     # Merge participant`s code
     _merge(sandbox_root, prog_info['merge_script'], raw_code, merged_code,
-           reporter)
+           reporter, user_id)
 
     limits = prog_info["limits"] if "limits" in prog_info else {}
 
@@ -329,7 +329,7 @@ def _run(prog_info, code, box_id, reporter):
             (prog_info['post_trigger_script'])):
         trigger_stdout = _post_trigger(sandbox_root,
                                        prog_info['post_trigger_script'],
-                                       reporter)
+                                       reporter, user_id)
 
         with open(trigger_stdout) as f:
             trigger_data = json.loads(f.read(OUTPUT_MAX_LEN))
@@ -355,7 +355,7 @@ def _run(prog_info, code, box_id, reporter):
     }
 
 
-def _merge(wd, merge_script, code, code_merged, reporter):
+def _merge(wd, merge_script, code, code_merged, reporter, user_id):
     """ Runs merge script. """
 
     cmd = [
@@ -363,6 +363,7 @@ def _merge(wd, merge_script, code, code_merged, reporter):
         os.path.abspath(code),
         os.path.abspath(code_merged),
         os.path.abspath(MODULE_LIB_PATH),
+        str(user_id),
     ]
 
     stdout_path = os.path.join(wd, 'merge.stdout')
@@ -498,13 +499,14 @@ def _exec(sandbox_dir, box_id, filename, stdin_path, reporter, limits):
     return (p.returncode, output_path, secret_path, stderr_path)
 
 
-def _post_trigger(sandbox_dir, trigger_script, reporter):
+def _post_trigger(sandbox_dir, trigger_script, reporter, user_id):
     """ Runs post trigger script. """
 
     cmd = [
         os.path.abspath(trigger_script),
         os.path.abspath(sandbox_dir),
         os.path.abspath(MODULE_LIB_PATH),
+        str(user_id),
     ]
 
     stdout_path = os.path.join(sandbox_dir, 'post_trigger.stdout')
@@ -529,14 +531,15 @@ def _post_trigger(sandbox_dir, trigger_script, reporter):
     return stdout_path
 
 
-def _check(sandbox_dir, check_script, sandbox_stdout, reporter):
+def _check(sandbox_dir, check_script, sandbox_stdout, reporter, user_id):
     """ Runs check script. """
 
     cmd = [
         os.path.abspath(check_script),
         os.path.abspath(sandbox_dir),
         os.path.abspath(sandbox_stdout),
-        os.path.abspath(MODULE_LIB_PATH)
+        os.path.abspath(MODULE_LIB_PATH),
+        str(user_id),
     ]
 
     stdout_path = os.path.join(sandbox_dir, 'check.stdout')

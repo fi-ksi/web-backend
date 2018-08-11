@@ -14,6 +14,7 @@ from model.post import Post
 from model.prerequisite import Prerequisite, PrerequisiteType
 from model.task import Task, SolutionComment
 from model.module import Module, ModuleType
+from model.module_custom import ModuleCustom
 from model.token import Token
 from model.user_achievement import UserAchievement
 from model.mail_easteregg import MailEasterEgg

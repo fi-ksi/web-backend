@@ -235,6 +235,11 @@ class ModuleSubmit(object):
 
             module = session.query(model.Module).get(id)
 
+            # Check for custom assignment
+            custom = session.query(model.ModuleCustom).get((id, user.id))
+            if custom is not None:
+                module.data = custom.data
+
             if not module:
                 resp.status = falcon.HTTP_404
                 req.context['result'] = {

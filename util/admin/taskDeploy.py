@@ -439,7 +439,7 @@ def process_module(module, module_path, task):
         shutil.rmtree(target_path)
     shutil.copytree(module_path, target_path)
 
-    module.custom = os.path.isfile(os.path.join(target_path, "module-gen.py"))
+    module.custom = os.path.isfile(os.path.join(target_path, "module-gen"))
 
     process_module_md(module, module_path + "/module.md", specific, task)
 

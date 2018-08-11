@@ -36,6 +36,7 @@ class UserExport(object):
                 str(points) + ";" +\
                 ('A' if points >= 0.6 * sum_points else 'N') + ";" +\
                 user.email + ";" +\
+                user.sex + ";" +\
                 profile.addr_street + ";" +\
                 profile.addr_city + ";" +\
                 profile.addr_zip + ";" +\
@@ -134,6 +135,7 @@ class UserExport(object):
                 "Body;" +\
                 "Úspěšný řešitel;" +\
                 "E-mail;" +\
+                "Pohlaví;" +\
                 "Ulice;" +\
                 "Město;" +\
                 "PSČ;" +\

@@ -241,6 +241,7 @@ def _load_custom(module, user_id):
                 module=module.id,
                 user=user_id,
             )
+            session.add(custom)
         else:
             custom.error = None
 
@@ -251,7 +252,7 @@ def _load_custom(module, user_id):
                     '<div class="alert alert-danger">Chyba při vytváření '
                     'individuálního zadání, kontaktuj organizátora!</div>'
                 )
-                res.data = ''
+                res.data = '{}'
                 return res
 
             data = json.loads(stdout)
@@ -272,7 +273,7 @@ def _load_custom(module, user_id):
                 '<div class="alert alert-danger">Chyba při vytváření '
                 'individuálního zadání, kontaktuj organizátora!</div>'
             )
-            res.data = ''
+            res.data = '{}'
             return res
 
     except SQLAlchemyError:
@@ -280,7 +281,6 @@ def _load_custom(module, user_id):
         raise
     finally:
         try:
-            session.add(custom)
             session.commit()
         except:
             session.rollback()
@@ -292,7 +292,24 @@ def _apply_custom(module, custom):
     if custom.description is not None:
         module.description = custom.description
     if custom.data is not None:
-        module.data = custom.data
+        if 'text' in mdata and 'eval_script' in mdata['text'] \
+            and 'eval_script' not in cdata:
+            # Preserve 'eval_script' key
+            mdata = json.loads(module.data)
+            cdata = json.loads(custom.data)
+            cdata['eval_script'] = mdata['eval_script']
+            module.data = json.dumps(cdata, indent=2)
+
+        elif 'programming' in mdata:
+            # Use all original module data, replace only if needed
+            mdata = json.loads(module.data)
+            cdata = json.loads(custom.data)
+            mdata.update(cdata)
+            module.data = json.dumps(mdata, indent=2)
+
+        else:
+            module.data = custom.data
+
     if custom.description_replace is not None:
         data = json.loads(custom.description_replace)
         for (key, value) in data.items():

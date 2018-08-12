@@ -28,6 +28,7 @@ from . import year
 from . import content
 from . import git
 from . import lock
+from . import feedback
 
 
 def decode_form_data(req):

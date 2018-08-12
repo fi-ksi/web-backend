@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, ForeignKey, Text
+from sqlalchemy import Column, Integer, ForeignKey, Text, text
 from sqlalchemy.types import TIMESTAMP
+import datetime
 
 from . import Base
 from .user import User

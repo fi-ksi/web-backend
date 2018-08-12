@@ -3,7 +3,7 @@ import json
 import util
 
 
-class Feedback(object):
+class FeedbackEmail(object):
 
     def on_post(self, req, resp):
         data = json.loads(req.stream.read().decode('utf-8'))

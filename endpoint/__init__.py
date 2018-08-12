@@ -11,7 +11,8 @@ from endpoint.image import Image
 from endpoint.content import Content, TaskContent
 from endpoint.oauth2 import Authorize, Logout
 from endpoint.runcode import RunCode
-from endpoint.feedback import Feedback
+from endpoint.feedback_email import FeedbackEmail
+from endpoint.feedback_task import FeedbackTask, FeedbacksTask
 from endpoint.wave import Wave, Waves
 from endpoint.year import Year, Years
 from endpoint.robots import Robots

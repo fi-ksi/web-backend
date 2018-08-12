@@ -193,13 +193,15 @@ api.add_route('/registration', endpoint.Registration())
 api.add_route('/auth', endpoint.Authorize())
 api.add_route('/logout', endpoint.Logout())
 api.add_route('/runCode/{id}/submit', endpoint.RunCode())
-api.add_route('/feedback', endpoint.Feedback())
+api.add_route('/feedback', endpoint.FeedbackEmail())
 api.add_route('/settings/changePassword', endpoint.ChangePassword())
 api.add_route('/forgottenPassword', endpoint.ForgottenPassword())
 api.add_route('/waves', endpoint.Waves())
 api.add_route('/waves/{id}', endpoint.Wave())
 api.add_route('/years', endpoint.Years())
 api.add_route('/years/{id}', endpoint.Year())
+api.add_route('/feedbacks', endpoint.FeedbacksTask())
+api.add_route('/feedbacks/{id}', endpoint.FeedbackTask())
 
 """
 task-content endpoint contains: (defined in endpoint/content.py, see also

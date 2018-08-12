@@ -6,12 +6,8 @@ import datetime
 from db import session
 import model
 import util
+from util.feedback import EForbiddenType, EUnmatchingDataType, EMissingAnswer
 
-MAX_CATEGORIES = 16
-MAX_ID_LEN = 32
-MAX_TYPE_LEN = 32
-MAX_QUESTION_LEN = 1024
-MAX_ANSWER_LEN = 8192
 
 class FeedbackTask(object):
 
@@ -23,10 +19,17 @@ class FeedbackTask(object):
                 resp.status = falcon.HTTP_400
                 return
 
-            feedback = session.query(model.Feedback).get((user, id))
+            feedback = session.query(model.Feedback).get((user.get_id(), id))
 
             if feedback is None:
                 if session.query(model.Task).get(id) is None:
+                    req.context['result'] = {
+                        'errors': [{
+                            'status': '404',
+                            'title': 'Not found',
+                            'detail': 'Úloha s tímto ID neexistuje.'
+                        }]
+                    }
                     resp.status = falcon.HTTP_404
                     return
 
@@ -56,10 +59,10 @@ class FeedbackTask(object):
 
             data = json.loads(req.stream.read().decode('utf-8'))['feedback']
 
-            feedback = session.query(model.Feedback).get((user, id))
+            feedback = session.query(model.Feedback).get((user.get_id(), id))
             if feedback is None:
                 feedback = model.Feedback(
-                    user=user,
+                    user=user.get_id(),
                     task=id,
                     content='{}',
                 )
@@ -67,12 +70,22 @@ class FeedbackTask(object):
 
             feedback.lastUpdated = datetime.datetime.utcnow()
             feedback.content = json.dumps(
-                util.feedback.parse_feedback(data['feedback']['categories']),
+                util.feedback.parse_feedback(data['categories']),
                 indent=2
             )
 
             session.commit()
 
+        except (EForbiddenType, EUnmatchingDataType, EMissingAnswer) as e:
+            req.context['result'] = {
+                'errors': [{
+                    'status': '400',
+                    'title': 'Bad Request',
+                    'detail': str(e)
+                }]
+            }
+            resp.status = falcon.HTTP_400
+            return
         except SQLAlchemyError:
             session.rollback()
             raise
@@ -92,6 +105,13 @@ class FeedbackTask(object):
 
             feedback = session.query(model.Feedback).get((user, id))
             if feedback is None:
+                req.context['result'] = {
+                    'errors': [{
+                        'status': '404',
+                        'title': 'Not found',
+                        'detail': 'Feedback s tímto ID neexistuje.'
+                    }]
+                }
                 resp.status = falcon.HTTP_404
                 return
 
@@ -120,6 +140,13 @@ class FeedbacksTask(object):
             data = json.loads(req.stream.read().decode('utf-8'))['feedback']
 
             if session.query(model.Task).get(int(data['taskId'])) is None:
+                req.context['result'] = {
+                    'errors': [{
+                        'status': '404',
+                        'title': 'Not found',
+                        'detail': 'Úloha s tímto ID neexistuje.'
+                    }]
+                }
                 resp.status = falcon.HTTP_404
                 return
 
@@ -129,7 +156,7 @@ class FeedbacksTask(object):
             )
 
             feedback = model.Feedback(
-                user=user,
+                user=user.get_id(),
                 task=int(data['taskId']),
                 content=content,
                 lastUpdated = datetime.datetime.utcnow(),

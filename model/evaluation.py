@@ -25,6 +25,7 @@ class Evaluation(Base):
                     nullable=False, default=0)
     ok = Column(Boolean, nullable=False, default=False,
                 server_default=text('FALSE'))
+    cheat = Column(Boolean, nullable=False, default=False)
     full_report = Column(Text, nullable=False, default="")
     time = Column(TIMESTAMP, default=datetime.datetime.utcnow,
                   server_default=text('CURRENT_TIMESTAMP'))

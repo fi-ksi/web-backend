@@ -161,6 +161,8 @@ class Correction(object):
                 str(user_id) + " : " + str(data_eval['points']) +
                 " points" + '\n'
             )
+            evaluation.cheat = data_eval['cheat'] \
+                               if 'cheat' in data_eval else False
             session.commit()
         except SQLAlchemyError:
             session.rollback()

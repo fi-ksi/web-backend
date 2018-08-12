@@ -98,9 +98,11 @@ class Users(object):
 
         try:
             # Skore uzivatele per modul (zahrnuje jen moduly evaluation_public)
-            per_user = session.query(model.Evaluation.user.label('user'),
-                                     func.max(model.Evaluation.points).
-                                     label('points')).\
+            per_user = session.query(
+                model.Evaluation.user.label('user'),
+                func.max(model.Evaluation.points).label('points'),
+                func.max(model.Evaluation.cheat).label('cheat'),
+            ).\
                 join(model.Module,
                      model.Evaluation.module == model.Module.id).\
                 join(model.Task, model.Task.id == model.Module.task).\
@@ -126,14 +128,16 @@ class Users(object):
             # Ziskame vsechny uzivatele
             # Tem, kteri maji evaluations, je prirazen pocet bodu a
             # pocet odevzdanych uloh
-            # Vraci n tici: (model.User, total_score, tasks_cnt, model.Profile)
+            # Vraci n tici:
+            # (model.User, total_score, tasks_cnt, model.Profile, cheat)
             # POZOR: outerjoin je dulezity, chceme vracet i uzivatele,
             # kteri nemaji zadna evaluations (napriklad orgove pro seznam orgu)
             users = session.query(
                 model.User,
                 func.sum(per_user.c.points).label("total_score"),
                 tasks_per_user.c.tasks_cnt.label('tasks_cnt'),
-                model.Profile
+                model.Profile,
+                func.max(per_user.c.cheat).label('cheat'),
             ).\
                 outerjoin(per_user, model.User.id == per_user.c.user).\
                 outerjoin(tasks_per_user,
@@ -235,37 +239,40 @@ class Users(object):
             # neodevzdali zadnou ulohu
             # -> nastavime jim natvrdo 'tasks_cnt' = 0 a total_score = 0,
             # abychom omezili dalsi SQL dotazy v util.user.to_json
-            users_json = [util.user.to_json(
-                user.User,
-                year,
-                user.total_score if user.total_score else 0,
-                user.tasks_cnt if user.tasks_cnt else 0,
-                user.Profile,
-                achs=[item.a_id for item in achievements
-                      if item.user_id == user.User.id],
-                seasons=[item.year_id for item in seasons
-                         if item.user_id == user.User.id],
-                users_tasks=[
-                    task for (_, task) in [
-                        usr_task
-                        for usr_task in users_tasks
-                        if usr_task[0].id == user.User.id
+            users_json = [
+                util.user.to_json(
+                    user=user.User,
+                    year_obj=year,
+                    total_score=user.total_score if user.total_score else 0,
+                    tasks_cnt=user.tasks_cnt if user.tasks_cnt else 0,
+                    profile=user.Profile,
+                    achs=[item.a_id for item in achievements
+                          if item.user_id == user.User.id],
+                    seasons=[item.year_id for item in seasons
+                             if item.user_id == user.User.id],
+                    users_tasks=[
+                        task for (_, task) in [
+                            usr_task
+                            for usr_task in users_tasks
+                            if usr_task[0].id == user.User.id
+                        ]
+                    ] if users_tasks else None,
+                    admin_data=req.context['user'].is_org(),
+                    org_seasons=[
+                        item.year_id
+                        for item in org_seasons if item.user_id == user.User.id
+                    ],
+                    max_points=max_points,
+                    users_co_tasks=[
+                        task for (_, task) in [
+                            usr_task1
+                            for usr_task1 in users_co_tasks
+                            if usr_task1[0].id == user.User.id
+                        ]
                     ]
-                ] if users_tasks else None,
-                admin_data=req.context['user'].is_org(),
-                org_seasons=[
-                    item.year_id
-                    for item in org_seasons if item.user_id == user.User.id
-                ],
-                max_points=max_points,
-                users_co_tasks=[
-                    task for (_, task) in [
-                        usr_task1
-                        for usr_task1 in users_co_tasks
-                        if usr_task1[0].id == user.User.id
-                    ]
-                ]
-                if users_co_tasks else None)
+                    if users_co_tasks else None,
+                    cheat=user.cheat,
+                )
 
                 for user in users
             ]

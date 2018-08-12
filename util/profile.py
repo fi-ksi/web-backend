@@ -76,7 +76,7 @@ def _basic_profile_to_json(user):
 
 
 def _full_profile_to_json(user, profile, task_scores, year_obj):
-    points = util.user.sum_points(user.id, year_obj.id)
+    points, cheat = util.user.sum_points(user.id, year_obj.id)
     summary = util.task.sum_points(
         year_obj.id, bonus=False) + year_obj.point_pad
     successful = format(floor((float(points) / summary) *
@@ -106,6 +106,7 @@ def _full_profile_to_json(user, profile, task_scores, year_obj):
 
         'notify_eval': profile.notify_eval,
         'notify_response': profile.notify_response,
+        'cheat': cheat,
     }
 
 # \achievements ocekava seznam ID achievementu nebo None

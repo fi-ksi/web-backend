@@ -60,7 +60,8 @@ def corr_eval_to_json(module, evaluation, files=None):
         'points': evaluation.points,
         'last_modified': evaluation.time.isoformat(),
         'corrected_by': evaluation.evaluator,
-        'full_report': evaluation.full_report
+        'full_report': evaluation.full_report,
+        'cheat': evaluation.cheat,
     }
 
     if module.type == model.module.ModuleType.GENERAL:

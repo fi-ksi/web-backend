@@ -21,10 +21,8 @@ class UserExport(object):
         order = 0
         last_points = -1
         for i in range(0, len(users)):
-            user = users[i][0]
-            profile = users[i][1]
-            points = users[i][2]
-            tasks_cnt = users[i][3]
+            user, profile, points, tasks_cnt, cheat = users[i]
+
             if points != last_points:
                 order = i + 1
                 last_points = points
@@ -34,7 +32,8 @@ class UserExport(object):
                 user.last_name + ";" +\
                 user.first_name + ";" +\
                 str(points) + ";" +\
-                ('A' if points >= 0.6 * sum_points else 'N') + ";" +\
+                ('A' if points >= 0.6 * sum_points and not cheat else 'N') + ";" +\
+                ('A' if cheat else 'N') + ";" +\
                 user.email + ";" +\
                 user.sex + ";" +\
                 profile.addr_street + ";" +\
@@ -71,7 +70,8 @@ class UserExport(object):
             # Skore uzivatele per modul (zahrnuje jen moduly evaluation_public)
             per_user = session.query(
                 model.Evaluation.user.label('user'),
-                func.max(model.Evaluation.points).label('points')
+                func.max(model.Evaluation.points).label('points'),
+                func.max(model.Evaluation.cheat).label('cheat'),
             ).\
                 join(model.Module,
                      model.Evaluation.module == model.Module.id).\
@@ -103,7 +103,8 @@ class UserExport(object):
                 model.User,
                 model.Profile,
                 func.sum(per_user.c.points).label("total_score"),
-                tasks_per_user.c.tasks_cnt.label('tasks_cnt')
+                tasks_per_user.c.tasks_cnt.label('tasks_cnt'),
+                func.max(per_user.c.cheat).label('cheat'),
             ).\
                 join(per_user, model.User.id == per_user.c.user).\
                 join(tasks_per_user, model.User.id == tasks_per_user.c.user).\
@@ -134,6 +135,7 @@ class UserExport(object):
                 "Jméno;" +\
                 "Body;" +\
                 "Úspěšný řešitel;" +\
+                "Podvod;" +\
                 "E-mail;" +\
                 "Pohlaví;" +\
                 "Ulice;" +\

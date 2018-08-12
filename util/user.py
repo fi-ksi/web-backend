@@ -91,9 +91,12 @@ def points_per_task(user_id):
     return {task: util.task.points(task.id, user_id) for task in tasks}
 
 
-def sum_points(user_id, year_id):
-    points = session.query(model.Evaluation.module,
-                           func.max(model.Evaluation.points).label('points')).\
+def sum_points(user_id, year_id) -> (int, bool):
+    """Returns (points, cheating)."""
+    evals = session.query(
+        func.max(model.Evaluation.points).label('points'),
+        func.max(model.Evaluation.cheat).label('cheat'),
+    ).\
         filter(model.Evaluation.user == user_id).\
         join(model.Module, model.Evaluation.module == model.Module.id).\
         join(model.Task, model.Task.id == model.Module.task).\
@@ -102,14 +105,17 @@ def sum_points(user_id, year_id):
         filter(model.Wave.year == year_id).\
         group_by(model.Evaluation.module).all()
 
-    return sum([item.points for item in points if item.points is not None])
+    return (
+        sum([points for points, _ in evals if points is not None]),
+        any(cheat for _, cheat in evals),
+    )
 
 
 def percentile(user_id, year_id):
     query = session.query(model.User).filter(model.User.role == 'participant')
     count = query.count()
     user_points = {
-        user.id: sum_points(user.id, year_id) for user in query.all()
+        user.id: sum_points(user.id, year_id)[0] for user in query.all()
     }
     points_order = sorted(list(user_points.values()), reverse=True)
 
@@ -160,7 +166,8 @@ def get_profile_picture(user):
 
 def to_json(user, year_obj, total_score=None, tasks_cnt=None, profile=None,
             achs=None, seasons=None, users_tasks=None, admin_data=False,
-            org_seasons=None, max_points=None, users_co_tasks=None):
+            org_seasons=None, max_points=None, users_co_tasks=None,
+            cheat=None):
     """Spoustu atributu pro serializaci lze teto funkci predat za ucelem
     minimalizace SQL dotazu. Toho se vyuziva napriklad pri vypisovani
     vysledkovky.
@@ -186,8 +193,8 @@ def to_json(user, year_obj, total_score=None, tasks_cnt=None, profile=None,
     else:
         data['role'] = user.role
 
-    if total_score is None:
-        total_score = sum_points(user.id, year_obj.id)
+    if total_score is None or cheat is None:
+        total_score, cheat = sum_points(user.id, year_obj.id)
 
     data['score'] = float(format(total_score, '.1f'))
     data['tasks_num'] = tasks_cnt if tasks_cnt is not None\
@@ -209,7 +216,8 @@ def to_json(user, year_obj, total_score=None, tasks_cnt=None, profile=None,
         data['school_name'] = profile.school_name
         data['seasons'] = seasons if seasons is not None\
             else [key for (key,) in active_years(user.id)]
-        data['successful'] = total_score >= (0.6 * max_points)
+        data['successful'] = total_score >= (0.6 * max_points) and not cheat
+        data['cheat'] = cheat
 
     elif user.role == 'org' or user.role == 'admin':
         if users_tasks is None:

@@ -6,7 +6,8 @@ import datetime
 from db import session
 import model
 import util
-from util.feedback import EForbiddenType, EUnmatchingDataType, EMissingAnswer
+from util.feedback import EForbiddenType, EUnmatchingDataType, EMissingAnswer, \
+                          EOutOfRange
 
 
 class FeedbackTask(object):
@@ -76,7 +77,8 @@ class FeedbackTask(object):
 
             session.commit()
 
-        except (EForbiddenType, EUnmatchingDataType, EMissingAnswer) as e:
+        except (EForbiddenType, EUnmatchingDataType, EMissingAnswer,
+                EOutOfRange) as e:
             req.context['result'] = {
                 'errors': [{
                     'status': '400',
@@ -103,7 +105,7 @@ class FeedbackTask(object):
                 resp.status = falcon.HTTP_400
                 return
 
-            feedback = session.query(model.Feedback).get((user, id))
+            feedback = session.query(model.Feedback).get((user.get_id(), id))
             if feedback is None:
                 req.context['result'] = {
                     'errors': [{
@@ -169,6 +171,17 @@ class FeedbacksTask(object):
                 'feedback': util.feedback.to_json(feedback)
             }
 
+        except (EForbiddenType, EUnmatchingDataType, EMissingAnswer,
+                EOutOfRange) as e:
+            req.context['result'] = {
+                'errors': [{
+                    'status': '400',
+                    'title': 'Bad Request',
+                    'detail': str(e)
+                }]
+            }
+            resp.status = falcon.HTTP_400
+            return
         except SQLAlchemyError:
             session.rollback()
             raise

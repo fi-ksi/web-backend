@@ -38,13 +38,16 @@ MAX_TYPE_LEN = 32
 MAX_QUESTION_LEN = 1024
 MAX_ANSWER_LEN = 8192
 
-ALLOWED_TYPES = ['stars', 'line', 'comment']
+ALLOWED_TYPES = ['stars', 'line', 'text_large']
 TYPE_TO_TYPE = {
     'stars': int,
     'line': int,
-    'comment': str,
+    'text_large': str,
 }
-
+ALLOWED_RANGES = {
+    'stars': range(0, 6),
+    'line': range(0, 6),
+}
 
 class EForbiddenType(Exception):
     pass
@@ -55,6 +58,10 @@ class EUnmatchingDataType(Exception):
 
 
 class EMissingAnswer(Exception):
+    pass
+
+
+class EOutOfRange(Exception):
     pass
 
 
@@ -76,7 +83,7 @@ def parse_feedback(categories):
             )
 
         if isinstance(category['answer'], str):
-            catgegory['answer'] = category['answer'][:MAX_ANSWER_LEN]
+            category['answer'] = category['answer'][:MAX_ANSWER_LEN]
 
         if category['type'] not in ALLOWED_TYPES:
             raise EUnmatchingDataType(
@@ -89,6 +96,10 @@ def parse_feedback(categories):
                     type(category['answer']).__name__, category['type']
                 )
             )
+
+        if category['type'] in ALLOWED_RANGES and \
+           category['answer'] not in ALLOWED_RANGES[category['type']]:
+           raise EOutOfRange("'%s' out of range!" % (category['id']))
 
         to_store.append({
             'id': category['id'][:MAX_ID_LEN],

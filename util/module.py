@@ -257,14 +257,14 @@ def _load_custom(module, user_id):
 
             data = json.loads(stdout)
             if 'assignment' in data:
-                custom.description = json.dumps(data['description'], indent=2)
+                custom.description = json.dumps(data['description'], indent=2, ensure_ascii=False)
                 del data['description']
             if 'description_replace' in data:
                 custom.description_replace = json.dumps(
-                    data['description_replace'], indent=2
+                    data['description_replace'], indent=2, ensure_ascii=False
                 )
                 del data['description_replace']
-            custom.data = json.dumps(data, indent=2)
+            custom.data = json.dumps(data, indent=2, ensure_ascii=False)
 
             return _apply_custom(res, custom)
         except Exception as e:
@@ -299,13 +299,13 @@ def _apply_custom(module, custom):
             # Preserve 'eval_script' key
             cdata = json.loads(custom.data)
             cdata['eval_script'] = mdata['eval_script']
-            module.data = json.dumps(cdata, indent=2)
+            module.data = json.dumps(cdata, indent=2, ensure_ascii=False)
 
         elif 'programming' in mdata:
             # Use all original module data, replace only if needed
             cdata = json.loads(custom.data)
             mdata.update(cdata)
-            module.data = json.dumps(mdata, indent=2)
+            module.data = json.dumps(mdata, indent=2, ensure_ascii=False)
 
         else:
             module.data = custom.data

@@ -95,7 +95,7 @@ def eval_text(eval_script, data, reporter):
 def evaluate(task, module, data, reporter):
     reporter += '=== Evaluating text id \'%s\' for task id \'%s\' ===\n\n' % (
           module.id, task)
-    reporter += 'Raw data: ' + json.dumps(data) + '\n'
+    reporter += 'Raw data: ' + json.dumps(data, ensure_ascii=False) + '\n'
     reporter += 'Evaluation:\n'
 
     text = json.loads(module.data)['text']

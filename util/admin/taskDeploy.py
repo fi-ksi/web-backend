@@ -568,7 +568,7 @@ def process_module_programming(module, lines, specific, source_path):
     if 'limits' in specific:
         data['programming']['limits'] = specific['limits']
 
-    module.data = json.dumps(data, indent=2)
+    module.data = json.dumps(data, indent=2, ensure_ascii=False)
     return lines[:line]
 
 
@@ -627,7 +627,7 @@ def process_module_quiz(module, lines, specific, task):
         # Pridame otazku
         quiz_data.append(question)
 
-    module.data = json.dumps({'quiz': quiz_data}, indent=2)
+    module.data = json.dumps({'quiz': quiz_data}, indent=2, ensure_ascii=False)
     return lines[:text_end]
 
 
@@ -680,7 +680,7 @@ def process_module_sortable(module, lines, specific):
             sort_data['correct'].append(match.group(1).split(','))
         line += 1
 
-    module.data = json.dumps({'sortable': sort_data}, indent=2)
+    module.data = json.dumps({'sortable': sort_data}, indent=2, ensure_ascii=False)
     return lines[:text_end]
 
 
@@ -702,7 +702,7 @@ def process_module_text(module, lines, specific, path, task):
         line += 1
     text_end = line
     if line >= len(lines):
-        module.data = json.dumps(text_data, indent=2)
+        module.data = json.dumps(text_data, indent=2, ensure_ascii=False)
         return lines
 
     inputs_cnt = 0
@@ -737,7 +737,7 @@ def process_module_text(module, lines, specific, path, task):
         shutil.copy2(path + "/eval", target_path + "eval")
         text_data['eval_script'] = target_path + "eval"
 
-    module.data = json.dumps({'text': text_data}, indent=2)
+    module.data = json.dumps({'text': text_data}, indent=2, ensure_ascii=False)
     return lines[:text_end]
 
 ###############################################################################

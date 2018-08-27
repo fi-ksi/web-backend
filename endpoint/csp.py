@@ -29,7 +29,7 @@ class CSP(object):
             return
 
         text = "<p>" + util.config.ksi_web() + \
-            "<br><pre>" + json.dumps(data, indent=4) + "</pre></p>" + \
+            "<br><pre>" + json.dumps(data, indent=4, ensure_ascii=False) + "</pre></p>" + \
             util.mail.easteregg()
 
         try:

@@ -28,7 +28,7 @@ def to_json(db_dict, user_id):
 def evaluate(task, module, data):
     report = '=== Evaluating quiz id \'%s\' for task id \'%s\' ===\n\n' % (
         module.id, task)
-    report += ' Raw data: ' + json.dumps(data) + '\n'
+    report += ' Raw data: ' + json.dumps(data, ensure_ascii=False) + '\n'
     report += ' Evaluation:\n'
 
     overall_results = True

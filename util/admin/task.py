@@ -26,7 +26,7 @@ def createGit(git_path, git_branch, author_id, title):
         data = json.loads(f.read())
     data['author'] = author_id
     with open(target_path+'/task.json', 'w') as f:
-        f.write(json.dumps(data, indent=4))
+        f.write(json.dumps(data, indent=4, ensure_ascii=False))
 
     with open(target_path+'/assignment.md', 'w') as f:
         s = title + ".\n\n" + \

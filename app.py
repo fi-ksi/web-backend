@@ -29,7 +29,12 @@ class JSONTranslator(object):
         if 'result' not in req.context:
             return
 
-        resp.body = json.dumps(req.context['result'], sort_keys=True, indent=4)
+        resp.body = json.dumps(
+            req.context['result'],
+            sort_keys=True,
+            indent=4,
+            ensure_ascii=False,
+        )
 
 
 class Authorizer(object):

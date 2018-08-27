@@ -35,7 +35,7 @@ def to_json(db_dict, user_id):
 def evaluate(task, module, data):
     report = '=== Evaluating sortable id \'%s\' for task id \'%s\' ===\n\n' % (
         module.id, task)
-    report += ' Raw data: ' + json.dumps(data) + '\n'
+    report += ' Raw data: ' + json.dumps(data, ensure_ascii=False) + '\n'
     report += ' Evaluation:\n'
 
     sortable = json.loads(module.data)['sortable']

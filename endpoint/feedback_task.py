@@ -72,7 +72,8 @@ class FeedbackTask(object):
             feedback.lastUpdated = datetime.datetime.utcnow()
             feedback.content = json.dumps(
                 util.feedback.parse_feedback(data['categories']),
-                indent=2
+                indent=2,
+                ensure_ascii=False,
             )
 
             session.commit()
@@ -154,7 +155,8 @@ class FeedbacksTask(object):
 
             content = json.dumps(
                 util.feedback.parse_feedback(data['categories']),
-                indent=2
+                indent=2,
+                ensure_ascii=False,
             )
 
             feedback = model.Feedback(

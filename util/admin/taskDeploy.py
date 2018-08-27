@@ -394,6 +394,7 @@ def process_modules(task, git_path):
                 order=i
             )
             session.add(module)
+            session.commit()
 
         log("Processing module" + str(i + 1))
         process_module(module, git_path + "/module" + str(i + 1), task)

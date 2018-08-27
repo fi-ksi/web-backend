@@ -145,7 +145,7 @@ def evaluate(task, module, user_id, code, eval_id, reporter):
     check_res = {}
     try:
         try:
-            res = _run(prog_info, code, box_id, reporter)
+            res = _run(prog_info, code, box_id, reporter, user_id)
 
             if res["code"] == 0:
                 check_res = _check(os.path.join(EXEC_PATH, box_id),

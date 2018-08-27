@@ -11,22 +11,22 @@ FeedbackId = namedtuple('FeedbackId', ['user', 'task'])
 CATEGORIES = [
     {
         'id': 'explained',
-        'type': 'stars',
+        'ftype': 'stars',
         'text': 'Jak dobře ti přišla úloha vysvětlená?',
     },
     {
         'id': 'interesting',
-        'type': 'stars',
+        'ftype': 'stars',
         'text': 'Jak moc ti přijde úloha zajímavá?',
     },
     {
         'id': 'difficult',
-        'type': 'line',
+        'ftype': 'line',
         'text': 'Jak moc ti přijde úloha těžká?',
     },
     {
         'id': 'comment',
-        'type': 'text_large',
+        'ftype': 'text_large',
         'text': ('Chceš nám vzkázat něco, co nám pomůže příště úlohu připravit '
                  'lépe? (nepovinné)'),
     },
@@ -85,25 +85,25 @@ def parse_feedback(categories):
         if isinstance(category['answer'], str):
             category['answer'] = category['answer'][:MAX_ANSWER_LEN]
 
-        if category['type'] not in ALLOWED_TYPES:
+        if category['ftype'] not in ALLOWED_TYPES:
             raise EUnmatchingDataType(
-                "'%s' is not allowed as question type!" % (category['type'])
+                "'%s' is not allowed as question type!" % (category['ftype'])
             )
 
-        if not isinstance(category['answer'], TYPE_TO_TYPE[category['type']]):
+        if not isinstance(category['answer'], TYPE_TO_TYPE[category['ftype']]):
             raise EForbiddenType(
                 "'%s' is not allowed as answer of type '%s'!" % (
-                    type(category['answer']).__name__, category['type']
+                    type(category['answer']).__name__, category['ftype']
                 )
             )
 
-        if category['type'] in ALLOWED_RANGES and \
-           category['answer'] not in ALLOWED_RANGES[category['type']]:
+        if category['ftype'] in ALLOWED_RANGES and \
+           category['answer'] not in ALLOWED_RANGES[category['ftype']]:
            raise EOutOfRange("'%s' out of range!" % (category['id']))
 
         to_store.append({
             'id': category['id'][:MAX_ID_LEN],
-            'type': category['type'][:MAX_TYPE_LEN],
+            'ftype': category['ftype'][:MAX_TYPE_LEN],
             'text': category['text'][:MAX_QUESTION_LEN],
             'answer': category['answer'],
         })
@@ -113,7 +113,7 @@ def parse_feedback(categories):
 
 def empty_to_json(task_id, user_id):
     return {
-        'taskId': task_id,
+        'id': task_id,
         'userId': user_id,
         'categories': CATEGORIES,
         'filled': False,
@@ -122,7 +122,7 @@ def empty_to_json(task_id, user_id):
 
 def to_json(feedback):
     return {
-        'taskId': feedback.task,
+        'id': feedback.task,
         'userId': feedback.user,
         'lastUpdated': feedback.lastUpdated.isoformat(),
         'categories': json.loads(feedback.content),

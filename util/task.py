@@ -352,7 +352,8 @@ def to_json(task, prereq_obj, user=None, adeadline=None, fsubmitted=None,
             [] if not prereq_obj else util.prerequisite.to_json(prereq_obj),
         'picture_base': pict_base,
         'picture_suffix': '.svg',
-        'wave': task.wave
+        'wave': task.wave,
+        'feedbacks': task.id,
     }
 
 

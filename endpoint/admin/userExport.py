@@ -45,7 +45,8 @@ class UserExport(object):
                 profile.school_city + ";" +\
                 profile.school_zip + ";" +\
                 profile.school_country + ";" +\
-                str(profile.school_finish) + '\n'
+                str(profile.school_finish) + ";" +\
+                profile.tshirt_size + '\n'
 
         return res
 
@@ -147,7 +148,8 @@ class UserExport(object):
                 "Město školy;" +\
                 "PSČ školy;" +\
                 "Země školy;" +\
-                'Rok maturity\n'\
+                "Rok maturity;" +\
+                "Velikost trička\n"
 
             inMemoryOutputFile.write(
                 "Celkem bodů: " + str(sum_points) +

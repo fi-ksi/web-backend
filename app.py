@@ -62,7 +62,6 @@ class Authorizer(object):
                         pass
             except:
                 session.rollback()
-                raise
 
         req.context['user'] = UserInfo()
 

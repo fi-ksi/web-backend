@@ -231,8 +231,18 @@ def cleanup_exec_environment(box_id):
 
     sandbox_root = os.path.join(EXEC_PATH, box_id)
     if os.path.isdir(sandbox_root):
-        p = subprocess.Popen(["isolate", "-b", box_id, "--cleanup"])
+        p = subprocess.Popen(
+            ["isolate", "-b", box_id, "--cleanup"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
         p.wait()
+        if p.returncode != 0:
+            stdout, stderr = p.communicate()
+            print('Error cleaning directory %s:\n%s\n%s' % (
+                    box_id, stdout.decode('utf-8'), stderr.decode('utf-8')
+                )
+            )
 
 
 def store_exec(box_id, user_id, module_id, source):

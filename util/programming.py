@@ -244,6 +244,12 @@ def cleanup_exec_environment(box_id):
                 )
             )
 
+        try:
+            if os.path.isdir(sandbox_root):
+                shutil.rmtree(sandbox_root)
+        except:
+            pass
+
 
 def store_exec(box_id, user_id, module_id, source):
     """ Saves execution permanently to STORE_PATH directory. """

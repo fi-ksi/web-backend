@@ -472,6 +472,8 @@ def process_module_json(module, filename):
     module.autocorrect = data['autocorrect']
     module.bonus = data['bonus'] if 'bonus' in data else False
     module.action = data['action'] if 'action' in data else ""
+    if isinstance(module.action, dict):
+        module.action = json.dumps(module.action, indent=2, ensure_ascii=False)
 
     global eval_public
     if not module.autocorrect:

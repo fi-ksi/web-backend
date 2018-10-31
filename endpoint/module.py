@@ -215,9 +215,10 @@ class ModuleSubmit(object):
                                        reporter.report + '\n')
             session.commit()
 
-            if 'action' in result and result['action']:
-                reporter += "Trying to perform action...\n"
-                util.module.perform_action(module, user)
+            if 'actions' in result:
+                for action in result['actions']:
+                    reporter += "Performing %s...\n" % (action)
+                    util.module.perform_action(module, user, action)
 
             if user.is_org():
                 result['report'] = reporter.report
@@ -287,7 +288,6 @@ class ModuleSubmit(object):
 
             if module.type == ModuleType.PROGRAMMING:
                 self._evaluate_code(req, module, user, resp, data)
-                # ToDo: Auto actions
                 return
 
             elif module.type == ModuleType.TEXT:
@@ -332,8 +332,9 @@ class ModuleSubmit(object):
                 ok=(result['result'] == 'ok')
             )
 
-            if "action" in result['report']:
-                util.module.perform_action(module, user)
+            for l in result['report']:
+                if l.startswith('action '):
+                    util.module.perform_action(module, user, l.strip())
 
             req.context['result'] = result
             if 'report' in req.context['result'] and not user.is_org():

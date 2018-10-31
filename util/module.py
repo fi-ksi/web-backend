@@ -155,18 +155,16 @@ def _load_sortable(module_id):
     return (fixed, movable)
 
 
-def perform_action(module, user):
-    if not module.action:
-        return
-    action = json.loads(module.action)
-    if "action" not in action:
+def perform_action(module, user, action):
+    action = action.split(' ')[1:]
+    if len(action) < 1:
         return
 
-    if action["action"] == "add_achievement":
+    if action[0] == "add_achievement":
+        achievement_id = int(action[1])
         already_done = session.query(model.UserAchievement).\
             filter(model.UserAchievement.user_id == user.id,
-                   model.UserAchievement.achievement_id ==
-                   action["achievement_id"],
+                   model.UserAchievement.achievement_id == achievement_id,
                    model.UserAchievement.task_id == module.task).\
             first()
 
@@ -175,7 +173,7 @@ def perform_action(module, user):
 
         achievement = model.UserAchievement(
             user_id=user.id,
-            achievement_id=action["achievement_id"],
+            achievement_id=achievement_id,
             task_id=module.task
         )
 
@@ -185,9 +183,6 @@ def perform_action(module, user):
         except BaseException:
             session.rollback()
             raise
-    else:
-        print("Unknown action!")
-        # ToDo: More actions
 
 
 def delete_module(module):

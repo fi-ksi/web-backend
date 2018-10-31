@@ -159,26 +159,35 @@ def perform_action(module, user):
     if not module.action:
         return
     action = json.loads(module.action)
-    if "action" in action:
-        if action["action"] == "add_achievement":
-            achievement = model.UserAchievement(
-                user_id=user.id,
-                achievement_id=action["achievement_id"],
-                task_id=module.task
-            )
+    if "action" not in action:
+        return
 
-            already_done = session.query(model.UserAchievement).\
-                filter(model.UserAchievement.user_id == user.id,
-                       model.UserAchievement.achievement_id ==
-                       action["achievement_id"],
-                       model.UserAchievement.task_id == module.task).\
-                first()
+    if action["action"] == "add_achievement":
+        already_done = session.query(model.UserAchievement).\
+            filter(model.UserAchievement.user_id == user.id,
+                   model.UserAchievement.achievement_id ==
+                   action["achievement_id"],
+                   model.UserAchievement.task_id == module.task).\
+            first()
 
-            if not already_done:
-                session.add(achievement)
-        else:
-            print("Unknown action!")
-            # ToDo: More actions
+        if already_done:
+            return
+
+        achievement = model.UserAchievement(
+            user_id=user.id,
+            achievement_id=action["achievement_id"],
+            task_id=module.task
+        )
+
+        try:
+            session.add(achievement)
+            session.commit()
+        except BaseException:
+            session.rollback()
+            raise
+    else:
+        print("Unknown action!")
+        # ToDo: More actions
 
 
 def delete_module(module):

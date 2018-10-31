@@ -169,6 +169,7 @@ def evaluate(task, module, user_id, code, eval_id, reporter):
     res = {
         'result': 'ok' if res['code'] == 0 and check_res['success'] else 'nok',
         'stdout': res['stdout'],
+        'action': check_res['action'],
     }
 
     if 'message' in check_res:
@@ -570,7 +571,10 @@ def _check(sandbox_dir, check_script, sandbox_stdout, reporter, user_id):
                              cwd=sandbox_dir)
         p.wait()
 
-    res = {'success': (p.returncode == 0)}
+    res = {
+        'success': (p.returncode == 0),
+        'action': 'action' in (open(stdout_path, 'r').read()),
+    }
 
     if os.path.getsize(stderr_path) > 0:
         reporter += "Check script returned nonempty stderr:\n"

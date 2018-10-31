@@ -215,6 +215,10 @@ class ModuleSubmit(object):
                                        reporter.report + '\n')
             session.commit()
 
+            if 'action' in result and result['action']:
+                reporter += "Trying to perform action...\n"
+                util.module.perform_action(module, user)
+
             if user.is_org():
                 result['report'] = reporter.report
 

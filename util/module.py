@@ -33,7 +33,7 @@ def existing_evaluation(module_id, user_id):
 
 
 def to_json(module, user_id):
-    if module.custom:
+    if module.custom and user_id is not None:
         _module = _load_custom(module, user_id)
     else:
         _module = module

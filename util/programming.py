@@ -1,5 +1,5 @@
 import datetime
-from humanfriendly import format_size, parse_timespan, parse_size
+from humanfriendly import parse_timespan, parse_size
 import json
 import os
 import shutil

@@ -12,7 +12,6 @@ import datetime
 import time
 import pyparsing as pp
 import dateutil.parser
-from humanfriendly import parse_size
 
 import util
 import model

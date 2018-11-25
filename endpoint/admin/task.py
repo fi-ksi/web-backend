@@ -111,19 +111,36 @@ class Task(object):
                 resp.status = falcon.HTTP_403
                 return
 
+            execs = session.query(model.CodeExecution).\
+                join(
+                    model.Module,
+                    model.Module.id == model.CodeExecution.module
+                ).\
+                filter(model.Module.task == id).all()
+            for _exec in execs:
+                session.delete(_exec)
+
+            evals = session.query(model.Evaluation).\
+                join(model.Module, model.Module.id == model.Evaluation.module).\
+                filter(model.Module.task == id).all()
+            for _eval in evals:
+                session.delete(_eval)
+
+            session.query(model.Module).\
+                filter(model.Module.task == id).delete()
+
             thread = session.query(model.Thread).get(task.thread)
             prer = task.prerequisite_obj
+            if prer is not None:
+                session.delete(task.prerequisite_obj)
 
             session.delete(task)
             session.commit()
 
-            # Odstranime diskuzni vlakno
             if thread is not None:
                 session.delete(thread)
-                session.commit()
 
-            if prer:
-                session.delete(task.prerequisite_obj)
+            session.commit()
 
             req.context['result'] = {}
         except SQLAlchemyError:

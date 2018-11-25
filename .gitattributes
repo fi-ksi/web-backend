@@ -1,1 +1,5 @@
+# Basically all the files should use LF only
+* text=auto
+*.py text
+
 ksi-backend merge=ours

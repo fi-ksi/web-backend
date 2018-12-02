@@ -349,10 +349,9 @@ class Posts(object):
 
             if parent:
                 parent_user = session.query(model.User).get(parent.author)
-                parent_profile = session.query(model.Profile).\
-                    get(parent.author)
+                parent_notify = util.user_notify.get(parent.author)
                 if (parent_user.email not in sent_emails and
-                        parent_profile.notify_response):
+                        parent_notify.notify_response):
                     try:
                         sent_emails.add(parent_user.email)
 

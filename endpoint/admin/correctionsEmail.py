@@ -48,13 +48,13 @@ class CorrectionsEmail(object):
             participant = aliased(model.User)
             commenter = aliased(model.User)
             tos = session.query(participant,
-                                model.Profile,
+                                model.UserNotify,
                                 model.Evaluation,
                                 model.Post,
                                 commenter,
                                 model.SolutionComment).\
-                join(model.Profile, participant.id == model.Profile.user_id).\
-                filter(model.Profile.notify_eval).\
+                join(model.UserNotify, participant.id == model.UserNotify.user).\
+                filter(model.UserNotify.notify_eval).\
                 join(model.Evaluation,
                      model.Evaluation.user == participant.id).\
                 join(model.Module,

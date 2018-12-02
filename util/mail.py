@@ -121,8 +121,9 @@ def send(to, subject, text, unsubscribe=None, params=None, bcc=None, cc=None):
 
     if unsubscribe is not None:
         text += unsubscribe.text()
-        params['List-Unsubscribe-Post'] = 'List-Unsubscribe=One-Click'
-        params['List-Unsubscribe'] = '<' + unsubscribe.link() + '>'
+        if hasattr(unsubscribe, 'link'):
+            params['List-Unsubscribe-Post'] = 'List-Unsubscribe=One-Click'
+            params['List-Unsubscribe'] = '<' + unsubscribe.link() + '>'
 
     _send(to, subject, text, params, bcc, cc)
 
@@ -138,7 +139,7 @@ def send_multiple(recipients, subject, text, params={}, bcc=[]):
     bcc.append(config.ksi_conf())
     for b in bcc:
         bcc_params['Cc'] = b
-        send([], subject, text, None, bcc_params, b)
+        send([], subject, text, FakeUnsubscribe(), bcc_params, b)
 
     for to, unsubscribe in recipients:
         send(to, subject, text, unsubscribe, params)
@@ -187,4 +188,14 @@ class Unsubscribe:
                 self.notify.auth_token,
                 UNSUBSCRIBE_LINK[self.email_type],
             )
+        )
+
+
+class FakeUnsubscribe:
+    def text(self):
+        return (
+            '<hr><p style="font-size: 70%;">Na tomto místě je přímý odkaz na '
+            'odhlášení odběru, který vypadá takto:<br>Pokud nechceš dostávat tyto '
+            'notifikace, změň si nastavení na <a href="">KSI webu</a> nebo '
+            'klikni na <a href="">odhlásit se</a>.</p>'
         )

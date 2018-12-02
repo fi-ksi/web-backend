@@ -9,7 +9,7 @@ def fake_profile():
     return {'profile': {'id': 0, 'signed_in': False}}
 
 
-def to_json(user, profile, year_obj, basic=False):
+def to_json(user, profile, notify, year_obj, basic=False):
     if basic:
         return {'profile': _basic_profile_to_json(user)}
     else:
@@ -104,8 +104,10 @@ def _full_profile_to_json(user, profile, task_scores, year_obj):
         'results': [task.id for task in list(task_scores.keys())],
         'tasks_num': len(util.task.fully_submitted(user.id, year_obj.id)),
 
-        'notify_eval': profile.notify_eval,
-        'notify_response': profile.notify_response,
+        'notify_eval': notify.notify_eval if notify else True,
+        'notify_response': notify.notify_response if notify else True,
+        'notify_ksi': notify.notify_ksi if notify else True,
+        'notify_events': notify.notify_events if notify else True,
         'cheat': cheat,
     }
 

@@ -30,6 +30,3 @@ class Profile(Base):
     school_country = Column(countries, nullable=False)
     school_finish = Column(Integer, nullable=False)
     tshirt_size = Column(Enum('XS', 'S', 'M', 'L', 'XL'), nullable=False)
-
-    notify_eval = Column(Boolean, nullable=False, default=True)
-    notify_response = Column(Boolean, nullable=False, default=True)

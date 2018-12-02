@@ -65,6 +65,7 @@ class Registration(object):
             )
         except BaseException:
             session.delete(user)
+            session.commit()
             req.context['result'] = {
                 'error': "Nelze vytvořit profil, kontaktuj prosím orga."
             }
@@ -72,6 +73,32 @@ class Registration(object):
 
         try:
             session.add(profile)
+            session.commit()
+        except SQLAlchemyError:
+            session.rollback()
+            raise
+
+        try:
+            notify = model.UserNotify(
+                user=user.id,
+                auth_token=util.user_notify.new_token(),
+                notify_eval=data['notify_eval'] if 'notify_eval' in data else True,
+                notify_response=data['notify_response'] if 'notify_response' in data else True,
+                notify_ksi=data['notify_ksi'] if 'notify_ksi' in data else True,
+                notify_events=data['notify_events'] if 'notify_events' in data else True,
+            )
+        except BaseException:
+            session.delete(profile)
+            session.commit()
+            session.delete(user)
+            session.commit()
+            req.context['result'] = {
+                'error': "Nelze vytvořit notifikační záznam, kontaktuj prosím orga."
+            }
+            raise
+
+        try:
+            session.add(notify)
             session.commit()
         except SQLAlchemyError:
             session.rollback()
@@ -93,3 +120,4 @@ class Registration(object):
                                       file=sys.stderr)
 
         session.close()
+        req.context['result'] = {}

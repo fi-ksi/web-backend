@@ -34,11 +34,14 @@ class Profile(object):
                 return
 
             data = json.loads(req.stream.read().decode('utf-8'))
-            user, profile = session.query(model.User).\
+            user, profile, notify = session.query(model.User).\
                 filter(model.User.id == userinfo.get_id()).\
                 outerjoin(model.Profile,
                           model.User.id == model.Profile.user_id).\
                 add_entity(model.Profile).\
+                outerjoin(model.userNotify,
+                          model.User.id == model.UserNotify.user).\
+                add_entity(model.UserNotify).\
                 first()
 
             user.first_name = data['first_name']
@@ -60,11 +63,14 @@ class Profile(object):
             profile.school_finish = data['school_finish']
             profile.tshirt_size = data['tshirt_size']
 
-            profile.notify_eval = data['notify_eval']
-            profile.notify_response = data['notify_response']
+            notify.notify_eval = data['notify_eval']
+            notify.notify_response = data['notify_response']
+            notify.notify_ksi = data['notify_ksi']
+            notify.notify_events = data['notify_events']
 
             session.add(user)
             session.add(profile)
+            session.add(notify)
             session.commit()
 
             req.context['result'] = util.profile.to_json(
@@ -86,8 +92,10 @@ class Profile(object):
                 return
 
             profile = session.query(model.Profile).get(userinfo.id)
+            notify = session.query(model.UserNotify).get(userinfo.id)
             req.context['result'] = util.profile.to_json(
-                userinfo.user, profile, req.context['year_obj'], basic=False
+                userinfo.user, profile, notify, req.context['year_obj'],
+                basic=False
             )
         except SQLAlchemyError:
             session.rollback()

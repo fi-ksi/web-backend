@@ -235,5 +235,6 @@ api.add_route('/admin/user-export', endpoint.admin.UserExport())
 api.add_route('/admin/evalCodes/{id}', endpoint.admin.EvalCode())
 api.add_route('/admin/execs', endpoint.admin.Execs())
 api.add_route('/admin/execs/{id}', endpoint.admin.Exec())
+api.add_route('/unsubscribe/{id}', endpoint.Unsubscribe())
 
 api.add_sink(log_sink)

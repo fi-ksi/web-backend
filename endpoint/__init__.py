@@ -17,5 +17,6 @@ from endpoint.wave import Wave, Waves
 from endpoint.year import Year, Years
 from endpoint.robots import Robots
 from endpoint.csp import CSP
+from endpoint.unsubscribe import Unsubscribe
 
 from . import admin

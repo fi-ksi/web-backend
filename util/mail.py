@@ -8,28 +8,29 @@ import model
 import smtplib
 import queue
 from enum import Enum
+from collections import namedtuple
 
 from db import session
 from util import config
 import util
 
-# Emaily jsou odesilane v parelelnim vlakne.
+# Emaily jsou odesilane v paralelnim vlakne.
 
 queueLock = threading.Lock()    # Zamek fronty emailQueue
 emailQueue = queue.Queue()      # Fronta emailu k odeslani
 emailThread = None              # Vlakno pro odesilani emailu
 
-class EmailType(Enum):
+class EMailType(Enum):
     EVAL = 0
     RESPONSE = 1
     KSI = 2
     EVENTS = 4
 
 UNSUBSCRIBE_LINK = {
-    EmailType.EVAL: 'eval',
-    EmailType.RESPONSE: 'response',
-    EmailType.KSI: 'ksi',
-    EmailType.EVENTS: 'events',
+    EMailType.EVAL: 'eval',
+    EMailType.RESPONSE: 'response',
+    EMailType.KSI: 'ksi',
+    EMailType.EVENTS: 'events',
 }
 
 class emailData():
@@ -126,7 +127,10 @@ def send(to, subject, text, unsubscribe=None, params=None, bcc=None, cc=None):
     _send(to, subject, text, params, bcc, cc)
 
 
-def send_multiple(to, subject, text, params={}, bcc=[]):
+EMailRecipient = namedtuple('EMailRecipient', ['to', 'unsunscribe'])
+
+
+def send_multiple(recipients, subject, text, params={}, bcc=[]):
     """Odeslani hromadnych emailu"""
 
     bcc_params = copy.deepcopy(params)
@@ -134,10 +138,10 @@ def send_multiple(to, subject, text, params={}, bcc=[]):
     bcc.append(config.ksi_conf())
     for b in bcc:
         bcc_params['Cc'] = b
-        send([], subject, text, bcc_params, b)
+        send([], subject, text, None, bcc_params, b)
 
-    for recipient in to:
-        send(recipient, subject, text, params)
+    for to, unsubscribe in recipients:
+        send(to, subject, text, unsubscribe, params)
 
 
 def send_feedback(text, addr_from):

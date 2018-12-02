@@ -25,7 +25,8 @@ class Email(object):
             "KarlikSign": (true|false),
             "Easteregg": (true|false),
             "Successful": (true|false),
-            "Category": ("hs", "other", "both")
+            "Category": ("hs", "other", "both"),
+            "Type": ("ksi", "events"),
         }
 
         Backend edpovida:
@@ -46,32 +47,29 @@ class Email(object):
 
             # Filtrovani uzivatelu
             if ('Successful' in data) and (data['Successful']):
-                to = set()
+                tos = {}
                 for year in data['To']:
                     year_obj = session.query(model.Year).get(year)
-                    to |= set([
-                        user_points[0]
-                        for user_points in util.user.successful_participants(
+                    tos.update({
+                        user.id: user
+                        for (user, _) in util.user.successful_participants(
                             year_obj
                         )
-                    ])
+                    })
 
             else:
-                active = util.user.active_years_all()
-                active = [
-                    user
-                    for (user, year) in [
-                        user_year
-                        for user_year in active
-                        if (user_year[0].role == 'participant' and
-                            user_year[1].id in data['To'])
-                    ]
-                ]
+                tos = {
+                    user.id: user
+                    for user, year in util.user.active_years_all()
+                    if user.role == 'participant' and year.id in data['To']
+                }
+
                 if ('Gender' in data) and (data['Gender'] != 'both'):
-                    active = [
-                        user for user in active if user.sex == data['Gender']
-                    ]
-                to = set(active)
+                    tos = {
+                        user.id: user
+                        for user in tos.values()
+                        if user.sex == data['Gender']
+                    }
 
             if 'Category' in data and data['Category'] != 'both':
                 min_year = util.year.year_end(session.query(model.Year).
@@ -81,18 +79,22 @@ class Email(object):
 
                 finish = {
                     id: year
-                    for (id, year) in
-                    session.query(model.Profile.user_id,
-                                  model.Profile.school_finish).
-                    all()
+                    for (id, year) in session.query(model.Profile.user_id,
+                                      model.Profile.school_finish).all()
                 }
 
                 if data['Category'] == 'hs':
-                    to = filter(lambda user: finish[user.id] >= min_year, to)
+                    tos = {
+                        user.id: user
+                        for user in tos.values()
+                        if finish[user.id] >= min_year
+                    }
                 elif data['Category'] == 'other':
-                    to = filter(lambda user: finish[user.id] < max_year, to)
-
-            to = set([user.email for user in to])
+                    tos = {
+                        user.id: user
+                        for user in tos.values()
+                        if finish[user.id] < max_year
+                    }
 
             params = {}
 
@@ -107,17 +109,37 @@ class Email(object):
             if ('Easteregg' in data) and (data['Easteregg']):
                 body = body + util.mail.easteregg()
 
+            # Select notifications to build unsubscribes
+            notifies = {n.user: n for n in session.query(model.UserNotify).all()}
+
+            recipients = [
+                util.mail.EMailRecipient(
+                    user.email,
+                    util.mail.Unsubscribe(
+                        util.mail.EMailType.KSI, # TODO: add type from frontend
+                        notifies[user.id] if user.id in notifies else None,
+                        user.id,
+                        commit=False, # we will commit new entries only once
+                        backend_url=util.config.backend_url(),
+                        ksi_web=util.config.ksi_web(),
+                    )
+                ) for user in tos.values()
+            ]
+
             try:
                 util.mail.send_multiple(
-                    to,
+                    recipients,
                     data['Subject'],
-                    body, params,
-                    data['Bcc']
+                    body,
+                    params,
+                    data['Bcc'],
                 )
-                req.context['result'] = {'count': len(to)}
+                req.context['result'] = {'count': len(tos)}
+                session.commit()
             except Exception as e:
                 req.context['result'] = {'error': str(e)}
                 resp.status = falcon.HTTP_500
+                raise # TODO: remove after debug
 
         except SQLAlchemyError:
             session.rollback()

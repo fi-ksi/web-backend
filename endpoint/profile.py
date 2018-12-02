@@ -39,7 +39,7 @@ class Profile(object):
                 outerjoin(model.Profile,
                           model.User.id == model.Profile.user_id).\
                 add_entity(model.Profile).\
-                outerjoin(model.userNotify,
+                outerjoin(model.UserNotify,
                           model.User.id == model.UserNotify.user).\
                 add_entity(model.UserNotify).\
                 first()
@@ -63,10 +63,15 @@ class Profile(object):
             profile.school_finish = data['school_finish']
             profile.tshirt_size = data['tshirt_size']
 
-            notify.notify_eval = data['notify_eval']
-            notify.notify_response = data['notify_response']
-            notify.notify_ksi = data['notify_ksi']
-            notify.notify_events = data['notify_events']
+            if notify is None:
+                notify = model.UserNotify(
+                    user=userinfo.get_id(),
+                    auth_token=util.user_notify.new_token(),
+                )
+            notify.notify_eval = data['notify_eval'] if 'notify_eval' in data else True
+            notify.notify_response = data['notify_response'] if 'notify_response' in data else True
+            notify.notify_ksi = data['notify_ksi'] if 'notify_ksi' in data else True
+            notify.notify_events = data['notify_events'] if 'notify_events' in data else True
 
             session.add(user)
             session.add(profile)
@@ -74,7 +79,7 @@ class Profile(object):
             session.commit()
 
             req.context['result'] = util.profile.to_json(
-                user, profile,
+                user, profile, notify,
                 session.query(model.Year).get(req.context['year'])
             )
         except SQLAlchemyError:
@@ -116,9 +121,11 @@ class BasicProfile(object):
                 return
 
             profile = session.query(model.Profile).get(userinfo.id)
+            notify = session.query(model.UserNotify).get(userinfo.id)
             req.context['result'] = {
                 'basicProfile': util.profile.to_json(
-                    userinfo.user, profile, req.context['year_obj'], basic=True
+                    userinfo.user, profile, notify, req.context['year_obj'],
+                    basic=True
                 )['profile']
             }
         except SQLAlchemyError:

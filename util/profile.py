@@ -38,7 +38,7 @@ def to_json(user, profile, notify, year_obj, basic=False):
         return {
             'profile': dict(
                 list(_basic_profile_to_json(user).items()) +
-                list(_full_profile_to_json(user, profile, task_scores,
+                list(_full_profile_to_json(user, profile, notify, task_scores,
                                            year_obj).items())
             ),
             'tasks': [
@@ -75,7 +75,7 @@ def _basic_profile_to_json(user):
     }
 
 
-def _full_profile_to_json(user, profile, task_scores, year_obj):
+def _full_profile_to_json(user, profile, notify, task_scores, year_obj):
     points, cheat = util.user.sum_points(user.id, year_obj.id)
     summary = util.task.sum_points(
         year_obj.id, bonus=False) + year_obj.point_pad

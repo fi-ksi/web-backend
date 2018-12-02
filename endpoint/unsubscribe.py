@@ -23,7 +23,7 @@ class Unsubscribe(object):
 
             notify = util.user_notify.get(id)
             if req.get_param('token') != notify.auth_token:
-                req.context['result'] = 'Chyba 403: špatný autorizační token!'
+                resp.body = 'Chyba 403: špatný autorizační token!'
                 resp.status = falcon.HTTP_403
                 return
 
@@ -31,7 +31,7 @@ class Unsubscribe(object):
             u_type = req.get_param('type')
 
             if u_type not in valid_types:
-                req.context['result'] = 'Chyba 400: neplatný typ zprávy!'
+                resp.body = 'Chyba 400: neplatný typ zprávy!'
                 resp.status = falcon.HTTP_400
                 return
 
@@ -50,10 +50,29 @@ class Unsubscribe(object):
                 notify.notify_events = False
 
             session.commit()
-            req.context['result'] = 'Úspěšně odhlášeno.'
+            resp.body = 'Úspěšně odhlášeno.'
+
+            resp.body += '<br><br>Aktuální stav notifikací pro adresu: %s:' % (
+                session.query(model.User).get(id).email
+            )
+            resp.body += '<ul>'
+            resp.body += '<li>Notifikovat o opravení mého řešení: %s.</li>' % (
+                'ano' if notify.notify_eval else 'ne'
+            )
+            resp.body += '<li>Notifikovat o reakci na můj komentář: %s.</li>' % (
+                'ano' if notify.notify_response else 'ne'
+            )
+            resp.body += '<li>Notifikovat o průběhu semináře (vydání nové vlny, ...): %s.</li>' % (
+                'ano' if notify.notify_ksi else 'ne'
+            )
+            resp.body += '<li>Zasílat pozvánky na spřátelené akce (InterLoS, InterSoB, ...): %s.</li>' % (
+                'ano' if notify.notify_events else 'ne'
+            )
+            resp.body += '</ul>'
+            resp.body += 'Další změny je možné provést v nastavení tvého profilu na KSI webu.'
 
         except SQLAlchemyError:
-            req.context['result'] = 'Chyba 500: nastala výjimka, kontaktuj orga!'
+            resp.body = 'Chyba 500: nastala výjimka, kontaktuj orga!'
             session.rollback()
             raise
         finally:

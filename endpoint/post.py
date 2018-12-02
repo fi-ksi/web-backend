@@ -365,19 +365,16 @@ class Posts(object):
                         body += ("<div style='margin-left: 50px;'>%s</div>" %
                                  (util.post.to_html(post)))
                         body += util.config.karlik_img()
-                        body += (
-                            '<hr><p style="font-size: 70%%;">Tuto zprávu '
-                            'dostáváš, protože máš v nastavení na <a href="%s"'
-                            '>KSI webu</a> aktivované zasílání notifikací. '
-                            'Pokud nechceš dostávat notifikace, změň si '
-                            'nastavení na webu.</p>' % (util.config.ksi_web())
-                        )
 
                         util.mail.send(
                             parent_user.email,
                             ('[KSI-WEB] Nový příspěvek v diskuzi %s' %
                              (thread.title)),
-                            body
+                            body,
+                            unsubscribe=util.mail.Unsubscribe(
+                                email_type=util.mail.EmailType.RESPONSE,
+                                user_id=parent_user.id,
+                            ),
                         )
                     except BaseException:
                         exc_type, exc_value, exc_traceback = sys.exc_info()

@@ -26,6 +26,7 @@ def normalize(notify, user_id):
     if notify is None:
         notify = model.UserNotify(
             user=user_id,
+            auth_token=new_token(),
             notify_eval=True,
             notify_response=True,
             notify_ksi=True,

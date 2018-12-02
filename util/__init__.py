@@ -29,6 +29,7 @@ from . import content
 from . import git
 from . import lock
 from . import feedback
+from . import user_notify
 
 
 def decode_form_data(req):

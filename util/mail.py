@@ -171,7 +171,7 @@ class Unsubscribe:
 
     def text(self):
         return (
-            '<hr><p style="font-size: 70%%;">Pokud nechceš dostávat tyto notifikace,'
+            '<hr><p style="font-size: 70%%;">Pokud nechceš dostávat tyto notifikace, '
             'změň si nastavení na <a href="%s">KSI webu</a> nebo klikni na '
             '<a href="%s">odhlásit se</a>.</p>' % (
                 self.ksi_web,

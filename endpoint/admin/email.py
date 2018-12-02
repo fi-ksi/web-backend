@@ -112,11 +112,20 @@ class Email(object):
             # Select notifications to build unsubscribes
             notifies = {n.user: n for n in session.query(model.UserNotify).all()}
 
+            TYPE_MAPPING = {
+                'ksi': util.mail.EMailType.KSI,
+                'events': util.mail.EMailType.EVENTS,
+            }
+
+            message_type = TYPE_MAPPING[data['Type']] \
+                           if 'Type' in data and data['Type'] in TYPE_MAPPING \
+                           else util.mail.EMailType.KSI
+
             recipients = [
                 util.mail.EMailRecipient(
                     user.email,
                     util.mail.Unsubscribe(
-                        util.mail.EMailType.KSI, # TODO: add type from frontend
+                        message_type,
                         notifies[user.id] if user.id in notifies else None,
                         user.id,
                         commit=False, # we will commit new entries only once

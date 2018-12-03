@@ -100,8 +100,6 @@ class Email(object):
 
             if 'Reply-To' in data and data['Reply-To']:
                 params['Reply-To'] = data['Reply-To']
-            if 'Sender' in data and data['Sender']:
-                params['Sender'] = data['Sender']
 
             body = data['Body']
             if ('KarlikSign' in data) and (data['KarlikSign']):

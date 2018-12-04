@@ -1,4 +1,5 @@
 from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from email import charset as Charset
 import sys
 import copy
@@ -9,6 +10,7 @@ import smtplib
 import queue
 from enum import Enum
 from collections import namedtuple
+import pypandoc
 
 from db import session
 from util import config
@@ -83,8 +85,7 @@ def _send(to, subject, text, params, bcc, cc):
     Charset.add_charset('utf-8', Charset.QP, Charset.QP, 'utf-8')
     text = "<html>" + text + "</html>"
 
-    msg = MIMEText(text, 'html', 'utf-8')
-
+    msg = MIMEMultipart('alternative')
     msg['Subject'] = subject
     msg['From'] = config.mail_sender()
     if 'Sender' not in params:
@@ -97,6 +98,11 @@ def _send(to, subject, text, params, bcc, cc):
 
     for key in list(params.keys()):
         msg[key] = params[key]
+
+    plaintext = pypandoc.convert(text, 'markdown', format='html')
+
+    msg.attach(MIMEText(plaintext, 'plain', 'utf-8'))
+    msg.attach(MIMEText(text, 'html', 'utf-8'))
 
     send_to = set((to if isinstance(to, (list)) else [to]) +
                   (cc if isinstance(cc, (list)) else [cc]) +

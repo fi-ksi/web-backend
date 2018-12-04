@@ -16,7 +16,6 @@ class Email(object):
         {
             "Subject": String,
             "Body": String,
-            "Sender": String,
             "Reply-To": String,
             "To": [year_id_1, year_id_2, ...] (resitelum v danych rocnicich),
             "Bcc": [String],

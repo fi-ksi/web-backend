@@ -372,7 +372,7 @@ class Posts(object):
                              (thread.title)),
                             body,
                             unsubscribe=util.mail.Unsubscribe(
-                                email_type=util.mail.EmailType.RESPONSE,
+                                email_type=util.mail.EMailType.RESPONSE,
                                 user_id=parent_user.id,
                             ),
                         )

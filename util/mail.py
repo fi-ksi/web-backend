@@ -58,7 +58,6 @@ class sendThread(threading.Thread):
                 queueLock.release()
 
                 try:
-                    print("test")
                     s = smtplib.SMTP('relay.fi.muni.cz')
                     s.sendmail(data.frm, data.to, data.msg)
                 except Exception as e:

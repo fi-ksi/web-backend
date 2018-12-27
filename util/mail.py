@@ -58,6 +58,7 @@ class sendThread(threading.Thread):
                 queueLock.release()
 
                 try:
+                    print("test")
                     s = smtplib.SMTP('relay.fi.muni.cz')
                     s.sendmail(data.frm, data.to, data.msg)
                 except Exception as e:
@@ -77,7 +78,7 @@ def easteregg():
     return "<hr><p>PS: " + egg.body + "</p>"
 
 
-def _send(to, subject, text, params, bcc, cc):
+def _send(to, subject, text, params, bcc, cc, plaintext=None):
     """Odeslani emailu."""
 
     global emailThread
@@ -99,7 +100,8 @@ def _send(to, subject, text, params, bcc, cc):
     for key in list(params.keys()):
         msg[key] = params[key]
 
-    plaintext = pypandoc.convert(text, 'markdown', format='html')
+    if plaintext is None:
+        plaintext = pypandoc.convert(text, 'markdown', format='html')
 
     msg.attach(MIMEText(plaintext, 'plain', 'utf-8'))
     msg.attach(MIMEText(text, 'html', 'utf-8'))
@@ -119,7 +121,7 @@ def _send(to, subject, text, params, bcc, cc):
         emailThread.start()
 
 
-def send(to, subject, text, unsubscribe=None, params=None, bcc=None, cc=None):
+def send(to, subject, text, unsubscribe=None, params=None, bcc=None, cc=None, plaintext=None):
     if params is None:
         params = {}
     if bcc is None:
@@ -133,7 +135,7 @@ def send(to, subject, text, unsubscribe=None, params=None, bcc=None, cc=None):
             params['List-Unsubscribe-Post'] = 'List-Unsubscribe=One-Click'
             params['List-Unsubscribe'] = '<' + unsubscribe.link() + '>'
 
-    _send(to, subject, text, params, bcc, cc)
+    _send(to, subject, text, params, bcc, cc, plaintext)
 
 
 EMailRecipient = namedtuple('EMailRecipient', ['to', 'unsunscribe'])
@@ -142,15 +144,17 @@ EMailRecipient = namedtuple('EMailRecipient', ['to', 'unsunscribe'])
 def send_multiple(recipients, subject, text, params={}, bcc=[]):
     """Odeslani hromadnych emailu"""
 
+    plaintext = pypandoc.convert(text, 'markdown', format='html')
+
     bcc_params = copy.deepcopy(params)
     bcc_params['To'] = 'ksi-resitele@fi.muni.cz'
     bcc.append(config.ksi_conf())
     for b in bcc:
         bcc_params['Cc'] = b
-        send([], subject, text, FakeUnsubscribe(), bcc_params, b)
+        send([], subject, text, FakeUnsubscribe(), bcc_params, b, plaintext=plaintext)
 
     for to, unsubscribe in recipients:
-        send(to, subject, text, unsubscribe, params)
+        send(to, subject, text, unsubscribe, params, plaintext=plaintext)
 
 
 def send_feedback(text, addr_from):

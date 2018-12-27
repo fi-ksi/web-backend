@@ -130,6 +130,7 @@ def send(to, subject, text, unsubscribe=None, params=None, bcc=None, cc=None, pl
 
     if unsubscribe is not None:
         text += unsubscribe.text()
+        plaintext += unsubscribe.plaintext()
         if hasattr(unsubscribe, 'link'):
             params['List-Unsubscribe-Post'] = 'List-Unsubscribe=One-Click'
             params['List-Unsubscribe'] = '<' + unsubscribe.link() + '>'
@@ -191,6 +192,15 @@ class Unsubscribe:
             )
         )
 
+    def plaintext(self):
+        return (
+            '\n\nPokud nechceš dostávat tyto notifikace,\n'
+            'změň si nastavení na %s nebo klikni na přímý odkaz:\n%s' % (
+                self.ksi_web,
+                self.link(),
+            )
+        )
+
     def link(self):
         return (
             '%s/unsubscribe/%d?token=%s&type=%s' % (
@@ -209,4 +219,9 @@ class FakeUnsubscribe:
             'odhlášení odběru, který vypadá takto:<br>Pokud nechceš dostávat tyto '
             'notifikace, změň si nastavení na <a href="">KSI webu</a> nebo '
             'klikni na <a href="">odhlásit se</a>.</p>'
+        )
+
+    def plaintext(self):
+        return (
+            '\n\nTady je plaintextová verze unsubscribe, ale tu snad nikdo nečte...'
         )

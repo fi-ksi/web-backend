@@ -7,7 +7,7 @@
  * Python 3.5
  * virtualenv
  * packages from `requirements.txt`
- * [isolate](https://github.com/cms-dev/isolate)
+ * [isolate](https://github.com/ioi/isolate)
 
 ## Installation
 

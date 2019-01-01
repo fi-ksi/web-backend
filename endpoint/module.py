@@ -202,7 +202,8 @@ class ModuleSubmit(object):
                                 'opravení, zkuste to za chvíli.')
                 }
             except Exception as e:
-                reporter += traceback.format_exc()
+                if not isinstance(e, util.programming.EIsolateError):
+                    reporter += traceback.format_exc()
                 result = {
                     'result': 'error',
                     'message': ('Nastala chyba při vykonávání kódu, kontaktuj '

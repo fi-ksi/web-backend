@@ -145,6 +145,7 @@ def evaluate(task, module, user_id, code, eval_id, reporter):
     check_res = {}
     try:
         try:
+            isolate_err = False
             res = _run(prog_info, code, box_id, reporter, user_id)
 
             if res["code"] == 0:
@@ -159,9 +160,13 @@ def evaluate(task, module, user_id, code, eval_id, reporter):
                                'chyby!',
                     'stdout': res['stdout'],
                 }
+        except EIsolateError:
+            isolate_err = True
+            raise
         finally:
-            store_exec(box_id, user_id, module.id,
-                       'evaluation\n' + str(eval_id) + '\n')
+            if not isolate_err:
+                store_exec(box_id, user_id, module.id,
+                           'evaluation\n' + str(eval_id) + '\n')
 
     finally:
         cleanup_exec_environment(box_id)
@@ -300,10 +305,15 @@ def run(module, user_id, code, exec_id, reporter):
 
     try:
         try:
+            isolate_err = False
             res = _run(prog_info, code, box_id, reporter, user_id)
+        except EIsolateError:
+            isolate_err = True
+            raise
         finally:
-            store_exec(box_id, user_id, module.id,
-                       'execution\n' + str(exec_id) + '\n')
+            if not isolate_err:
+                store_exec(box_id, user_id, module.id,
+                           'execution\n' + str(exec_id) + '\n')
     finally:
         cleanup_exec_environment(box_id)
 
@@ -339,7 +349,8 @@ def _run(prog_info, code, box_id, reporter, user_id):
 
     (return_code, output_path, secret_path, stderr_path) = _exec(
         sandbox_root, box_id, "/box/run", os.path.abspath(prog_info['stdin']),
-        reporter, limits)
+        reporter, limits
+    )
 
     trigger_data = None
     if ((return_code == 0) and ('post_trigger_script' in prog_info) and
@@ -485,6 +496,10 @@ def _exec(sandbox_dir, box_id, filename, stdin_path, reporter, limits):
             reporter += "Stdout: " + stdout.read() + "\n"
         with open(stderr_path, 'r') as stderr:
             reporter += "Stderr: " + stderr.read() + "\n"
+
+        if p.returncode != 1: # 1 = error in sadbox, >1 = isolate error
+            raise EIsolateError("Isolate --run returned code " +
+                                str(p.returncode))
 
     # Post process stdout
     with open(stdout_path, 'r') as f:

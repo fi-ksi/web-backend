@@ -268,7 +268,8 @@ def store_exec(box_id, user_id, module_id, source):
     if os.path.isdir(dst_path):
         shutil.rmtree(dst_path)
 
-    shutil.copytree(src_path, dst_path)
+    IGNORE = ["tmp", "root", "etc", "__pycache__", "*.pyc"]
+    shutil.copytree(src_path, dst_path, ignore=shutil.ignore_patterns(*IGNORE))
 
     # Write evaluation id so we can recognize it in the future
     with open(os.path.join(dst_path, SOURCE_FILE), 'w') as s:

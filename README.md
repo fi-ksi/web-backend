@@ -32,6 +32,7 @@
      ```
      $ mount --bind /etc /opt/etc
      ```
+    Do not forget to add it to `/etc/fstab`.
  9. Optional: make `/tmp` tmpfs.
  10. Optional: ensure the server will be started after system boots up
      (run `./runner start`).

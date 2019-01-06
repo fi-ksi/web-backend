@@ -26,10 +26,15 @@
 
  5. Uncomment part of the `app.py`, which creates database structure.
  6. Run the server, comment the database-create-section in `run.py`
- 7. Install `isolate`.
- 8. Optional: make `/tmp` tmpfs.
- 9. Optional: ensure the server will be started after system boots up
-    (run `./runner start`).
+ 7. Install `isolate` with box directory `/tmp/box`.
+ 8. Bind-mount `/etc` directory to `/opt/etc` (this is required for sandbox to
+    work):
+     ```
+     $ mount --bind /etc /opt/etc
+     ```
+ 9. Optional: make `/tmp` tmpfs.
+ 10. Optional: ensure the server will be started after system boots up
+     (run `./runner start`).
 
 ## Server control
 

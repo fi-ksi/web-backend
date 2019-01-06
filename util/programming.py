@@ -451,7 +451,8 @@ def _exec(sandbox_dir, box_id, filename, stdin_path, reporter, limits):
         "-b",
         box_id,
         "--dir=/etc=" + os.path.join(sandbox_dir, "etc"),
-        "--env=LANG=C.UTF-8",
+        "--dir=/etc/alternatives=/opt/etc/alternatives",
+        "--env=LANG=en_US.UTF-8",
         "-Mmeta",
         "-m" + str(parse_size(limits["mem"])),
         "-w" + str(parse_timespan(limits["total_time"])),
@@ -479,6 +480,10 @@ def _exec(sandbox_dir, box_id, filename, stdin_path, reporter, limits):
         os.mkdir(os.path.join(sandbox_dir, "etc"))
     with open(os.path.join(sandbox_dir, "etc", "passwd"), 'w') as f:
         f.write("tester:x:" + str(60000 + int(box_id)) + ":0:Tester:/:\n")
+
+    # Create /etc/alternatives directory to allow mount
+    if not os.path.isdir(os.path.join(sandbox_dir, "etc", "alternatives")):
+        os.mkdir(os.path.join(sandbox_dir, "etc", "alternatives"))
 
     reporter += 'Running sandbox: %s\n' % (" ".join(cmd))
     reporter += ' * stdout: %s\n' % stdout_path

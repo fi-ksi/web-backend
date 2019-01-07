@@ -223,7 +223,11 @@ def init_exec_environment():
         raise ENoFreeBox("Reached limit of concurrent tasks!")
 
     # Run isolate --init
-    p = subprocess.Popen(["isolate", "-b", box_id, "--init"])
+    p = subprocess.Popen(
+        ["isolate", "-b", box_id, "--init"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
     p.wait()
     if p.returncode != 0:
         raise EIsolateError("Isolate --init returned code " +

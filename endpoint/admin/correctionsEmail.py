@@ -27,7 +27,7 @@ class CorrectionsEmail(object):
                     'status': '403',
                     'title': 'Forbidden',
                     'detail': ('Informační e-mail může odeslat pouze '
-                               'organizátor.')
+                            'organizátor.')
                 }]
             }
             resp.status = falcon.HTTP_400
@@ -53,7 +53,7 @@ class CorrectionsEmail(object):
                                 model.Post,
                                 commenter,
                                 model.SolutionComment).\
-                join(model.UserNotify, participant.id == model.UserNotify.user).\
+                outerjoin(model.UserNotify, participant.id == model.UserNotify.user).\
                 filter(model.UserNotify.notify_eval).\
                 join(model.Evaluation,
                      model.Evaluation.user == participant.id).\
@@ -118,21 +118,27 @@ class CorrectionsEmail(object):
 
                     body += util.config.karlik_img()
 
-                    body += ("<hr><p style='font-size: 70%%;'>Tuto zprávu "
-                             "dostáváš, protože máš v nastavení na "
-                             "<a href=\"%s\">KSI webu</a> aktivované zasílání "
-                             "notifikací. Pokud nechceš dostávat notifikace, "
-                             "změň si nastavení na webu.</p>") % (
-                        util.config.ksi_web()
+                    unsubscribe = util.mail.Unsubscribe(
+                        util.mail.EMailType.EVAL,
+                        to[1],
+                        to[0].id,
+                        commit=False, # we will commit new entries only once
+                        backend_url=util.config.backend_url(),
+                        ksi_web=util.config.ksi_web(),
                     )
 
                     util.mail.send(
                         to[0].email,
                         "[KSI-WEB] Úloha %s opravena" % task.title,
-                        body
+                        body,
+                        unsubscribe=unsubscribe
                     )
+
                 except Exception as e:
                     errors.append(str(e))
+
+
+            session.commit()
 
             # Odeslani informacniho emailu do konference
             try:
@@ -148,7 +154,8 @@ class CorrectionsEmail(object):
                 body += " informační e-mail %s řešitelům.</p>" % len(tos)
                 util.mail.send(
                     util.config.ksi_conf(),
-                    "[KSI-WEB] Úloha %s opravena" % task.title, body
+                    "[KSI-WEB] Úloha %s opravena" % task.title,
+                    body
                 )
             except Exception as e:
                 errors.append(str(e))

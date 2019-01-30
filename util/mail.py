@@ -130,7 +130,8 @@ def send(to, subject, text, unsubscribe=None, params=None, bcc=None, cc=None, pl
 
     if unsubscribe is not None:
         text += unsubscribe.text()
-        plaintext += unsubscribe.plaintext()
+        if plaintext is not None:
+            plaintext += unsubscribe.plaintext()
         if hasattr(unsubscribe, 'link'):
             params['List-Unsubscribe-Post'] = 'List-Unsubscribe=One-Click'
             params['List-Unsubscribe'] = '<' + unsubscribe.link() + '>'

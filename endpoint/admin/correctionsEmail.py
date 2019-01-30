@@ -33,6 +33,11 @@ class CorrectionsEmail(object):
         else:
             body += ("<p>K tvému řešení nebyl přidán žádný komentář.</p>")
 
+        if task.eval_comment:
+            body += "<p>Společný komentář ke všem opravením:</p> %s" % (
+                task.eval_comment
+            )
+
         body += ("<p>Můžeš si prohlédnout <a href=\"%s\">výsledkovku</a>, ") % (
             util.config.ksi_web() + "/vysledky"
         )
@@ -153,6 +158,12 @@ class CorrectionsEmail(object):
                     body += "a"
 
                 body += " informační e-mail %s řešitelům.</p>" % len(tos)
+
+                if task.eval_comment:
+                    body += "<p>Společný komentář ke všem opravením:</p> %s" % (
+                        task.eval_comment
+                    )
+
                 util.mail.send(
                     util.config.ksi_conf(),
                     "[KSI-WEB] Úloha %s opravena" % task.title,

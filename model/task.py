@@ -51,6 +51,7 @@ class Task(Base):
         nullable=False,
         default='default'
     )
+    eval_comment = Column(Text, nullable=True, default='')
 
 
 class SolutionComment(Base):

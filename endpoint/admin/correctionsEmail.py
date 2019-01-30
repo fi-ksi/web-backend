@@ -54,7 +54,7 @@ class CorrectionsEmail(object):
                                 commenter,
                                 model.SolutionComment).\
                 outerjoin(model.UserNotify, participant.id == model.UserNotify.user).\
-                filter(model.UserNotify.notify_eval).\
+                filter(or_(model.UserNotify.notify_eval, model.UserNotify.user == None)).\
                 join(model.Evaluation,
                      model.Evaluation.user == participant.id).\
                 join(model.Module,

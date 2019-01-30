@@ -10,6 +10,68 @@ import util
 
 class CorrectionsEmail(object):
 
+    def _send_single_email(self, task, participant, notify, evaluation, post,
+                           commenter, solution_comment):
+        body = ("<p>Ahoj,<br>opravili jsme tvé řešení úlohy " +
+                task.title + ".</p>")
+
+        if participant.sex == 'female':
+            body += ("<a>Získala jsi <strong>%.1f bodů</strong>."
+                     "</p>" % evaluation.points)
+        else:
+            body += ("<a>Získal jsi <strong>%.1f bodů</strong>."
+                     "</p>" % evaluation.points)
+
+        if post:
+            body += ("<p><a href=\"%s\"><i>%s</i></a> komentuje "
+                     "tvé řešení:</p> %s") % (
+                util.config.ksi_web() + "/profil/" +
+                str(commenter.id),
+                commenter.first_name + " " + commenter.last_name,
+                post.body
+            )
+        else:
+            body += ("<p>K tvému řešení nebyl přidán žádný komentář.</p>")
+
+        body += ("<p>Můžeš si prohlédnout <a href=\"%s\">výsledkovku</a>, ") % (
+            util.config.ksi_web() + "/vysledky"
+        )
+
+        if solution_comment:
+            body += ("podívat se na <a href=\"%s\">"
+                     "vzorové řešení úlohy</a>, nebo <a href=\"%s\">"
+                     "odpovědět na komentář opravujícího</a>.</p>") % (
+                util.config.ksi_web() + "/ulohy/" +
+                str(id) + "/reseni",
+                util.config.ksi_web() + "/ulohy/" +
+                str(id) + "/hodnoceni"
+            )
+        else:
+            body += ("nebo se podívat na <a href=\"%s\">"
+                     "vzorové řešení úlohy</a>.</p>") % (
+                util.config.ksi_web() + "/ulohy/" +
+                str(id) + "/reseni"
+            )
+
+        body += util.config.karlik_img()
+
+        unsubscribe = util.mail.Unsubscribe(
+            util.mail.EMailType.EVAL,
+            notify,
+            participant.id,
+            commit=False, # we will commit new entries only once
+            backend_url=util.config.backend_url(),
+            ksi_web=util.config.ksi_web(),
+        )
+
+        util.mail.send(
+            participant.email,
+            "[KSI-WEB] Úloha %s opravena" % task.title,
+            body,
+            unsubscribe=unsubscribe,
+            plaintext='' # No plaintext (pandoc is too slow for the bulk)
+        )
+
     def on_put(self, req, resp, id):
         """
         1) Odeslani informacniho emailu resitelum, ve kterem se pise
@@ -70,71 +132,9 @@ class CorrectionsEmail(object):
                 all()
 
             errors = []
-
             for to in tos:
                 try:
-                    body = ("<p>Ahoj,<br>opravili jsme tvé řešení úlohy " +
-                            task.title + ".</p>")
-
-                    if to[0].sex == 'female':
-                        body += ("<a>Získala jsi <strong>%.1f bodů</strong>."
-                                 "</p>" % to.Evaluation.points)
-                    else:
-                        body += ("<a>Získal jsi <strong>%.1f bodů</strong>."
-                                 "</p>" % to.Evaluation.points)
-
-                    if to.Post:
-                        body += ("<p><a href=\"%s\"><i>%s</i></a> komentuje "
-                                 "tvé řešení:</p> %s") % (
-                            util.config.ksi_web() + "/profil/" +
-                            str(to[4].id),
-                            to[4].first_name + " " + to[4].last_name,
-                            to.Post.body
-                        )
-                    else:
-                        body += ("<p>K tvému řešení nebyl přidán žádný "
-                                 "komentář.</p>")
-
-                    body += ("<p>Můžeš si prohlédnout <a href=\"%s\">"
-                             "výsledkovku</a>, ") % (
-                        util.config.ksi_web() + "/vysledky"
-                    )
-
-                    if to.SolutionComment:
-                        body += ("podívat se na <a href=\"%s\">"
-                                 "vzorové řešení úlohy</a>, nebo <a href=\"%s\">"
-                                 "odpovědět na komentář opravujícího</a>.</p>") % (
-                            util.config.ksi_web() + "/ulohy/" +
-                            str(id) + "/reseni",
-                            util.config.ksi_web() + "/ulohy/" +
-                            str(id) + "/hodnoceni"
-                        )
-                    else:
-                        body += ("nebo se podívat na <a href=\"%s\">"
-                                 "vzorové řešení úlohy</a>.</p>") % (
-                            util.config.ksi_web() + "/ulohy/" +
-                            str(id) + "/reseni"
-                        )
-
-                    body += util.config.karlik_img()
-
-                    unsubscribe = util.mail.Unsubscribe(
-                        util.mail.EMailType.EVAL,
-                        to[1],
-                        to[0].id,
-                        commit=False, # we will commit new entries only once
-                        backend_url=util.config.backend_url(),
-                        ksi_web=util.config.ksi_web(),
-                    )
-
-                    util.mail.send(
-                        to[0].email,
-                        "[KSI-WEB] Úloha %s opravena" % task.title,
-                        body,
-                        unsubscribe=unsubscribe,
-                        plaintext='' # No plaintext (pandoc is too slow for the bulk)
-                    )
-
+                    self._send_single_email(task, *to)
                 except Exception as e:
                     errors.append(str(e))
 

@@ -99,10 +99,8 @@ def _send(to, subject, text, params, bcc, cc, plaintext=None):
     for key in list(params.keys()):
         msg[key] = params[key]
 
-    if plaintext is None:
-        plaintext = pypandoc.convert(text, 'markdown', format='html')
-
-    msg.attach(MIMEText(plaintext, 'plain', 'utf-8'))
+    if plaintext is not None:
+        msg.attach(MIMEText(plaintext, 'plain', 'utf-8'))
     msg.attach(MIMEText(text, 'html', 'utf-8'))
 
     send_to = set((to if isinstance(to, (list)) else [to]) +
@@ -120,7 +118,8 @@ def _send(to, subject, text, params, bcc, cc, plaintext=None):
         emailThread.start()
 
 
-def send(to, subject, text, unsubscribe=None, params=None, bcc=None, cc=None, plaintext=None):
+def send(to, subject, text, unsubscribe=None, params=None, bcc=None, cc=None,
+         plaintext=None):
     if params is None:
         params = {}
     if bcc is None:
@@ -130,11 +129,16 @@ def send(to, subject, text, unsubscribe=None, params=None, bcc=None, cc=None, pl
 
     if unsubscribe is not None:
         text += unsubscribe.text()
-        if plaintext is not None:
+        if plaintext is not None and plaintext != '':
             plaintext += unsubscribe.plaintext()
         if hasattr(unsubscribe, 'link'):
             params['List-Unsubscribe-Post'] = 'List-Unsubscribe=One-Click'
             params['List-Unsubscribe'] = '<' + unsubscribe.link() + '>'
+
+    if plaintext is None:
+        plaintext = pypandoc.convert(text, 'markdown', format='html')
+    elif plaintext == '':
+        plaintext = None
 
     _send(to, subject, text, params, bcc, cc, plaintext)
 

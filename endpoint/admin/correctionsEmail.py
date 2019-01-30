@@ -131,7 +131,8 @@ class CorrectionsEmail(object):
                         to[0].email,
                         "[KSI-WEB] Úloha %s opravena" % task.title,
                         body,
-                        unsubscribe=unsubscribe
+                        unsubscribe=unsubscribe,
+                        plaintext='' # No plaintext (pandoc is too slow for the bulk)
                     )
 
                 except Exception as e:

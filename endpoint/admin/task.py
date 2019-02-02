@@ -80,6 +80,8 @@ class Task(object):
             task.git_branch = data['git_branch']
             task.git_commit = data['git_commit']
             if 'eval_comment' in data:
+                if data['eval_comment'] == '':
+                    data['eval_comment'] = None
                 task.eval_comment = data['eval_comment']
 
             session.commit()

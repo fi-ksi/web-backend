@@ -419,4 +419,5 @@ def admin_to_json(task, amax_points=None):
             task.deploy_date.isoformat() if task.deploy_date else None,
         'deploy_status': task.deploy_status,
         'max_score': float(format(amax_points, '.1f')),
+        'eval_comment': task.eval_comment,
     }

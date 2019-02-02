@@ -79,6 +79,8 @@ class Task(object):
             task.git_path = data['git_path']
             task.git_branch = data['git_branch']
             task.git_commit = data['git_commit']
+            if 'eval_comment' in data:
+                task.eval_comment = data['eval_comment']
 
             session.commit()
         except SQLAlchemyError:

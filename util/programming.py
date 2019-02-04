@@ -456,6 +456,7 @@ def _exec(sandbox_dir, box_id, filename, stdin_path, reporter, limits):
         box_id,
         "--dir=/etc=" + os.path.join(sandbox_dir, "etc"),
         "--dir=/etc/alternatives=/opt/etc/alternatives",
+        "--env=PATH",
         "--env=LANG=en_US.UTF-8",
         "-Mmeta",
         "-m" + str(parse_size(limits["mem"])),

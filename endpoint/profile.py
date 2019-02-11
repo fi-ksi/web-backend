@@ -80,7 +80,7 @@ class Profile(object):
 
             req.context['result'] = util.profile.to_json(
                 user, profile, notify,
-                session.query(model.Year).get(req.context['year'])
+                req.context['year_obj']
             )
         except SQLAlchemyError:
             session.rollback()
@@ -171,7 +171,7 @@ class OrgProfile(object):
             req.context['result'] = util.profile.to_json(
                 user,
                 profile,
-                session.query(model.Year).get(req.context['year'])
+                req.context['year_obj']
             )
         except SQLAlchemyError:
             session.rollback()

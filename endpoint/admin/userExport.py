@@ -55,7 +55,7 @@ class UserExport(object):
 
         try:
             user = req.context['user']
-            year_obj = session.query(model.Year).get(req.context['year'])
+            year_obj = req.context['year_obj']
 
             if (not user.is_logged_in()) or (not user.is_org()):
                 resp.status = falcon.HTTP_400

@@ -168,9 +168,11 @@ class OrgProfile(object):
                 resp.status = falcon.HTTP_404
                 return
 
+            notify = session.query(model.UserNotify).get(userinfo.id)
             req.context['result'] = util.profile.to_json(
                 user,
                 profile,
+                notify,
                 req.context['year_obj']
             )
         except SQLAlchemyError:

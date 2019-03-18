@@ -47,15 +47,15 @@ class CorrectionsEmail(object):
                      "vzorové řešení úlohy</a>, nebo <a href=\"%s\">"
                      "odpovědět na komentář opravujícího</a>.</p>") % (
                 util.config.ksi_web() + "/ulohy/" +
-                str(id) + "/reseni",
+                str(task.id) + "/reseni",
                 util.config.ksi_web() + "/ulohy/" +
-                str(id) + "/hodnoceni"
+                str(task.id) + "/hodnoceni"
             )
         else:
             body += ("nebo se podívat na <a href=\"%s\">"
                      "vzorové řešení úlohy</a>.</p>") % (
                 util.config.ksi_web() + "/ulohy/" +
-                str(id) + "/reseni"
+                str(task.id) + "/reseni"
             )
 
         body += util.config.karlik_img()

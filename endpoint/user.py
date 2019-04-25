@@ -161,14 +161,14 @@ class Users(object):
                 # Resitele zobrazujeme jen v aktualnim rocniku
                 # (pro jine neni tasks_cnt definovano).
                 users = users.filter(model.User.role == 'participant').\
-                    filter(text("tasks_cnt"), text("tasks_cnt > 0"))
+                    having(text("total_score > 0"))
                 if year:
                     users = users.filter(model.Profile.school_finish >=
                                          util.year.year_end(year))
 
             elif filt == 'part-other':
                 users = users.filter(model.User.role == 'participant').\
-                    filter(text("tasks_cnt"), text("tasks_cnt > 0"))
+                    having(text("total_score > 0"))
                 if year:
                     users = users.filter(model.Profile.school_finish <
                                          util.year.year_end(year))
@@ -239,6 +239,7 @@ class Users(object):
             # neodevzdali zadnou ulohu
             # -> nastavime jim natvrdo 'tasks_cnt' = 0 a total_score = 0,
             # abychom omezili dalsi SQL dotazy v util.user.to_json
+
             users_json = [
                 util.user.to_json(
                     user=user.User,

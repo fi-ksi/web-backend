@@ -112,19 +112,19 @@ def sum_points(user_id, year_id) -> (int, bool):
 
 
 def percentile(user_id, year_id):
-    query = session.query(model.User).filter(model.User.role == 'participant')
-    count = query.count()
-
-    upoints = user_points(year_id)
+    upoints = {
+        userid: points
+        for userid, points in user_points(year_id).items() if points > 0
+    }
     if user_id not in upoints:
         return 0
 
     points_order = sorted(list(upoints.values()), reverse=True)
 
-    rank = 0.0
+    rank = 0
     for points in points_order:
         if points == upoints[user_id]:
-            return round((1 - (rank / count)) * 100)
+            return round((1 - (rank / len(points_order))) * 100)
         rank += 1
 
     return 0

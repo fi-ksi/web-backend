@@ -108,7 +108,7 @@ def sum_points(user_id, year_id) -> (int, bool):
 def percentile(user_id, year_id):
     upoints = {
         userid: points
-        for userid, points in user_points(year_id, only_ids=True).items()
+        for userid, points in user_points(year_id).items()
         if points > 0
     }
     if user_id not in upoints:
@@ -125,7 +125,7 @@ def percentile(user_id, year_id):
     return 0
 
 
-def user_points(year_id, only_ids):
+def user_points(year_id):
     """Returns {user.id: user.points}."""
     points_per_module = session.query(model.User.id.label('user'),
                                       model.Evaluation.module,
@@ -139,16 +139,12 @@ def user_points(year_id, only_ids):
         filter(model.Wave.year == year_id).\
         group_by(model.User.id, model.Evaluation.module).subquery()
 
-    if only_ids:
-        results = session.query(model.User.id,
-                                func.sum(points_per_module.c.points).
-                                label('sum_points'))
-    else:
-        results = session.query(model.User,
-                                func.sum(points_per_module.c.points).
-                                label('sum_points'))
+    results = session.query(model.User.id,
+                            func.sum(points_per_module.c.points).
+                            label('sum_points'))
 
-    results.join(points_per_module, points_per_module.c.user == model.User.id).\
+    results = results.join(points_per_module,
+                           points_per_module.c.user == model.User.id).\
             group_by(model.User).all()
 
     return {userid: points for userid, points in results}

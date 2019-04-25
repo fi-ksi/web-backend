@@ -98,7 +98,7 @@ def max_points(task_id, bonus=False):
 
 
 def max_points_dict(bonus=False):
-    """Vraci [task_id, max_points)]"""
+    """Vraci {task_id: max_points}"""
     # Musime si davat pozor na to, ze uloha muze byt bez modulu
     # points_per_task musi vratit i ulohy bez modulu (v tom pripade vrati
     #  points jako Null)

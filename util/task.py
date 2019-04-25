@@ -69,7 +69,7 @@ def any_submitted(user_id, year_id):
     return session.query(model.Task,
                          func.sum(per_module.c.points).label("score"),
                          model.Wave, model.Prerequisite).\
-        join(model.Prerequisite, model.Task.prerequisite ==
+        outerjoin(model.Prerequisite, model.Task.prerequisite ==
              model.Prerequisite.id).\
         join(model.Module, model.Module.task == model.Task.id).\
         join(per_module, model.Module.id == per_module.c.module).\

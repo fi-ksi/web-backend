@@ -156,11 +156,37 @@ def user_points(year_id, only_ids):
 
 def successful_participants(year_obj):
     """vraci seznam [(user,points)] uspesnych v danem rocniku"""
+
+    points_per_module = session.query(
+        model.User.id.label('user'),
+        model.Evaluation.module,
+        func.max(model.Evaluation.points).label('points'),
+        func.max(model.Evaluation.cheat).label('cheat'),
+    ).\
+        join(model.Evaluation, model.Evaluation.user == model.User.id).\
+        join(model.Module, model.Evaluation.module == model.Module.id).\
+        join(model.Task, model.Task.id == model.Module.task).\
+        filter(model.Task.evaluation_public).\
+        join(model.Wave, model.Wave.id == model.Task.wave).\
+        filter(model.Wave.year == year_obj.id).\
+        group_by(model.User.id, model.Evaluation.module).subquery()
+
+    results = session.query(
+        model.User,
+        func.sum(points_per_module.c.points).label('sum_points'),
+        func.max(points_per_module.c.cheat).label('cheat'),
+    ).\
+        join(points_per_module, points_per_module.c.user == model.User.id).\
+        filter(model.User.role == 'participant').\
+        group_by(model.User).all()
+
     max_points = util.task.sum_points(year_obj.id, bonus=False) + \
         year_obj.point_pad
+
     return [
-        (user, points) for user, points in user_points(year_obj.id, only_ids=False)
-        if points >= 0.6*max_points
+        (user, points)
+        for user, points, cheat in results
+        if points >= 0.6*max_points and not cheat
     ]
 
 

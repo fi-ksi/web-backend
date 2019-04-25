@@ -114,21 +114,43 @@ def sum_points(user_id, year_id) -> (int, bool):
 def percentile(user_id, year_id):
     query = session.query(model.User).filter(model.User.role == 'participant')
     count = query.count()
-    user_points = {
-        user.id: sum_points(user.id, year_id)[0] for user in query.all()
-    }
-    points_order = sorted(list(user_points.values()), reverse=True)
 
-    if user_id not in user_points:
+    upoints = user_points(year_id)
+    if user_id not in upoints:
         return 0
+
+    points_order = sorted(list(upoints.values()), reverse=True)
 
     rank = 0.0
     for points in points_order:
-        if points == user_points[user_id]:
+        if points == upoints[user_id]:
             return round((1 - (rank / count)) * 100)
         rank += 1
 
     return 0
+
+
+def user_points(year_id):
+    """Returns {user.id: user.points}."""
+    points_per_module = session.query(model.User.id.label('user'),
+                                      model.Evaluation.module,
+                                      func.max(model.Evaluation.points).
+                                      label('points')).\
+        join(model.Evaluation, model.Evaluation.user == model.User.id).\
+        join(model.Module, model.Evaluation.module == model.Module.id).\
+        join(model.Task, model.Task.id == model.Module.task).\
+        filter(model.Task.evaluation_public).\
+        join(model.Wave, model.Wave.id == model.Task.wave).\
+        filter(model.Wave.year == year_id).\
+        group_by(model.User.id, model.Evaluation.module).subquery()
+
+    results = session.query(model.User.id,
+                            func.sum(points_per_module.c.points).
+                            label('sum_points')).\
+        join(points_per_module, points_per_module.c.user == model.User.id).\
+        group_by(model.User).all()
+
+    return {userid: points for userid, points in results}
 
 
 def successful_participants(year_obj):

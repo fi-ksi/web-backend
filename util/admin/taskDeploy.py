@@ -752,8 +752,8 @@ def parse_pandoc(source):
     return pypandoc.convert(
         source,
         'html5',
-        format='md',
-        extra_args=['--smart', '--mathjax', '--email-obfuscation=none']
+        format='markdown+smart',
+        extra_args=['--mathjax', '--email-obfuscation=none']
     )
 
 

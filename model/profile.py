@@ -29,4 +29,4 @@ class Profile(Base):
     school_zip = Column(String(20), nullable=False)
     school_country = Column(countries, nullable=False)
     school_finish = Column(Integer, nullable=False)
-    tshirt_size = Column(Enum('XS', 'S', 'M', 'L', 'XL'), nullable=False)
+    tshirt_size = Column(Enum('XS', 'S', 'M', 'L', 'XL', 'NA'), nullable=False)

@@ -30,3 +30,5 @@ class Profile(Base):
     school_country = Column(countries, nullable=False)
     school_finish = Column(Integer, nullable=False)
     tshirt_size = Column(Enum('XS', 'S', 'M', 'L', 'XL', 'NA'), nullable=False)
+    gdpr_accepted_version = Column(Integer, nullable=False)
+    gdpr_accepted_timestamp = Column(TIMESTAMP)

@@ -622,7 +622,7 @@ def _check(sandbox_dir, check_script, sandbox_stdout, reporter, user_id):
         if 'message' in data:
             res['message'] = data['message']
 
-        if 'score' in data and res['success']:
+        if 'score' in data:
             res['score'] = round(data['score'], 1)
 
     return res

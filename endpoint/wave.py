@@ -1,6 +1,7 @@
 import falcon
 import json
 from sqlalchemy.exc import SQLAlchemyError
+import dateutil.parser
 
 from db import session
 import model
@@ -50,7 +51,7 @@ class Wave(object):
             wave.index = data['index']
             wave.caption = data['caption']
             if data['time_published']:
-                wave.time_published = data['time_published']
+                wave.time_published = dateutil.parser.parse(data['time_published'])
             wave.garant = data['garant']
 
             session.commit()
@@ -138,7 +139,7 @@ class Waves(object):
                 index=data['index'],
                 caption=data['caption'],
                 garant=data['garant'],
-                time_published=data['time_published']
+                time_published=dateutil.parser.parse(data['time_published'])
             )
 
             session.add(wave)

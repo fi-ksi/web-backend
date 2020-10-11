@@ -10,17 +10,17 @@ import util
 
 class CorrectionsEmail(object):
 
-    def _send_single_email(self, task, participant, notify, evaluation, post,
+    def _send_single_email(self, task, participant, notify, points, post,
                            commenter, solution_comment):
         body = ("<p>Ahoj,<br>opravili jsme tvé řešení úlohy " +
                 task.title + ".</p>")
 
         if participant.sex == 'female':
             body += ("<a>Získala jsi <strong>%.1f bodů</strong>."
-                     "</p>" % evaluation.points)
+                     "</p>" % points)
         else:
             body += ("<a>Získal jsi <strong>%.1f bodů</strong>."
-                     "</p>" % evaluation.points)
+                     "</p>" % points)
 
         if post:
             body += ("<p><a href=\"%s\"><i>%s</i></a> komentuje "
@@ -114,9 +114,9 @@ class CorrectionsEmail(object):
 
             participant = aliased(model.User)
             commenter = aliased(model.User)
-            tos = session.query(participant,
+            tos= session.query(participant,
                                 model.UserNotify,
-                                model.Evaluation,
+                                func.sum(model.Evaluation.points).label('points'),
                                 model.Post,
                                 commenter,
                                 model.SolutionComment).\

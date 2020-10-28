@@ -517,12 +517,12 @@ def _exec(sandbox_dir, box_id, filename, stdin_path, reporter, limits):
         lines = f.readlines()
 
     out = []
-    data = []
+    secret = []
 
     found = False
     for line in lines:
-        if found:
-            data.append(line)
+        if found or line.strip().startswith('#KSI_'):
+            secret.append(line)
         else:
             if '#KSI_META_OUTPUT_0a859a#' in line:
                 found = True
@@ -533,7 +533,7 @@ def _exec(sandbox_dir, box_id, filename, stdin_path, reporter, limits):
         f.write(''.join(out))
 
     with open(secret_path, 'w') as f:
-        f.write(''.join(data))
+        f.write(''.join(secret))
 
     # Post process stderr
     # _parse_stderr(stderr_path, timeout,

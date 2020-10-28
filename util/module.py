@@ -164,8 +164,7 @@ def perform_action(module, user, action):
         achievement_id = int(action[1])
         already_done = session.query(model.UserAchievement).\
             filter(model.UserAchievement.user_id == user.id,
-                   model.UserAchievement.achievement_id == achievement_id,
-                   model.UserAchievement.task_id == module.task).\
+                   model.UserAchievement.achievement_id == achievement_id).\
             first()
 
         if already_done:

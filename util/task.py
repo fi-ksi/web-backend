@@ -1,5 +1,5 @@
 import datetime
-from sqlalchemy import func, distinct, or_, desc
+from sqlalchemy import func, distinct, or_, and_, desc
 from sqlalchemy.dialects import mysql
 import os
 
@@ -102,14 +102,18 @@ def max_points_dict(bonus=False):
     # Musime si davat pozor na to, ze uloha muze byt bez modulu
     # points_per_task musi vratit i ulohy bez modulu (v tom pripade vrati
     #  points jako Null)
-    points_per_task = session.query(model.Task.id.label('id'),
-                                    func.sum(model.Module.max_points).
-                                    label('points')).\
-        outerjoin(model.Module, model.Module.task == model.Task.id)
-
+    points_per_task = session.query(
+        model.Task.id.label('id'),
+        func.sum(model.Module.max_points).label('points')
+    )
     if not bonus:
-        points_per_task = points_per_task.filter(
-            or_(model.Module.id == None, model.Module.bonus == False))
+        points_per_task = points_per_task.\
+            outerjoin(model.Module, and_(model.Module.task == model.Task.id,
+                                         model.Module.bonus == False))
+    else:
+        points_per_task = points_per_task.\
+            outerjoin(model.Module, model.Module.task == model.Task.id)
+
     points_per_task = points_per_task.group_by(model.Task).all()
 
     return {

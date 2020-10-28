@@ -521,13 +521,12 @@ def _exec(sandbox_dir, box_id, filename, stdin_path, reporter, limits):
 
     found = False
     for line in lines:
-        if found or line.strip().startswith('#KSI_'):
+        if '#KSI_META_OUTPUT_0a859a#' in line:
+            found = True
+        elif found or line.strip().startswith('#KSI_'):
             secret.append(line)
         else:
-            if '#KSI_META_OUTPUT_0a859a#' in line:
-                found = True
-            else:
-                out.append(line)
+            out.append(line)
 
     with open(output_path, 'w') as f:
         f.write(''.join(out))

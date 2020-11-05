@@ -32,8 +32,10 @@ def fully_submitted(user_id, year_id=None):
     q = q.outerjoin(model.Module).group_by(model.Task.id)
 
     # {task.id : task.max_modules_count}
-    max_modules_count = {task.id: task.modules for task in q.filter(
-        model.Module.bonus == False).all()}
+    max_modules_count = {
+        task.id: task.modules
+        for task in q.filter(model.Module.bonus == False).all()
+    }
 
     # {task.id, task.fully_submitted_modules_count}
     real_modules_count = {
@@ -47,8 +49,11 @@ def fully_submitted(user_id, year_id=None):
             all()
     }
 
-    return {int(key): int(val) for key, val in
-            list(real_modules_count.items()) if max_modules_count[key] <= val}
+    return {
+        int(key): int(val)
+        for key, val in list(real_modules_count.items())
+        if max_modules_count.get(key, 0) <= val
+    }
 
 
 def any_submitted(user_id, year_id):

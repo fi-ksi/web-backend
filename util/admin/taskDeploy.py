@@ -10,6 +10,8 @@ import sys
 import traceback
 import datetime
 import time
+import random
+import string
 import pyparsing as pp
 import dateutil.parser
 
@@ -133,8 +135,21 @@ def process_task(task, path):
     """
 
     try:
+        DATAPATH = f"data/task-content/{task.id}"
+
         process_meta(task, path + "/task.json")
         session.commit()
+
+        # Remove non-mangled path
+        to_remove = f"{DATAPATH}/zadani"
+        if os.path.isdir(to_remove):
+            log(f"Removing old {to_remove}...")
+            shutil.rmtree(to_remove)
+
+        task.mangled_datadir = mangled_dirname(
+            f"data/task-content/{task.id}", "zadani_")
+        task.mangled_soldir = mangled_dirname(
+            f"data/task-content/{task.id}", "reseni_")
 
         log("Processing assignment")
         process_assignment(task, path + "/assignment.md")
@@ -144,9 +159,12 @@ def process_task(task, path):
         process_solution(task, path + "/solution.md")
         session.commit()
 
-        log("Processing icons")
-        process_icons(task, path + "/icons/")
-        process_data(task, path + "/data/")
+        log("Processing icons & data")
+        copy_icons(task, path + "/icons/")
+        copy_data(task, f"{path}/data",
+                  os.path.join(DATAPATH, task.mangled_datadir))
+        copy_data(task, f"{path}/data_solution",
+                  os.path.join(DATAPATH, task.mangled_soldir))
 
         log("Processing modules")
         process_modules(task, path)
@@ -343,8 +361,7 @@ def process_assignment(task, filename):
 
 
 def process_solution(task, filename):
-    """Vlozi reseni ulohy do databaze"""
-
+    """Add solution to database."""
     if os.path.isfile(filename):
         with open(filename, 'r') as f:
             data = f.read()
@@ -353,9 +370,9 @@ def process_solution(task, filename):
         task.solution = None
 
 
-def process_icons(task, source_path):
-    """Zkopiruje ikony z gitovskeho adresare do adresare backendu"""
-    target_path = "data/task-content/" + str(task.id) + "/icon/"
+def copy_icons(task, source_path):
+    """Copy icons from repository to backend path."""
+    target_path = f"data/task-content/{task.id}/icon/"
     files = ["base.svg", "correcting.svg", "locked.svg", "done.svg"]
     if not os.path.isdir(target_path):
         os.makedirs(target_path)
@@ -364,9 +381,29 @@ def process_icons(task, source_path):
             shutil.copy2(source_path + "/" + f, target_path + f)
 
 
-def process_data(task, source_path):
-    """Zkopiruje veskera data do adresare dat backendu"""
-    target_path = "data/task-content/" + str(task.id) + "/zadani/"
+def mangled_dirname(base_directory: str, prefix: str) -> str:
+    MANGLER_LENGTH = 16
+    dirs = list(
+        filter(lambda fn: fn.startswith(prefix), os.listdir(base_directory))
+    )
+    if dirs:
+        assert len(dirs) == 1, f"Mutliple directories {base_directory}/{prefix}*"
+        whole_path = os.path.join(base_directory, dirs[0])
+        assert os.path.isdir(whole_path), f"Not directory: {whole_path}"
+        return dirs[0]
+    else:
+        suffix = ''.join(
+            random.choice(string.ascii_uppercase + string.digits
+            + string.ascii_lowercase)
+            for _ in range(MANGLER_LENGTH)
+        )
+        whole_path = os.path.join(base_directory, prefix+suffix)
+        os.makedirs(whole_path)
+        return prefix+suffix
+
+
+def copy_data(task, source_path, target_path):
+    """Copy all data from repository to backend path."""
     if not os.path.isdir(target_path):
         os.makedirs(target_path)
     shutil.rmtree(target_path)
@@ -828,10 +865,13 @@ def ksi_collapse(source):
 
 
 def change_links(task, source):
-    """ Nahrazuje odkazy do ../data/ a data/ za odkazy do backendu. """
+    """Nahrazuje odkazy do ../data/ a data/ za odkazy do backendu."""
 
-    return re.sub(r"(\.\./)*data/", util.config.backend_url() +
-                  "/taskContent/" + str(task.id) + "/zadani/", source)
+    res = re.sub(r"(\.\./)*data_solution/", util.config.backend_url() +
+                  f"/taskContent/{task.id}/{task.mangled_soldir}/", source)
+    res = re.sub(r"(\.\./)*data/", util.config.backend_url() +
+                  f"/taskContent/{task.id}/{task.mangled_datadir}/", res)
+    return res
 
 
 def add_table_class(source):

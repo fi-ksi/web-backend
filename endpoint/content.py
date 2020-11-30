@@ -131,8 +131,8 @@ class TaskContent(object):
     def on_get(self, req, resp, id, view):
         user = req.context['user']
 
-        if (view != 'icon' and not view.startswith('reseni_')
-                and not view.startswith('zadani_')):
+        if (view != 'icon' and not view.startswith('reseni')
+                and not view.startswith('zadani')):
             resp.status = falcon.HTTP_400
             return
 

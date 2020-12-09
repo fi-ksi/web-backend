@@ -383,9 +383,11 @@ def copy_icons(task, source_path):
 
 def mangled_dirname(base_directory: str, prefix: str) -> str:
     MANGLER_LENGTH = 16
-    dirs = list(
-        filter(lambda fn: fn.startswith(prefix), os.listdir(base_directory))
-    )
+    dirs = []
+    if os.path.isdir(base_directory):
+        dirs = list(
+            filter(lambda fn: fn.startswith(prefix), os.listdir(base_directory))
+        )
     if dirs:
         assert len(dirs) == 1, f"Mutliple directories {base_directory}/{prefix}*"
         whole_path = os.path.join(base_directory, dirs[0])

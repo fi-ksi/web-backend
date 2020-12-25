@@ -5,6 +5,7 @@ import os
 import shutil
 import subprocess
 import sys
+import traceback
 from datetime import datetime, timedelta
 from sqlalchemy import func, desc
 from sqlalchemy.exc import SQLAlchemyError
@@ -142,9 +143,28 @@ class Corser(object):
                             'OPTIONS,PUT,POST,GET,DELETE')
 
 
+def error_handler(ex, req, resp, params):
+    req.context['result'] = {
+        'errors': [ {
+            'status': '500',
+            'title': 'Internal server error',
+            'detail': 'Vnitřní chyba serveru, kontaktujte správce backendu.',
+        } ]
+    }
+    resp.status = falcon.HTTP_500
+
+    log(req, resp)
+    dt = datetime.now().strftime('[%Y-%m-%d %H:%M:%S]')
+    lines = '\n'.join(
+        [dt + ' ' + line for line in traceback.format_exc().split('\n')]
+    )
+    print(lines)
+
+
 # Add Logger() to middleware for logging
 api = falcon.API(middleware=[JSONTranslator(), Authorizer(), Year_fill(),
                  Corser()])
+api.add_error_handler(Exception, handler=error_handler)
 api.req_options.auto_parse_form_urlencoded = True
 
 # Odkomentovat pro vytvoreni tabulek v databazi

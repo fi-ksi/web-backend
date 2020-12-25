@@ -112,21 +112,30 @@ class CorrectionsEmail(object):
                 }
                 resp.status = falcon.HTTP_400
 
+            points_per_module = session.query(
+                model.User.id.label('user'),
+                model.Evaluation.module.label('module'),
+                func.max(model.Evaluation.points).label('points'),
+            ).\
+                join(model.Evaluation, model.Evaluation.user == model.User.id).\
+                join(model.Module, model.Evaluation.module == model.Module.id).\
+                filter(model.Module.task == id).\
+                group_by(model.User.id, model.Evaluation.module).subquery()
+
             participant = aliased(model.User)
             commenter = aliased(model.User)
-            tos= session.query(participant,
-                                model.UserNotify,
-                                func.sum(model.Evaluation.points).label('points'),
-                                model.Post,
-                                commenter,
-                                model.SolutionComment).\
+            tos = session.query(
+                participant,
+                model.UserNotify,
+                func.sum(points_per_module.c.points).label('points'),
+                model.Post,
+                commenter,
+                model.SolutionComment
+            ).\
                 outerjoin(model.UserNotify, participant.id == model.UserNotify.user).\
                 filter(or_(model.UserNotify.notify_eval, model.UserNotify.user == None)).\
-                join(model.Evaluation,
-                     model.Evaluation.user == participant.id).\
-                join(model.Module,
-                     model.Module.id == model.Evaluation.module).\
-                filter(model.Module.task == id).\
+                join(points_per_module,
+                     points_per_module.c.user == participant.id).\
                 outerjoin(model.SolutionComment,
                           and_(model.SolutionComment.user == participant.id,
                                model.SolutionComment.task == id)).\

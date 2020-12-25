@@ -62,9 +62,10 @@ def any_submitted(user_id, year_id):
     sum(body) je suma bodu za vsechny moduly v dane uloze.
     """
     # Skore uivatele per modul
-    per_module = session.query(model.Evaluation.module.label('module'),
-                               func.max(model.Evaluation.points).
-                               label('points')).\
+    per_module = session.query(
+        model.Evaluation.module.label('module'),
+        func.max(model.Evaluation.points).label('points'),
+    ).\
         join(model.Module, model.Evaluation.module == model.Module.id).\
         join(model.Task, model.Task.id == model.Module.task).\
         filter(model.Evaluation.user == user_id).\

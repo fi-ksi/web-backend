@@ -125,12 +125,11 @@ def percentile(user_id, year_id):
     return 0
 
 
-def user_points(year_id):
-    """Returns {user.id: user.points}."""
-    points_per_module = session.query(model.User.id.label('user'),
-                                      model.Evaluation.module,
-                                      func.max(model.Evaluation.points).
-                                      label('points')).\
+def points_per_module_subq(year_id):
+    return session.query(model.User.id.label('user'),
+                         model.Evaluation.module.label('module'),
+                         func.max(model.Evaluation.points).label('points'),
+                         func.max(model.Evaluation.cheat).label('cheat')).\
         join(model.Evaluation, model.Evaluation.user == model.User.id).\
         join(model.Module, model.Evaluation.module == model.Module.id).\
         join(model.Task, model.Task.id == model.Module.task).\
@@ -139,6 +138,10 @@ def user_points(year_id):
         filter(model.Wave.year == year_id).\
         group_by(model.User.id, model.Evaluation.module).subquery()
 
+
+def user_points(year_id):
+    """Returns {user.id: user.points}."""
+    points_per_module = points_per_module_subq(year_id)
     results = session.query(model.User.id,
                             func.sum(points_per_module.c.points).
                             label('sum_points'))
@@ -153,19 +156,7 @@ def user_points(year_id):
 def successful_participants(year_obj):
     """vraci seznam [(user,points)] uspesnych v danem rocniku"""
 
-    points_per_module = session.query(
-        model.User.id.label('user'),
-        model.Evaluation.module,
-        func.max(model.Evaluation.points).label('points'),
-        func.max(model.Evaluation.cheat).label('cheat'),
-    ).\
-        join(model.Evaluation, model.Evaluation.user == model.User.id).\
-        join(model.Module, model.Evaluation.module == model.Module.id).\
-        join(model.Task, model.Task.id == model.Module.task).\
-        filter(model.Task.evaluation_public).\
-        join(model.Wave, model.Wave.id == model.Task.wave).\
-        filter(model.Wave.year == year_obj.id).\
-        group_by(model.User.id, model.Evaluation.module).subquery()
+    points_per_module = poins_per_module_subq(year_obj.id)
 
     results = session.query(
         model.User,

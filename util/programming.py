@@ -110,7 +110,7 @@ def exec_to_json(ex):
 
 
 def evaluate(task, module, user_id, code, eval_id, reporter):
-    """Evaluates task. Run merge, code, check."""
+    """Evaluate task. Run merge, code, check."""
 
     prog_info = json.loads(module.data)['programming']
     if ("version" not in prog_info or
@@ -136,7 +136,8 @@ def evaluate(task, module, user_id, code, eval_id, reporter):
     try:
         try:
             isolate_err = False
-            res = _run(prog_info, code, box_id, reporter, user_id)
+            res = _run(prog_info, code, box_id, reporter, user_id,
+                       run_type='eval')
 
             if res["code"] == 0:
                 check_res = _check(os.path.join(EXEC_PATH, box_id),
@@ -184,7 +185,6 @@ def find_free_box_id() -> str:
     limits = prog_info["limits"] if "limits" in prog_info else {}
     Returns is of the first available sandbox directory. Searched for
     non-existing directories in /tmp/box.
-
     """
 
     # Search for free id in EXEC_PATH
@@ -201,7 +201,7 @@ def find_free_box_id() -> str:
 
 
 def init_exec_environment():
-    """ Initializes sandbox. """
+    """Initialize sandbox."""
 
     # Create directory for sandbox
     if not os.path.exists(EXEC_PATH):
@@ -227,7 +227,7 @@ def init_exec_environment():
 
 
 def cleanup_exec_environment(box_id):
-    """ Cleans up sandbox data. """
+    """Clean-up sandbox data."""
 
     sandbox_root = os.path.join(EXEC_PATH, box_id)
     if os.path.isdir(sandbox_root):
@@ -252,7 +252,7 @@ def cleanup_exec_environment(box_id):
 
 
 def store_exec(box_id, user_id, module_id, source):
-    """ Saves execution permanently to STORE_PATH directory. """
+    """Save execution permanently to STORE_PATH directory."""
 
     src_path = os.path.abspath(os.path.join(EXEC_PATH, box_id))
     dst_path = os.path.abspath(os.path.join(STORE_PATH,
@@ -276,7 +276,7 @@ def _parse_version(version):
 
 
 def run(module, user_id, code, exec_id, reporter):
-    """ Manages whole process of running participant`s code. """
+    """Manage whole process of running participant`s code."""
 
     prog_info = json.loads(module.data)['programming']
     if ("version" not in prog_info or
@@ -301,7 +301,8 @@ def run(module, user_id, code, exec_id, reporter):
     try:
         try:
             isolate_err = False
-            res = _run(prog_info, code, box_id, reporter, user_id)
+            res = _run(prog_info, code, box_id, reporter, user_id,
+                       run_type='exec')
         except EIsolateError:
             isolate_err = True
             raise
@@ -318,9 +319,9 @@ def run(module, user_id, code, exec_id, reporter):
     }
 
 
-def _run(prog_info, code, box_id, reporter, user_id):
+def _run(prog_info, code, box_id, reporter, user_id, run_type = 'exec'):
     """
-    Runs merge and runs the merged file inside of a sandbox. Requires
+    Run merge and runs the merged file inside of a sandbox. Requires
     initialized sandbox with id \box_id (str). \data is participant`s code.
     This function can throw exceptions, exceptions must be handled.
     """
@@ -337,7 +338,7 @@ def _run(prog_info, code, box_id, reporter, user_id):
 
     # Merge participant`s code
     _merge(sandbox_root, prog_info['merge_script'], raw_code, merged_code,
-           reporter, user_id)
+           reporter, user_id, run_type)
 
     limits = prog_info["limits"] if "limits" in prog_info else {}
 
@@ -366,8 +367,8 @@ def _run(prog_info, code, box_id, reporter, user_id):
     }
 
 
-def _merge(wd, merge_script, code, code_merged, reporter, user_id):
-    """ Runs merge script. """
+def _merge(wd, merge_script, code, code_merged, reporter, user_id, run_type):
+    """Run merge script."""
 
     cmd = [
         os.path.abspath(merge_script),
@@ -375,6 +376,7 @@ def _merge(wd, merge_script, code, code_merged, reporter, user_id):
         os.path.abspath(code_merged),
         os.path.abspath(MODULE_LIB_PATH),
         str(user_id),
+        run_type,
     ]
 
     stdout_path = os.path.join(wd, 'merge.stdout')
@@ -406,7 +408,7 @@ def _merge(wd, merge_script, code, code_merged, reporter, user_id):
 
 
 def _exec(sandbox_dir, box_id, filename, stdin_path, reporter, limits):
-    """ Executes single file inside a sandbox. """
+    """Execute single file inside a sandbox."""
 
     stdout_path = os.path.join(sandbox_dir, "stdout")
     stderr_path = os.path.join(sandbox_dir, "stderr")
@@ -520,7 +522,7 @@ def _exec(sandbox_dir, box_id, filename, stdin_path, reporter, limits):
 
 
 def _check(sandbox_dir, check_script, sandbox_stdout, reporter, user_id):
-    """ Runs check script. """
+    """Run check script."""
 
     cmd = [
         os.path.abspath(check_script),

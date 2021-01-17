@@ -21,8 +21,6 @@ Specifikace \data v databazi modulu pro "programming":
             "stdin": Text,
             "args": "[]", <- tento argument je nepovinny
             "timeout": Integer, <- tento argument je nepovinny
-            "post_trigger_script": Text, (path/to/post-triggger-script.py),
-                tento argument je nepovinny
             "check_script": Text (path/to/check/script)
         }
 """
@@ -48,10 +46,6 @@ class ENoFreeBox(Exception):
 
 
 class EIsolateError(Exception):
-    pass
-
-
-class EPostTriggerError(Exception):
     pass
 
 
@@ -116,11 +110,7 @@ def exec_to_json(ex):
 
 
 def evaluate(task, module, user_id, code, eval_id, reporter):
-    """
-    Evaluates task. Runs merge, runs code, runs post trigger if necessary, runs
-    check script.
-
-    """
+    """Evaluates task. Run merge, code, check."""
 
     prog_info = json.loads(module.data)['programming']
     if ("version" not in prog_info or
@@ -333,7 +323,6 @@ def _run(prog_info, code, box_id, reporter, user_id):
     Runs merge and runs the merged file inside of a sandbox. Requires
     initialized sandbox with id \box_id (str). \data is participant`s code.
     This function can throw exceptions, exceptions must be handled.
-
     """
 
     # Prepare files with participant`s code
@@ -358,26 +347,15 @@ def _run(prog_info, code, box_id, reporter, user_id):
     )
 
     trigger_data = None
-    if ((return_code == 0) and ('post_trigger_script' in prog_info) and
-            (prog_info['post_trigger_script'])):
-        trigger_stdout = _post_trigger(sandbox_root,
-                                       prog_info['post_trigger_script'],
-                                       reporter, user_id)
+    if return_code == 0:
+        with open(output_path, 'r') as f:
+            output = f.read(OUTPUT_MAX_LEN)
 
-        with open(trigger_stdout) as f:
-            trigger_data = json.loads(f.read(OUTPUT_MAX_LEN))
-
-        output = trigger_data['stdout']
     else:
-        if return_code == 0:
-            with open(output_path, 'r') as f:
-                output = f.read(OUTPUT_MAX_LEN)
-
-        else:
-            with open(output_path, 'r') as output,\
-                    open(stderr_path, 'r') as stderr:
-                output = output.read(OUTPUT_MAX_LEN) + "\n" +\
-                         stderr.read(OUTPUT_MAX_LEN)
+        with open(output_path, 'r') as output,\
+                open(stderr_path, 'r') as stderr:
+            output = output.read(OUTPUT_MAX_LEN) + "\n" +\
+                     stderr.read(OUTPUT_MAX_LEN)
 
     if len(output) >= OUTPUT_MAX_LEN:
         output += "\nOutput too long, stripped!\n"
@@ -539,38 +517,6 @@ def _exec(sandbox_dir, box_id, filename, stdin_path, reporter, limits):
     #   datetime.datetime.now()-start_time, heaplimit)
 
     return (p.returncode, output_path, secret_path, stderr_path)
-
-
-def _post_trigger(sandbox_dir, trigger_script, reporter, user_id):
-    """ Runs post trigger script. """
-
-    cmd = [
-        os.path.abspath(trigger_script),
-        os.path.abspath(sandbox_dir),
-        os.path.abspath(MODULE_LIB_PATH),
-        str(user_id),
-    ]
-
-    stdout_path = os.path.join(sandbox_dir, 'post_trigger.stdout')
-    stderr_path = os.path.join(sandbox_dir, 'post_trigger.stderr')
-
-    reporter += 'Running post trigger (cmd: %s)\n' % (" ".join(cmd))
-    reporter += ' * stdout: %s\n' % stdout_path
-    reporter += ' * stderr: %s\n' % stderr_path
-
-    with open(stdout_path, 'w') as stdout, open(stderr_path, 'w') as stderr:
-        p = subprocess.Popen(cmd, cwd=sandbox_dir, stdout=stdout,
-                             stderr=stderr)
-        p.wait()
-
-    if p.returncode != 0:
-        reporter += "Post trigger script returned nonempty stderr:\n"
-        with open(stderr_path, 'r') as f:
-            reporter += f.read()
-        raise EPostTriggerError("Post trigger returned code %d" %
-                                (p.returncode))
-
-    return stdout_path
 
 
 def _check(sandbox_dir, check_script, sandbox_stdout, reporter, user_id):

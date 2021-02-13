@@ -454,6 +454,9 @@ def _exec(sandbox_dir, box_id, filename, stdin_path, reporter, limits):
     if "processes" in limits:
         cmd.append("-p" + str(limits["processes"]))
 
+    if "net" in limits and limits["net"] == "share":
+        cmd.append("--share-net")
+
     cmd += [
         "-c/box",
         "--run",

@@ -1,6 +1,5 @@
 import falcon
 import json
-from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
 
 from db import session
@@ -72,14 +71,16 @@ class Email(object):
 
             if 'Category' in data and data['Category'] != 'both':
                 min_year = util.year.year_end(session.query(model.Year).
-                    get(min(data['To'])))
+                                              get(min(data['To'])))
                 max_year = util.year.year_end(session.query(model.Year).
-                    get(max(data['To'])))
+                                              get(max(data['To'])))
 
                 finish = {
                     id: year
-                    for (id, year) in session.query(model.Profile.user_id,
-                                      model.Profile.school_finish).all()
+                    for (id, year) in session.query(
+                                        model.Profile.user_id,
+                                        model.Profile.school_finish
+                                      ).all()
                 }
 
                 if data['Category'] == 'hs':
@@ -107,16 +108,20 @@ class Email(object):
                 body = body + util.mail.easteregg()
 
             # Select notifications to build unsubscribes
-            notifies = {n.user: n for n in session.query(model.UserNotify).all()}
+            notifies = {
+                n.user: n for n in session.query(model.UserNotify).all()
+            }
 
             TYPE_MAPPING = {
                 'ksi': util.mail.EMailType.KSI,
                 'events': util.mail.EMailType.EVENTS,
             }
 
-            message_type = TYPE_MAPPING[data['Type']] \
-                           if 'Type' in data and data['Type'] in TYPE_MAPPING \
-                           else util.mail.EMailType.KSI
+            message_type = (
+                TYPE_MAPPING[data['Type']]
+                if 'Type' in data and data['Type'] in TYPE_MAPPING
+                else util.mail.EMailType.KSI
+            )
 
             # Filter unsubscribed
             tos = {
@@ -135,7 +140,7 @@ class Email(object):
                         message_type,
                         notifies[user.id] if user.id in notifies else None,
                         user.id,
-                        commit=False, # we will commit new entries only once
+                        commit=False,  # we will commit new entries only once
                         backend_url=util.config.backend_url(),
                         ksi_web=util.config.ksi_web(),
                     )
@@ -155,7 +160,6 @@ class Email(object):
             except Exception as e:
                 req.context['result'] = {'error': str(e)}
                 resp.status = falcon.HTTP_500
-                raise # TODO: remove after debug
 
         except SQLAlchemyError:
             session.rollback()

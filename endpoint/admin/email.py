@@ -118,6 +118,16 @@ class Email(object):
                            if 'Type' in data and data['Type'] in TYPE_MAPPING \
                            else util.mail.EMailType.KSI
 
+            # Filter unsubscribed
+            tos = {
+                user_id: user
+                for user_id, user in tos.items()
+                if ((message_type == util.mail.EMailType.KSI and
+                    notifies[user_id].notify_ksi) or
+                    (message_type == util.mail.EMailType.EVENTS and
+                     notifies[user_id].notify_events))
+            }
+
             recipients = [
                 util.mail.EMailRecipient(
                     user.email,

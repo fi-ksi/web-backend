@@ -144,21 +144,32 @@ class Corser(object):
 
 
 def error_handler(ex, req, resp, params):
-    req.context['result'] = {
-        'errors': [ {
-            'status': '500',
-            'title': 'Internal server error',
-            'detail': 'Vnitřní chyba serveru, kontaktujte správce backendu.',
-        } ]
-    }
-    resp.status = falcon.HTTP_500
+    if isinstance(ex, falcon.HTTPError):
+        req.context['result'] = {
+            'errors': [ {
+                'status': ex.status,
+                'title': ex.title,
+                'detail': ex.description,
+            } ]
+        }
+        resp.status = ex.status
+    else:
+        req.context['result'] = {
+            'errors': [ {
+                'status': '500',
+                'title': 'Internal server error',
+                'detail': 'Vnitřní chyba serveru, kontaktujte správce backendu.',
+            } ]
+        }
+        resp.status = falcon.HTTP_500
 
     log(req, resp)
-    dt = datetime.now().strftime('[%Y-%m-%d %H:%M:%S]')
-    lines = '\n'.join(
-        [dt + ' ' + line for line in traceback.format_exc().split('\n')]
-    )
-    print(lines)
+    if resp.status == falcon.HTTP_500:
+        dt = datetime.now().strftime('[%Y-%m-%d %H:%M:%S]')
+        lines = '\n'.join(
+            [dt + ' ' + line for line in traceback.format_exc().split('\n')]
+        )
+        print(lines)
 
 
 # Add Logger() to middleware for logging

@@ -42,7 +42,7 @@ class Image(object):
                 return
 
             image = os.path.join(
-                util.programming.code_execution_dir(execution.id),
+                util.programming.code_execution_dir(execution.user, execution.module),
                 os.path.basename(req.get_param('file')))
         else:
             resp.status = falcon.HTTP_400

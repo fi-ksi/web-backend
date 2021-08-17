@@ -251,13 +251,18 @@ def cleanup_exec_environment(box_id):
             pass
 
 
+def code_execution_dir(user_id: int, module_id: int) -> str:
+    dst_path = os.path.abspath(os.path.join(STORE_PATH,
+                                            "module_" + str(module_id),
+                                            "user_" + str(user_id)))
+    return dst_path
+
+
 def store_exec(box_id, user_id, module_id, source):
     """Save execution permanently to STORE_PATH directory."""
 
     src_path = os.path.abspath(os.path.join(EXEC_PATH, box_id))
-    dst_path = os.path.abspath(os.path.join(STORE_PATH,
-                                            "module_" + str(module_id),
-                                            "user_" + str(user_id)))
+    dst_path = code_execution_dir(user_id, module_id)
 
     if os.path.isdir(dst_path):
         shutil.rmtree(dst_path)

@@ -62,6 +62,8 @@ class Image(object):
                 util.programming.code_execution_dir(user_id, module_id),
                 filename
                 )
+            
+            resp.cache_control = ('no-cache', )
 
         else:
             resp.status = falcon.HTTP_400

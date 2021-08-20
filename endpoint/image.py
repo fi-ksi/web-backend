@@ -46,7 +46,7 @@ class Image(object):
                 os.path.basename(req.get_param('file')))
 
         elif context == 'codeModule':
-            if not req.get_param('file'):
+            if not req.get_param('file') or not req.get_param('module') or not req.get_param('user'):
                 resp.status = falcon.HTTP_400
                 return
 

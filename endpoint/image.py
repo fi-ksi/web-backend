@@ -52,7 +52,11 @@ class Image(object):
 
             user_id = int(req.get_param('user'))
             module_id = int(req.get_param('module'))
-            filename = os.path.basename(req.get_param('file'))
+            filename: str = os.path.basename(req.get_param('file'))
+
+            if not filename.endswith(".png"):
+                resp.status = falcon.HTTP_400
+                return
 
             image = os.path.join(
                 util.programming.code_execution_dir(user_id, module_id),

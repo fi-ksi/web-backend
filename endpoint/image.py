@@ -44,6 +44,21 @@ class Image(object):
             image = os.path.join(
                 util.programming.code_execution_dir(execution.user, execution.module),
                 os.path.basename(req.get_param('file')))
+
+        elif context == 'codeModule':
+            if not req.get_param('file'):
+                resp.status = falcon.HTTP_400
+                return
+
+            user_id = int(req.get_param('user'))
+            module_id = int(req.get_param('module'))
+            filename = os.path.basename(req.get_param('file'))
+
+            image = os.path.join(
+                util.programming.code_execution_dir(user_id, module_id),
+                filename
+                )
+
         else:
             resp.status = falcon.HTTP_400
             return

@@ -37,7 +37,7 @@ def update_tokens():
             token
             for token in tokens
             if (datetime.datetime.utcnow() >
-                token.expire+datetime.timedelta(days=1))
+                token.expire+datetime.timedelta(days=14))
         ]
         for token in tokens:
             session.delete(token)

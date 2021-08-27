@@ -869,10 +869,18 @@ def ksi_collapse(source):
 def change_links(task, source):
     """Nahrazuje odkazy do ../data/ a data/ za odkazy do backendu."""
 
-    res = re.sub(r"(\.\./)*data_solution/", util.config.backend_url() +
-                  f"/taskContent/{task.id}/{task.mangled_soldir}/", source)
-    res = re.sub(r"(\.\./)*data/", util.config.backend_url() +
-                  f"/taskContent/{task.id}/{task.mangled_datadir}/", res)
+    allowed_prefixes = ['(../', '(', '"']  # These should be mutually exclusive
+    urls_to_replace = {
+        "data_solution/": f"{util.config.backend_url()}/taskContent/{task.id}/{task.mangled_soldir}/",
+        "data/": f"{util.config.backend_url()}/taskContent/{task.id}/{task.mangled_datadir}/"
+    }
+
+    res = source
+
+    for url_fragment in urls_to_replace:
+        for prefix in allowed_prefixes:
+            res = res.replace(prefix + url_fragment, prefix + urls_to_replace[url_fragment])
+
     return res
 
 

@@ -54,12 +54,12 @@ class Profile(object):
             profile.addr_street = data['addr_street']
             profile.addr_city = data['addr_city']
             profile.addr_zip = data['addr_zip']
-            profile.addr_country = data['addr_country']
+            profile.addr_country = data['addr_country'].lower()
             profile.school_name = data['school_name']
             profile.school_street = data['school_street']
             profile.school_city = data['school_city']
             profile.school_zip = data['school_zip']
-            profile.school_country = data['school_country']
+            profile.school_country = data['school_country'].lower()
             profile.school_finish = data['school_finish']
             profile.tshirt_size = data['tshirt_size']
 

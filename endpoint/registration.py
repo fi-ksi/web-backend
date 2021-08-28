@@ -61,7 +61,8 @@ class Registration(object):
                 school_zip=data['school_zip'],
                 school_country=data['school_country'],
                 school_finish=int(data['school_finish']),
-                tshirt_size=data['tshirt_size'].upper()
+                tshirt_size=data['tshirt_size'].upper(),
+                referral=data.get('referral', "{}")
             )
         except BaseException:
             session.delete(user)

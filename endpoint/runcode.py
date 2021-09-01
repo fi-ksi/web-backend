@@ -71,10 +71,9 @@ class RunCode(object):
             if user.is_org():
                 req.context['result']['report'] = reporter.report
 
-            # truncate too long reports so that they fit into MEDIUMTEXT database field
-            # (MEDIUMTEXT is ~16MiB, but UTF encoding may take more space than 1B per character)
+            # truncate too long reports (possibly from cycled programs)
             report_text = reporter.report
-            report_text_safe_length = 10*(1024**2)
+            report_text_safe_length = 640 * 1024  # ~640KiB, max is 16MiB for MEDIUMTEXT
             if len(report_text) > report_text_safe_length:
                 report_text = report_text[:report_text_safe_length] + f" [ZKRÁCENO Z {len(report_text)} ZNAKŮ]"
 

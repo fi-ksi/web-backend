@@ -189,7 +189,7 @@ class ModuleSubmit(object):
                 req.context['result'] = {'result': 'ok'}
                 return
 
-            reporter = util.programming.Reporter()
+            reporter = util.programming.Reporter(max_size=640*1024)  # prevent database overflow
 
             try:
                 result = util.programming.evaluate(
@@ -213,7 +213,7 @@ class ModuleSubmit(object):
             evaluation.points = result['score'] if 'score' in result else 0
             evaluation.ok = (result['result'] == 'ok')
             evaluation.full_report += (str(datetime.datetime.now()) + " : " +
-                                       reporter.report + '\n')
+                                       reporter.report_truncated + '\n')
             session.commit()
 
             if 'actions' in result:
@@ -222,7 +222,7 @@ class ModuleSubmit(object):
                     util.module.perform_action(module, user, action)
 
             if user.is_org():
-                result['report'] = reporter.report
+                result['report'] = reporter.report_truncated
 
             req.context['result'] = result
         except SQLAlchemyError:

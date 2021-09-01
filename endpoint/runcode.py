@@ -43,7 +43,7 @@ class RunCode(object):
             session.add(execution)
             session.commit()
 
-            reporter = util.programming.Reporter()
+            reporter = util.programming.Reporter(max_size=640*1024)
             try:
                 try:
                     result = util.programming.run(module, user.id, data,
@@ -69,9 +69,9 @@ class RunCode(object):
                 }
 
             if user.is_org():
-                req.context['result']['report'] = reporter.report
+                req.context['result']['report'] = reporter.report_truncated
 
-            execution.report = reporter.report
+            execution.report = reporter.report_truncated  # prevent database column size overflow
             session.commit()
 
         except SQLAlchemyError:

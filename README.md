@@ -4,7 +4,7 @@
 
 ## Software needed
 
- * Python 3.5
+ * Python 3.7+
  * virtualenv
  * packages from `requirements.txt`
  * [isolate](https://github.com/ioi/isolate)

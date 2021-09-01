@@ -1,4 +1,6 @@
 import datetime
+from typing import Optional
+
 from humanfriendly import parse_timespan, parse_size
 import json
 import os
@@ -58,11 +60,44 @@ class EMergeError(Exception):
 
 
 class Reporter(object):
-    def __init__(self):
-        self.report = ""
+    def __init__(self, initial_value: str = "", max_size: Optional[int] = None) -> None:
+        """
+        Keeps string report.
+        Adding a string will add a string into a report attribute
+        :param max_size: maximal byte length of the saved string when truncated report is queried, None for infinity
+        """
+        self.__report: str = initial_value
+        self.__max_size: int = max_size
 
-    def __iadd__(self, other):
-        self.report += other
+    @property
+    def report(self) -> str:
+        """
+        Gets the full report, no maximal size applied
+        :return: full report content
+        """
+        return self.__report
+
+    @property
+    def report_truncated(self) -> str:
+        """
+        Gets the report, possibly truncating the content if size is larger than max_size
+        :return: full report with maximal size of max_size
+        """
+        if self.__max_size is None:
+            return self.__report
+        byte_size = len(self.__report.encode('utf8'))
+        if byte_size < self.__max_size:
+            return self.__report
+        text_truncated = f" [TRUNCATED FROM {len(self.__report)} CHARACTERS]"
+        return self.__report[:self.__max_size - len(text_truncated)] + text_truncated
+
+    def __iadd__(self, other: str) -> "Reporter":
+        """
+        Appends a string to the report
+        :param other: another string to append to the teport
+        :return: self
+        """
+        self.__report += other
         return self
 
 

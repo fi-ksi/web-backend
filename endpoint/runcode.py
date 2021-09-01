@@ -43,7 +43,7 @@ class RunCode(object):
             session.add(execution)
             session.commit()
 
-            reporter = util.programming.Reporter()
+            reporter = util.programming.Reporter(max_size=640*1024)
             try:
                 try:
                     result = util.programming.run(module, user.id, data,
@@ -71,13 +71,7 @@ class RunCode(object):
             if user.is_org():
                 req.context['result']['report'] = reporter.report
 
-            # truncate too long reports (possibly from cycled programs)
-            report_text = reporter.report
-            report_text_safe_length = 640 * 1024  # ~640KiB, max is 16MiB for MEDIUMTEXT
-            if len(report_text.encode('utf-8')) > report_text_safe_length:
-                report_text = report_text[:report_text_safe_length] + f" [ZKRÁCENO Z {len(report_text)} ZNAKŮ]"
-
-            execution.report = report_text
+            execution.report = reporter.report_truncated
             session.commit()
 
         except SQLAlchemyError:

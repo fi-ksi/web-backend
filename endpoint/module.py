@@ -329,7 +329,10 @@ class ModuleSubmit(object):
                 user=user.id,
                 module=module.id,
                 points=score,
-                full_report=result['report'],
+                full_report=util.programming.Reporter(
+                    initial_value=result['report'],
+                    max_size=640*1024
+                ).report_truncated,
                 ok=(result['result'] == 'ok')
             )
 

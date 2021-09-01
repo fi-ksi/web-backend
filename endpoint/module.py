@@ -189,7 +189,7 @@ class ModuleSubmit(object):
                 req.context['result'] = {'result': 'ok'}
                 return
 
-            reporter = util.programming.Reporter()
+            reporter = util.programming.Reporter(max_size=640*1024)  # prevent database overflow
 
             try:
                 result = util.programming.evaluate(
@@ -213,7 +213,7 @@ class ModuleSubmit(object):
             evaluation.points = result['score'] if 'score' in result else 0
             evaluation.ok = (result['result'] == 'ok')
             evaluation.full_report += (str(datetime.datetime.now()) + " : " +
-                                       reporter.report + '\n')
+                                       reporter.report_truncated + '\n')
             session.commit()
 
             if 'actions' in result:
@@ -329,10 +329,7 @@ class ModuleSubmit(object):
                 user=user.id,
                 module=module.id,
                 points=score,
-                full_report=util.programming.Reporter(
-                    initial_value=result['report'],
-                    max_size=640*1024
-                ).report_truncated,
+                full_report=result['report'],
                 ok=(result['result'] == 'ok')
             )
 

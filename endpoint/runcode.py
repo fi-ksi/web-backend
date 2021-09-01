@@ -71,7 +71,7 @@ class RunCode(object):
             if user.is_org():
                 req.context['result']['report'] = reporter.report
 
-            execution.report = reporter.report_truncated
+            execution.report = reporter.report_truncated  # prevent database column size overflow
             session.commit()
 
         except SQLAlchemyError:

@@ -1,5 +1,7 @@
 #!/bin/bash
-cd "$(realpath "$(dirname "$0")")/.."
+cd "$(realpath "$(dirname "$0")")/.." || { echo "ERR: Cannot cd to script dir"; exit 1; }
+
+bindfs /etc /opt/etc || { echo "ERR: Bind mount for isolate"; exit 1; }
 
 # create database if not exists
 if [ ! -f '/var/ksi-be/db.sqlite' ]; then
@@ -9,7 +11,7 @@ if [ ! -f '/var/ksi-be/db.sqlite' ]; then
   echo 'session.add(model.Year(year="initial year", sealed=False, point_pad=0)); session.commit()' >> gen-db.py &&
   sudo -Hu ksi bash -c 'source ksi-py3-venv/bin/activate && python gen-db.py' &&
   rm gen-db.py &&
-  echo "Database created"
+  echo "Database created" || { echo "ERR: Cannot start the DB"; exit 1; }
 fi
 
 # start the server

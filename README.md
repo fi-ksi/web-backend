@@ -2,6 +2,11 @@
 
 [https://ksi.fi.muni.cz](https://ksi.fi.muni.cz/)
 
+## Running with docker
+
+The backend can be run inside a docker container for testing purposes.
+To build and start backend with database to be stored in your `~/ksi-be` execute `./.docker/build.sh --run ~/ksi-be`
+
 ## Software needed
 
  * Python 3.7+

@@ -99,7 +99,7 @@ class Article(object):
             article.title = data['title']
             article.body = data['body']
             article.published = data['published']
-            article.time_created = data['time_published']
+            article.time_created = dateutil.parser.parse(data['time_published'])
             article.picture = data['picture']
 
             session.commit()

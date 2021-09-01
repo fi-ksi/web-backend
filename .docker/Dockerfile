@@ -25,7 +25,7 @@ RUN bash -c 'cd $DIR_BE && source ksi-py3-venv/bin/activate && pip install --no-
     && sed -e 's/READ COMMITTED/SERIALIZABLE/' -i db.py \
     && sed -e 's/127.0.0.1/0.0.0.0/' -i gunicorn_cfg.py
 
-# COPY seminar $DIR_BE/data/seminar
+COPY seminar $DIR_BE/data/seminar
 COPY module_lib $DIR_BE/data/module_lib
 
 RUN useradd -Mr ksi \

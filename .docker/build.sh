@@ -3,6 +3,7 @@ cd "$(realpath "$(dirname "$0")")/../.." &&
 docker rmi -f ksi-be &&
 docker build -f web-backend/.docker/Dockerfile -t ksi-be . &&
 if [[ "$1" == "--run" ]]; then
+  docker stop ksi-be
   docker rm ksi-be
   docker run \
     -p 3030:3030 \

@@ -74,7 +74,7 @@ class RunCode(object):
             # truncate too long reports (possibly from cycled programs)
             report_text = reporter.report
             report_text_safe_length = 640 * 1024  # ~640KiB, max is 16MiB for MEDIUMTEXT
-            if len(report_text) > report_text_safe_length:
+            if len(report_text.encode('utf-8')) > report_text_safe_length:
                 report_text = report_text[:report_text_safe_length] + f" [ZKRÁCENO Z {len(report_text)} ZNAKŮ]"
 
             execution.report = report_text

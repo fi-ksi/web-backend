@@ -1,18 +1,18 @@
 #!/bin/bash
-cd "$(realpath "$(dirname "$0")")/.." || { echo "ERR: Cannot cd to script dir"; exit 1; }
 
-bindfs /etc /opt/etc || { echo "ERR: Bind mount for isolate"; exit 1; }
+DIR_DB="$1"
 
-# create database if not exists
-if [ ! -f '/var/ksi-be/db.sqlite' ]; then
-  echo "Database does not exist yet, creating all tables" &&
-  cp app.py gen-db.py &&
-  sed -e 's/# model/model/' -i gen-db.py &&
-  echo 'session.add(model.Year(year="initial year", sealed=False, point_pad=0)); session.commit()' >> gen-db.py &&
-  sudo -Hu ksi bash -c 'source ksi-py3-venv/bin/activate && python gen-db.py' &&
-  rm gen-db.py &&
-  echo "Database created" || { echo "ERR: Cannot start the DB"; exit 1; }
-fi
+[ ! -d "$DIR_DB" ] && { echo "ERR: Given DB path is invalid"; exit 1; }
 
-# start the server
-sudo -Hu ksi bash -c 'source ksi-py3-venv/bin/activate && gunicorn -c gunicorn_cfg.py app:api'
+docker stop ksi-be &>/dev/null
+docker rm ksi-be &>/dev/null
+docker run \
+  -p 3030:3030 \
+  -v "$1:/var/ksi-be/" \
+  --rm \
+  --device /dev/fuse \
+  --cap-add=SYS_ADMIN \
+  --security-opt apparmor:unconfined \
+  -it \
+  --name ksi-be \
+  ksi-be

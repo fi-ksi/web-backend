@@ -20,7 +20,7 @@ ADD web-backend $DIR_BE/
 
 RUN bash -c 'cd $DIR_BE && source ksi-py3-venv/bin/activate && pip install --no-cache-dir -r requirements.txt' \
     && bash -c 'cd $DIR_BE  && ./init-makedirs.sh' \
-    && bash -c 'cd $DIR_BE  && chmod +x .docker/start.sh' \
+    && bash -c 'cd $DIR_BE  && chmod +x .docker/entrypoint.sh' \
     && mkdir /var/ksi-be \
     && sed -e 's/READ COMMITTED/SERIALIZABLE/' -i db.py \
     && sed -e 's/127.0.0.1/0.0.0.0/' -i gunicorn_cfg.py
@@ -32,4 +32,4 @@ RUN useradd -Mr ksi \
     && chown ksi:ksi -R $DIR_BE/data/seminar/
 
 ENTRYPOINT ["/bin/bash"]
-CMD ["./.docker/start.sh"]
+CMD ["./.docker/entrypoint.sh"]

@@ -5,7 +5,8 @@
 ## Running with docker
 
 The backend can be run inside a docker container for testing purposes.
-To build and start backend with database to be stored in your `~/ksi-be` execute `./.docker/build.sh --run ~/ksi-be`
+To build and start backend with database to be stored in your `~/ksi-be` execute `./.docker/build.sh --run ~/ksi-be`. 
+Already built docker images can be started by running `./.docker/start.sh ~/ksi-be`
 
 ## Software needed
 

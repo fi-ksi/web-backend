@@ -222,7 +222,7 @@ class ModuleSubmit(object):
                     util.module.perform_action(module, user, action)
 
             if user.is_org():
-                result['report'] = reporter.report
+                result['report'] = reporter.report_truncated
 
             req.context['result'] = result
         except SQLAlchemyError:

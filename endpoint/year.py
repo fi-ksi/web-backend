@@ -109,6 +109,10 @@ class Year(object):
 
 class Years(object):
 
+    def on_head(self, req, resp):
+        self.on_get(req=req, resp=resp)
+        resp.body = ''
+
     def on_get(self, req, resp):
         try:
             years = session.query(model.Year).all()

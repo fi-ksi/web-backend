@@ -28,11 +28,7 @@ unexpected errors. If so, please create Issue with report and reproduction steps
     source ksi-py3-venv/bin/activate
     pip3 install -r requirements.txt
     ```
- 4. Enter db url into `config.py` file. Format:
-    ```
-    SQL_ALCHEMY_URI = 'mysql://username:password@server/db_name?charset=utf8mb4'
-    ```
-
+ 4. Enter db url into `config.py` file. Format is the same as specified in `config.py.dist`
  5. Uncomment part of the `app.py`, which creates database structure.
  6. Run the server, comment the database-create-section in `run.py`
  7. Install `isolate` with box directory `/tmp/box`.

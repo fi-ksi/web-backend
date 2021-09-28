@@ -1,7 +1,11 @@
 #!/bin/bash
 cd "$(realpath "$(dirname "$0")")/.." || { echo "ERR: Cannot cd to script dir"; exit 1; }
 
+DIR_BE="/opt/web-backend"
+
 bindfs /etc /opt/etc || { echo "ERR: Bind mount for isolate"; exit 1; }
+bindfs /var/ksi-seminar "$DIR_BE/data/seminar" -u ksi -g ksi || { echo "ERR: Bind mount for seminar repo"; exit 1; }
+bindfs /var/ksi-module-lib "$DIR_BE/data/module_lib" -u ksi -g ksi -r || { echo "ERR: Bind mount for module lib"; exit 1; }
 
 # create database if not exists
 if [ ! -f '/var/ksi-be/db.sqlite' ]; then

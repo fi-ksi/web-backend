@@ -78,9 +78,9 @@ class Email(object):
                 finish = {
                     id: year
                     for (id, year) in session.query(
-                                        model.Profile.user_id,
-                                        model.Profile.school_finish
-                                      ).all()
+                        model.Profile.user_id,
+                        model.Profile.school_finish
+                    ).all()
                 }
 
                 if data['Category'] == 'hs':
@@ -127,10 +127,10 @@ class Email(object):
             tos = {
                 user_id: user
                 for user_id, user in tos.items()
-                if ((message_type == util.mail.EMailType.KSI and
-                    notifies[user_id].notify_ksi) or
-                    (message_type == util.mail.EMailType.EVENTS and
-                     notifies[user_id].notify_events))
+                if user_id in notifies and (  # some older users do not have to be inside notifies, filter them out
+                        (message_type == util.mail.EMailType.KSI and notifies[user_id].notify_ksi) or
+                        (message_type == util.mail.EMailType.EVENTS and notifies[user_id].notify_events)
+                )
             }
 
             recipients = [

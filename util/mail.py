@@ -13,7 +13,7 @@ from collections import namedtuple
 import pypandoc
 
 from db import session
-from util import config
+from util import config, logger
 import util
 
 # Emaily jsou odesilane v paralelnim vlakne.
@@ -79,6 +79,10 @@ def easteregg():
 
 def _send(to, subject, text, params, bcc, cc, plaintext=None):
     """Odeslani emailu."""
+    sender = config.mail_sender()
+    if sender is None:
+        logger.get_log().warning(f"Skipping sending mail to '{to}', because sender is not set in config")
+        return
 
     global emailThread
 
@@ -87,7 +91,7 @@ def _send(to, subject, text, params, bcc, cc, plaintext=None):
 
     msg = MIMEMultipart('alternative')
     msg['Subject'] = subject
-    msg['From'] = config.mail_sender()
+    msg['From'] = sender
     if 'Sender' not in params:
         msg['Sender'] = config.get('return_path')
     if 'Return-Path' not in params:

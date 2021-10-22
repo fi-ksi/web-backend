@@ -43,7 +43,7 @@ class RunCode(object):
             session.add(execution)
             session.commit()
 
-            reporter = util.programming.Reporter(max_size=640*1024)
+            reporter = util.programming.Reporter(max_size=50*1000)
             try:
                 try:
                     result = util.programming.run(module, user.id, data,

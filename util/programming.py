@@ -94,7 +94,7 @@ class Reporter(object):
     def __iadd__(self, other: str) -> "Reporter":
         """
         Appends a string to the report
-        :param other: another string to append to the teport
+        :param other: another string to append to the report
         :return: self
         """
         self.__report += other

@@ -189,7 +189,7 @@ class ModuleSubmit(object):
                 req.context['result'] = {'result': 'ok'}
                 return
 
-            reporter = util.programming.Reporter(max_size=640*1024)  # prevent database overflow
+            reporter = util.programming.Reporter(max_size=50*1000)  # prevent database overflow
 
             try:
                 result = util.programming.evaluate(

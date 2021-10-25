@@ -17,7 +17,7 @@ docker stop ksi-be &>/dev/null
 docker rm ksi-be &>/dev/null
 docker run \
   -p 3030:3030 \
-  -v "$DIR_DB:/var/ksi-be/" \
+  -v "$DIR_DB:/var/ksi-be.ro/" \
   -v "$DIR_SEMINAR:/var/ksi-seminar/" \
   -v "$DIR_MODULE_LIB:/var/ksi-module-lib/" \
   --device /dev/fuse \

@@ -21,6 +21,7 @@ ADD . $DIR_BE/
 RUN bash -c 'cd $DIR_BE && source ksi-py3-venv/bin/activate && pip install --no-cache-dir -r requirements.txt' \
     && bash -c 'cd $DIR_BE  && ./init-makedirs.sh' \
     && bash -c 'cd $DIR_BE  && chmod +x .docker/entrypoint.sh' \
+    && mkdir /var/ksi-be.ro \
     && mkdir /var/ksi-be \
     && mkdir /var/ksi-seminar \
     && mkdir /var/ksi-module-lib \

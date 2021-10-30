@@ -333,7 +333,7 @@ class ModuleSubmit(object):
                 ok=(result['result'] == 'ok')
             )
 
-            for l in result['report']:
+            for l in result['report'].split('\n'):
                 if l.startswith('action '):
                     util.module.perform_action(module, user, l.strip())
 

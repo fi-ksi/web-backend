@@ -28,7 +28,8 @@ RUN bash -c 'cd $DIR_BE && source ksi-py3-venv/bin/activate && pip install --no-
     && mkdir "$DIR_BE/data/module_lib" \
     && chmod 755 "$DIR_BE/data/module_lib" \
     && sed -e 's/READ COMMITTED/SERIALIZABLE/' -i db.py \
-    && sed -e 's/127.0.0.1/0.0.0.0/' -i gunicorn_cfg.py
+    && sed -e 's/127.0.0.1/0.0.0.0/' -i gunicorn_cfg.py \
+    && sed -e 's/CURRENT_TIMESTAMP + INTERVAL 1 SECOND/datetime("now", "+1 seconds")/' -i endpoint/post.py
 
 RUN useradd -Mr ksi
 

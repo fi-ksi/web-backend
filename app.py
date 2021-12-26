@@ -210,6 +210,7 @@ api.add_route('/tasks/{id}', endpoint.Task())
 api.add_route('/taskDetails/{id}', endpoint.TaskDetails())
 api.add_route('/modules/{id}', endpoint.Module())
 api.add_route('/modules/{id}/submit', endpoint.ModuleSubmit())
+api.add_route('/modules/{id}/submitFiles', endpoint.ModuleSubmit())  # alias required for swagger
 api.add_route('/submFiles/{id}', endpoint.ModuleSubmittedFile())
 api.add_route('/threads', endpoint.Threads())
 api.add_route('/threads/{id}', endpoint.Thread())

@@ -15,21 +15,21 @@ class RunCode(object):
         try:
             user = req.context['user']
             if not user.is_logged_in():
-                resp.status = falcon.HTTP_400
+                resp.status = falcon.HTTP_401
                 return
 
             data = json.loads(req.stream.read().decode('utf-8'))['content']
             module = session.query(model.Module).get(id)
 
             if not module:
-                resp.status = falcon.HTTP_400
+                resp.status = falcon.HTTP_404
                 return
 
             task_status = util.task.status(session.query(model.Task).
                                            get(module.task), user)
 
             if task_status == util.TaskStatus.LOCKED:
-                resp.status = falcon.HTTP_400
+                resp.status = falcon.HTTP_403
                 return
 
             execution = model.CodeExecution(

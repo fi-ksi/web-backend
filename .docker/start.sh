@@ -19,6 +19,7 @@ docker run \
   -v "$DIR_DATA:/var/ksi-data.ro/" \
   --device /dev/fuse \
   --cap-add=SYS_ADMIN \
+  --privileged=true \
   --security-opt apparmor:unconfined \
   -it \
   --name ksi-be \

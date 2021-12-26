@@ -9,7 +9,7 @@ EXPOSE 3030
 RUN wget -O - https://deb.adamhlavacek.com/pub.gpg | apt-key add - \
     && echo "deb https://deb.adamhlavacek.com ./" >> /etc/apt/sources.list \
     && apt-get update \
-    && apt-get install -y acl sudo isolate bindfs \
+    && apt-get install -y acl sudo isolate bindfs libpython3.7 \
     && sudo apt-get clean \
     && pip3 install virtualenv --no-cache-dir \
     && virtualenv -p python3 ksi-py3-venv \
@@ -29,6 +29,7 @@ RUN bash -c 'cd $DIR_BE && source ksi-py3-venv/bin/activate && pip install --no-
     && chmod 755 "$DIR_BE/data/module_lib" \
     && mv "$DIR_BE/.docker/config_isolate" /usr/local/etc/isolate \
     && chmod 644 /usr/local/etc/isolate \
+    && chmod u+s /usr/bin/isolate \
     && chown root:root /usr/local/etc/isolate \
     && sed -e 's/READ COMMITTED/SERIALIZABLE/' -i db.py \
     && sed -e 's/127.0.0.1/0.0.0.0/' -i gunicorn_cfg.py \

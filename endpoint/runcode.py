@@ -52,21 +52,17 @@ class RunCode(object):
                     req.context['result'] = result
                 except (util.programming.ENoFreeBox,
                         util.programming.EIsolateError,
-                        util.programming.EPostTriggerError,
                         util.programming.ECheckError,
                         util.programming.EMergeError) as e:
-                    reporter += str(e)
+                    reporter += str(e) + '\n'
                     raise
-                except Exception as e:
-                    reporter += traceback.format_exc()
-                    raise
-
             except Exception as e:
                 req.context['result'] = {
                     'message': ('Kód se nepodařilo '
                                 'spustit, kontaktujte organizátora.'),
                     'result': 'error',
                 }
+                reporter += traceback.format_exc()
 
             if user.is_org():
                 req.context['result']['report'] = reporter.report_truncated

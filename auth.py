@@ -1,3 +1,5 @@
+from typing import Union
+
 import bcrypt
 import random
 import string
@@ -16,13 +18,15 @@ def _generate_token():
     ])
 
 
-def get_hashed_password(plain_text_password):
-    return bcrypt.hashpw(plain_text_password.encode('utf-8'), bcrypt.gensalt())
+def get_hashed_password(plain_text_password: str) -> str:
+    return bcrypt.hashpw(plain_text_password.encode('utf-8'), bcrypt.gensalt()).decode('ascii')
 
 
-def check_password(plain_text_password, hashed_password):
-    return bcrypt.checkpw(plain_text_password.encode('utf-8'),
-                          hashed_password.encode('utf-8'))
+def check_password(plain_text_password: str, hashed_password: str) -> bool:
+    plain_bytes = plain_text_password.encode('utf8')
+    hash_bytes = hashed_password.encode('utf8')
+
+    return bcrypt.checkpw(plain_bytes, hash_bytes)
 
 
 class OAuth2Token(object):

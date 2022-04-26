@@ -363,7 +363,7 @@ class ForgottenPassword(object):
         try:
             util.mail.send(
                 user.email,
-                '[KSI] Nové heslo',
+                '[Naskoc na FI] Nové heslo',
                 'Ahoj,<br/>na základě tvé žádosti ti bylo vygenerováno nové '
                 'heslo: %s<br/><br/>KSI' % new_password
             )

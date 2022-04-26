@@ -169,7 +169,7 @@ def send_multiple(recipients, subject, text, params={}, bcc=[]):
 def send_feedback(text, addr_from):
     addr_reply = addr_from if len(addr_from) > 0 else None
     params = {'Reply-To': addr_reply}
-    send(config.feedback(), '[KSI-WEB] Zpetna vazba', '<p>' +
+    send(config.feedback(), '[Naskoc na FI] Zpetna vazba', '<p>' +
          text.decode('utf-8') + '</p>' + easteregg(), params=params)
 
 

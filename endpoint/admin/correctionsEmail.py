@@ -71,7 +71,7 @@ class CorrectionsEmail(object):
 
         util.mail.send(
             participant.email,
-            "[KSI-WEB] Úloha %s opravena" % task.title,
+            "[Naskoc na FI] Úloha %s opravena" % task.title,
             body,
             unsubscribe=unsubscribe,
             plaintext='' # No plaintext (pandoc is too slow for the bulk)
@@ -175,7 +175,7 @@ class CorrectionsEmail(object):
 
                 util.mail.send(
                     util.config.ksi_conf(),
-                    "[KSI-WEB] Úloha %s opravena" % task.title,
+                    "[Naskoc na FI] Úloha %s opravena" % task.title,
                     body
                 )
             except Exception as e:

@@ -108,12 +108,12 @@ class Registration(object):
         try:
             util.mail.send(
                 user.email,
-                '[KSI-WEB] Potvrzení registrace do Korespondenčního semináře '
-                'z informatiky', 'Ahoj!<br/>Vítáme tě v Korespondenčním '
-                'semináři z informatiky Fakulty informatiky Masarykovy '
+                '[Naskoc na FI] Potvrzení registrace do Naskoč na FI '
+                'z informatiky', 'Ahoj!<br/>Vítáme tě v Naskoč na FI,'
+                'semináři pro nastupující studenty Fakulty informatiky Masarykovy '
                 'univerzity. Nyní můžeš začít řešit naplno. Stačí se přihlásit'
-                ' na https://ksi.fi.muni.cz pomocí e-mailu a zvoleného hesla. '
-                'Přejeme ti hodně úspěchů při řešení semináře!<br/><br/>KSI'
+                ' na https://naskoc.fi.muni.cz/ pomocí e-mailu a zvoleného hesla. '
+                'Přejeme ti hodně úspěchů při řešení semináře!<br/><br/>Organizátoři Naskoč na FI'
             )
         except SQLAlchemyError:
             exc_type, exc_value, exc_traceback = sys.exc_info()

@@ -265,7 +265,7 @@ class Posts(object):
 
                         util.mail.send(
                             recipients,
-                            '[KSI-WEB] Nový příspěvek k úloze ' + task_thread.title,
+                            '[Naskoc na FI] Nový příspěvek k úloze ' + task_thread.title,
                             body,
                             cc=wave_garant_email
                         )
@@ -298,7 +298,7 @@ class Posts(object):
                         try:
                             util.mail.send(
                                 correctors,
-                                '[KSI-WEB] Nový komentář k tvé korektuře úlohy ' + task.title,
+                                '[Naskoc na FI] Nový komentář k tvé korektuře úlohy ' + task.title,
                                 '<p>Ahoj,<br/>k tvé <a href="' +
                                 config.ksi_web() + '/admin/opravovani?task_=' +
                                 str(task.id) + '&participant_='+str(user_class.id) +
@@ -321,7 +321,7 @@ class Posts(object):
                         sent_emails.add(config.ksi_conf())
                         util.mail.send(
                             config.ksi_conf(),
-                            '[KSI-WEB] Nový příspěvek v obecné diskuzi',
+                            '[Naskoc na FI] Nový příspěvek v obecné diskuzi',
                             '<p>Ahoj,<br/>do obecné diskuze na <a href="' +
                             config.ksi_web() + '/">' + config.ksi_web() +
                             '</a> byl přidán nový příspěvek:</p><p><i>' +
@@ -368,7 +368,7 @@ class Posts(object):
 
                         util.mail.send(
                             parent_user.email,
-                            ('[KSI-WEB] Nový příspěvek v diskuzi %s' %
+                            ('[Naskoc na FI] Nový příspěvek v diskuzi %s' %
                              (thread.title)),
                             body,
                             unsubscribe=util.mail.Unsubscribe(

@@ -114,7 +114,7 @@ def _send(to, subject, text, params, bcc, cc, plaintext=None):
     # Vlozime email do fronty
     queueLock.acquire()
     emailQueue.put(emailData(msg['Sender'], send_to, msg.as_string()))
-    if emailThread and emailThread.isAlive():
+    if emailThread and emailThread.is_alive():
         queueLock.release()
     else:
         queueLock.release()

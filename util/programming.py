@@ -1,5 +1,8 @@
 import datetime
-from typing import Optional
+import random
+import time
+from pathlib import Path
+from typing import Optional, Dict
 
 from humanfriendly import parse_timespan, parse_size
 import json
@@ -30,6 +33,7 @@ Specifikace \data v databazi modulu pro "programming":
 MODULE_LIB_PATH = 'data/module_lib/'
 EXEC_PATH = '/tmp/box/'
 MAX_CONCURRENT_EXEC = 3
+BOX_ID_PREFIX: int = 1
 STORE_PATH = 'data/exec/'
 SOURCE_FILE = 'source'
 RESULT_FILE = 'eval.out'
@@ -215,24 +219,24 @@ def evaluate(task, module, user_id, code, eval_id, reporter):
     return res
 
 
-def find_free_box_id() -> str:
+def find_free_box_id() -> Optional[str]:
     """
     limits = prog_info["limits"] if "limits" in prog_info else {}
     Returns is of the first available sandbox directory. Searched for
     non-existing directories in /tmp/box.
     """
+    dir_boxes = Path(EXEC_PATH)
 
-    # Search for free id in EXEC_PATH
-    ids = [True for i in range(MAX_CONCURRENT_EXEC)]
-    for d in os.listdir(EXEC_PATH):
-        if d.isdigit():
-            ids[int(d)] = False
+    if len(list(
+            filter(lambda x: x.name.startswith(f"{BOX_ID_PREFIX}"), dir_boxes.iterdir())
+    )) >= MAX_CONCURRENT_EXEC:
+        return None
 
-    for i in range(len(ids)):
-        if ids[i]:
-            return str(i)
-
-    return None
+    while True:
+        box_name = f"{BOX_ID_PREFIX}{int(((time.time() * 1000 % 10**5) * random.randint(0, 1000))%100):02d}"
+        if not dir_boxes.joinpath(box_name).exists():
+            return box_name
+        time.sleep(0.001)
 
 
 def init_exec_environment():
@@ -253,10 +257,15 @@ def init_exec_environment():
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
-    p.wait()
+    stdout, stderr = p.communicate(timeout=60)
     if p.returncode != 0:
-        raise EIsolateError("Isolate --init returned code " +
-                            str(p.returncode))
+        raise EIsolateError(
+            f"Isolate --init for box '{box_id}' returned code ({p.returncode})\n"
+            f"---- STDOUT ----\n"
+            f"{stdout}\n"
+            f"---- STDERR ----\n"
+            f"{stderr}"
+        )
 
     return box_id
 
@@ -299,10 +308,12 @@ def store_exec(box_id, user_id, module_id, source):
     src_path = os.path.abspath(os.path.join(EXEC_PATH, box_id))
     dst_path = code_execution_dir(user_id, module_id)
 
+    # FIXME: can fail sometimes on dir not empty
     if os.path.isdir(dst_path):
         shutil.rmtree(dst_path)
 
     IGNORE = ["tmp", "root", "etc", "__pycache__", "*.pyc"]
+    # FIXME: can fail sometimes when previously launched in near past
     shutil.copytree(src_path, dst_path, ignore=shutil.ignore_patterns(*IGNORE))
 
     # Write evaluation id so we can recognize it in the future

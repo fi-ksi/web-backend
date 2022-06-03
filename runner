@@ -76,25 +76,6 @@ def main():
     log.debug("Calling .%s() on %s", action, config.basename())
     getattr(config, action)()
 
-    # Kill any renaming pidfiles to prevent the case where we remove or
-    # renaming a configuration and it doesn't get stopped or restarted.
-    if action == 'stop' and not configs:
-        for pidfile in glob.glob(os.path.join(options.pid_dir, '*.pid')):
-            log.debug("Stopping extraenous pidfile %s", pidfile)
-            subprocess.call((
-                'start-stop-daemon',
-                '--stop',
-                '--oknodo',
-                '--retry', '1',
-                '--quiet',
-                '--pidfile', pidfile,
-            ))
-
-            try:
-                os.unlink(pidfile)
-            except OSError:
-                pass
-
     return 0
 
 class Config(dict):

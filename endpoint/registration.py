@@ -108,8 +108,8 @@ class Registration(object):
         try:
             util.mail.send(
                 user.email,
-                '[Naskoc na FI] Potvrzení registrace do Naskoč na FI '
-                'z informatiky', 'Ahoj!<br/>Vítáme tě v Naskoč na FI, '
+                '[Naskoc na FI] Potvrzení registrace do Naskoč na FI',
+                'Ahoj!<br/>Vítáme tě v Naskoč na FI, '
                 'semináři pro nastupující studenty Fakulty informatiky Masarykovy '
                 'univerzity. Nyní můžeš začít řešit naplno. Stačí se přihlásit'
                 ' na https://naskoc.fi.muni.cz/ pomocí e-mailu a zvoleného hesla. '

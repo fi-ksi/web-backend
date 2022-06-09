@@ -156,7 +156,7 @@ def user_points(year_id):
 def successful_participants(year_obj):
     """vraci seznam [(user,points)] uspesnych v danem rocniku"""
 
-    points_per_module = poins_per_module_subq(year_obj.id)
+    points_per_module = points_per_module_subq(year_obj.id)
 
     results = session.query(
         model.User,

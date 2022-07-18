@@ -69,7 +69,7 @@ class Unsubscribe(object):
                 'ano' if notify.notify_events else 'ne'
             )
             resp.body += '</ul>'
-            resp.body += 'Další změny je možné provést v nastavení tvého profilu na KSI webu.'
+            resp.body += 'Další změny je možné provést v nastavení tvého profilu na webu Naskoč na FI.'
 
         except SQLAlchemyError:
             resp.body = 'Chyba 500: nastala výjimka, kontaktuj orga!'

@@ -194,7 +194,7 @@ class Unsubscribe:
     def text(self):
         return (
             '<hr><p style="font-size: 70%%;">Pokud nechceš dostávat tyto notifikace, '
-            'změň si nastavení na <a href="%s">KSI webu</a> nebo klikni na '
+            'změň si nastavení na <a href="%s">webu Naskoč na FI</a> nebo klikni na '
             '<a href="%s">odhlásit se</a>.</p>' % (
                 self.ksi_web,
                 self.link(),
@@ -226,7 +226,7 @@ class FakeUnsubscribe:
         return (
             '<hr><p style="font-size: 70%;">Na tomto místě je přímý odkaz na '
             'odhlášení odběru, který vypadá takto:<br>Pokud nechceš dostávat tyto '
-            'notifikace, změň si nastavení na <a href="">KSI webu</a> nebo '
+            'notifikace, změň si nastavení na <a href="">webu Naskoč na FI</a> nebo '
             'klikni na <a href="">odhlásit se</a>.</p>'
         )
 

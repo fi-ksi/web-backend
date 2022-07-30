@@ -55,9 +55,9 @@ def createGit(git_path, git_branch, author_id, title):
         "Content-Type": "application/x-www-form-urlencoded"
     }
 
-    data = "{'title': 'Nova uloha: " + title + "'," + \
-        "'head': '" + git_branch + "'," + \
-        "'base': 'master'}"
+    data = str({"title": "Nova uloha: " + title,
+                "head": git_branch,
+                "base": "master"})
 
     requests.post(url, headers=headers, data=data)
 

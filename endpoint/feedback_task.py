@@ -1,13 +1,19 @@
 import json
+from typing import Any, Dict, List, Tuple
 import falcon
 from sqlalchemy.exc import SQLAlchemyError
 import datetime
 
 from db import session
 import model
+from model.task import Task
 import util
-from util.feedback import EForbiddenType, EUnmatchingDataType, EMissingAnswer, \
-                          EOutOfRange
+from util.feedback import (
+    EForbiddenType,
+    EUnmatchingDataType,
+    EMissingAnswer,
+    EOutOfRange,
+)
 
 
 class FeedbackTask(object):
@@ -142,7 +148,9 @@ class FeedbacksTask(object):
 
             data = json.loads(req.stream.read().decode('utf-8'))['feedback']
 
-            if session.query(model.Task).get(int(data['taskId'])) is None:
+            task_id = int(data["taskId"])
+            task = session.query(model.Task).get(task_id)
+            if task is None:
                 req.context['result'] = {
                     'errors': [{
                         'status': '404',
@@ -154,16 +162,17 @@ class FeedbacksTask(object):
                 return
 
             content = json.dumps(
-                util.feedback.parse_feedback(data['categories']),
+                util.feedback.parse_feedback(data["categories"]),
                 indent=2,
                 ensure_ascii=False,
             )
 
+            user_id = user.get_id()
             feedback = model.Feedback(
-                user=user.get_id(),
-                task=int(data['taskId']),
+                user=user_id,
+                task=task_id,
                 content=content,
-                lastUpdated = datetime.datetime.utcnow(),
+                lastUpdated=datetime.datetime.utcnow(),
             )
 
             session.add(feedback)
@@ -172,6 +181,15 @@ class FeedbacksTask(object):
             req.context['result'] = {
                 'feedback': util.feedback.to_json(feedback)
             }
+
+            try:
+                self._send_feedback_email_to_orgs(
+                    task_id=task_id,
+                    user_id=user_id,
+                    feedback_content=data["categories"],
+                )
+            except BaseException:
+                pass
 
         except (EForbiddenType, EUnmatchingDataType, EMissingAnswer,
                 EOutOfRange) as e:
@@ -189,3 +207,65 @@ class FeedbacksTask(object):
             raise
         finally:
             session.close()
+
+    def _send_feedback_email_to_orgs(
+        self, task_id: int, user_id: int, feedback_content: List[Dict[str, Any]]
+    ):
+        task = session.query(model.Task).get(task_id)
+        recipients, wave_garant_email = self._get_feedback_email_recipients(task)
+        body = self._get_feedback_email_body(task, user_id, feedback_content)
+
+        util.mail.send(
+            to=recipients,
+            subject=f"[KSI-WEB] Nový feedback k úloze {task.title}",
+            text=body,
+            cc=wave_garant_email,
+        )
+
+    def _get_feedback_email_recipients(self, task: Task) -> Tuple[List[str], str]:
+        author_email = (
+            session.query(model.User.email)
+            .filter(model.User.id == task.author)
+            .scalar()
+        )
+        wave_garant_email = (
+            session.query(model.User.email)
+            .join(model.Wave, model.Wave.garant == model.User.id)
+            .join(model.Task, model.Task.wave == model.Wave.id)
+            .filter(model.Task.id == task.id)
+            .scalar()
+        )
+        recipients = [author_email]
+        if task.co_author is not None:
+            co_author_email = (
+                session.query(model.User.email)
+                .filter(model.User.id == task.co_author)
+                .scalar()
+            )
+            recipients.append(co_author_email)
+        return recipients, wave_garant_email
+
+    def _get_feedback_email_body(
+        self, task: Task, user_id: int, feedback_content: List[Dict[str, Any]]
+    ) -> str:
+        user = session.query(model.User).get(user_id)
+        feedback_text = "\n".join(
+            [
+                f"<p><i>\"{category['text']}\"</i>:</p><p>{self._get_answer_string(category)}</p>"
+                for category in feedback_content
+            ]
+        )
+        ksi_web_url = util.config.ksi_web()
+        return (
+            f'<p>Ahoj,<br/>k tvé úloze <a href="{ksi_web_url}/ulohy/{task.id}" >'
+            f"{task.title}</a> byl přidán nový feedback od "
+            f"<b>{user.first_name} {user.last_name}:</b></p>"
+            f"{feedback_text}"
+            f"{util.config.mail_sign()}"
+        )
+
+    def _get_answer_string(self, rating_category: Dict[str, Any]) -> str:
+        answer = rating_category["answer"]
+        if rating_category["ftype"] in ["stars", "line"]:
+            return "★" * answer + "☆" * (5 - answer)
+        return answer

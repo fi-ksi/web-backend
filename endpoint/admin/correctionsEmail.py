@@ -58,7 +58,7 @@ class CorrectionsEmail(object):
                 str(task.id) + "/reseni"
             )
 
-        body += util.config.karlik_img()
+        body += util.config.mail_sign()
 
         unsubscribe = util.mail.Unsubscribe(
             util.mail.EMailType.EVAL,

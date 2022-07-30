@@ -1,5 +1,6 @@
-import config
 import falcon
+
+from util import config
 
 class MonitoringDashboard(object):
 
@@ -11,6 +12,6 @@ class MonitoringDashboard(object):
             resp.status = falcon.HTTP_400
             return
 
-        resp.media = {'url': config.MONITORING_DASHBOARD_URL}
+        resp.media = {'url': config.monitoring_dashboard_url()}
         resp.status = falcon.HTTP_200
 

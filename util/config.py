@@ -26,7 +26,7 @@ def ksi_conf():
     return get("ksi_conf")
 
 
-def karlik_img():
+def mail_sign():
     return get("mail_sign")
 
 
@@ -44,6 +44,8 @@ def mail_sender() -> Optional[str]:
 def backend_url():
     return get("backend_url")
 
+def monitoring_dashboard_url():
+    return get("monitoring_dashboard_url")
 
 def feedback():
     return [r for r, in session.query(model.FeedbackRecipient.email).all()]

@@ -103,7 +103,7 @@ class Email(object):
 
             body = data['Body']
             if ('KarlikSign' in data) and (data['KarlikSign']):
-                body = body + util.config.karlik_img()
+                body = body + util.config.mail_sign()
             if ('Easteregg' in data) and (data['Easteregg']):
                 body = body + util.mail.easteregg()
 

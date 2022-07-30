@@ -1,6 +1,8 @@
 import shutil
 import json
 import git
+import requests
+import config
 
 import util
 
@@ -42,5 +44,21 @@ def createGit(git_path, git_branch, author_id, title):
     # Netusim, jak udelat push -u, tohle je trosku prasarna:
     g = git.Git(util.git.GIT_SEMINAR_PATH)
     g.execute(["git", "push", "-u", "origin", git_branch+':'+git_branch])
+
+    # Pull request
+    # PR su per-service, teda treba urobit POST request na GitHub API
+    url = "https://api.github.com/repos/fi-ksi/" + config.seminar_repo() + "/pulls"
+
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "Authorization": "token" + config.github_token(),
+        "Content-Type": "application/x-www-form-urlencoded"
+    }
+
+    data = "{'title': 'Nova uloha: " + title + "'," + \
+        "'head': '" + git_branch + "'," + \
+        "'base': 'master'}"
+
+    requests.post(url, headers=headers, data=data)
 
     return repo.head.commit.hexsha

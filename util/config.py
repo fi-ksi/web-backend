@@ -45,5 +45,21 @@ def backend_url():
     return get("backend_url")
 
 
+def github_token():
+    """
+    Get the OAuth2.0 personal access token for fi-ksi-admin GitHub account
+
+    This token can be used for making requests to the GitHub API
+    """
+    return get("github_token")
+
+
+def seminar_repo():
+    """
+    Get the name of the seminar repository that contains tasks
+    """
+    return get("seminar_repo")
+
+
 def feedback():
     return [r for r, in session.query(model.FeedbackRecipient.email).all()]

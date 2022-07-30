@@ -142,7 +142,7 @@ class OrgProfile(object):
         try:
             userinfo = req.context['user']
 
-            if (not userinfo.is_logged_in()) or (not userinfo.is_admin()):
+            if (not userinfo.is_logged_in()) or (not userinfo.is_org()):
                 req.context['result'] = {
                     'errors': [{
                         'status': '401',

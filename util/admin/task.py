@@ -51,7 +51,7 @@ def createGit(git_path, git_branch, author_id, title):
 
     headers = {
         "Accept": "application/vnd.github+json",
-        "Authorization": "token" + config.github_token(),
+        "Authorization": "token " + config.github_token(),
         "Content-Type": "application/x-www-form-urlencoded"
     }
 

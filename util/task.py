@@ -400,7 +400,7 @@ def best_scores(task_id):
         filter(model.User.role == 'participant').\
         group_by(per_modules.c.user_id).\
         order_by(desc('sum')).\
-        slice(0, 5).\
+        slice(0, 100).\
         all()
 
 

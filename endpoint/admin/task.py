@@ -232,12 +232,13 @@ class Tasks(object):
             # Vytvorit novou ulohu mohou jen admini nebo garanti vlny.
             if (not user.is_logged_in()) or (not user.is_admin() and
                                              user.id != wave.garant):
-                resp.status = falcon.HTTP_400
+                resp.status = falcon.HTTP_401
                 return
 
             # Ulohu lze vytvorit jen pred casem zverejneni vlny
             if datetime.datetime.utcnow() > wave.time_published:
                 resp.status = falcon.HTTP_403
+                req.context['result'] = {'errors': 'Po zverejneni vlny nelze vytvaret nove ulohy'}
                 return
 
             # Vytvoreni adresare v repu je option:

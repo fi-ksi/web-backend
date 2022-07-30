@@ -1,2 +1,1 @@
 SQL_ALCHEMY_URI = 'mysql://username:password@server/db_name?charset=utf8mb4'
-MONITORING_DASHBOARD_URL = 'https://name:password@ksi.fi.muni.cz/monitor/'

@@ -44,8 +44,10 @@ def mail_sender() -> Optional[str]:
 def backend_url():
     return get("backend_url")
 
+
 def monitoring_dashboard_url():
     return get("monitoring_dashboard_url")
+
 
 def github_token():
     """

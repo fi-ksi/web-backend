@@ -2,8 +2,6 @@ import shutil
 import json
 import git
 import requests
-import config
-
 import util
 
 LOCKFILE = '/var/lock/ksi-task-new'
@@ -47,11 +45,11 @@ def createGit(git_path, git_branch, author_id, title):
 
     # Pull request
     # PR su per-service, teda treba urobit POST request na GitHub API
-    url = "https://api.github.com/repos/fi-ksi/" + config.seminar_repo() + "/pulls"
+    url = "https://api.github.com/repos/fi-ksi/" + util.config.seminar_repo() + "/pulls"
 
     headers = {
         "Accept": "application/vnd.github+json",
-        "Authorization": "token " + config.github_token()
+        "Authorization": "token " + util.config.github_token()
     }
 
     data = str({"title": "Nova uloha: " + title,

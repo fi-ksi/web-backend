@@ -62,12 +62,12 @@ class Email(object):
                     if user.role == 'participant' and year.id in data['To']
                 }
 
-                if ('Gender' in data) and (data['Gender'] != 'both'):
-                    tos = {
-                        user.id: user
-                        for user in tos.values()
-                        if user.sex == data['Gender']
-                    }
+            if ('Gender' in data) and (data['Gender'] != 'both'):
+                tos = {
+                    user.id: user
+                    for user in tos.values()
+                    if user.sex == data['Gender']
+                }
 
             if 'Category' in data and data['Category'] != 'both':
                 min_year = util.year.year_end(session.query(model.Year).

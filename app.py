@@ -238,7 +238,8 @@ api.add_route('/years', endpoint.Years())
 api.add_route('/years/{id}', endpoint.Year())
 api.add_route('/feedbacks', endpoint.FeedbacksTask())
 api.add_route('/feedbacks/{id}', endpoint.FeedbackTask())
-api.add_route('/diplomas/{id}', endpoint.Diploma())
+api.add_route('/diplomas/{user}', endpoint.Diploma())
+api.add_route('/diplomas/{user}/{year}/show', endpoint.DiplomaDownload())
 
 """
 task-content endpoint contains: (defined in endpoint/content.py, see also

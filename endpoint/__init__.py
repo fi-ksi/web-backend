@@ -18,6 +18,6 @@ from endpoint.year import Year, Years
 from endpoint.robots import Robots
 from endpoint.csp import CSP
 from endpoint.unsubscribe import Unsubscribe
-from endpoint.diploma import Diploma
+from endpoint.diploma import Diploma, DiplomaDownload
 
 from . import admin

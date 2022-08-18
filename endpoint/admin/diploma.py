@@ -12,7 +12,11 @@ from db import session
 from shutil import move
 
 ALLOWED_MIME_TYPES = ('application/pdf',)
-UPLOAD_DIR = Path().joinpath('data').joinpath('diploma')
+UPLOAD_DIR = Path().joinpath('data').joinpath('diplomas')
+
+
+def get_diploma_path(year_id: int, user_id: int) -> Path:
+    return UPLOAD_DIR.joinpath(f"year_{year_id}").joinpath(f"user_{user_id}.pdf")
 
 
 class DiplomaGrant:
@@ -39,7 +43,6 @@ class DiplomaGrant:
                 }
                 return
 
-            files = multipart.MultiDict()
             content_type, options = multipart.parse_options_header(
                 req.content_type
             )
@@ -51,7 +54,18 @@ class DiplomaGrant:
 
             for part in multipart.MultipartParser(req.stream, boundary,
                                                   req.content_length):
-                file = part  # take only the last file
+                file = part  # take only the first file
+                break
+            else:
+                resp.status = falcon.HTTP_400
+                req.context['result'] = {
+                    'errors': [{
+                        'status': '400',
+                        'title': 'Bad Request',
+                        'detail': 'No file found in the data'
+                    }]
+                }
+                return
 
             user_id = id
             year_id = req.context['year_obj'].id
@@ -63,17 +77,23 @@ class DiplomaGrant:
 
             if mime not in ALLOWED_MIME_TYPES:
                 resp.status = falcon.HTTP_400
+                req.context['result'] = {
+                    'errors': [{
+                        'status': '403',
+                        'title': 'Forbidden',
+                        'detail': f'Allowed file types are {ALLOWED_MIME_TYPES}'
+                    }]
+                }
                 return
 
-            upload_dir = UPLOAD_DIR.joinpath(f"year_{year_id}")
+            target_file = get_diploma_path(year_id, user_id)
+
             try:
-                upload_dir.mkdir(parents=True, exist_ok=True, mode=0o750)
+                target_file.parent.mkdir(parents=True, exist_ok=True, mode=0o750)
             except OSError:
                 print('Unable to create directory for profile pictures')
                 resp.status = falcon.HTTP_500
                 return
-
-            target_file = upload_dir.joinpath(f"user_{user_id}.pdf")
 
             try:
                 move(tmpfile.name, target_file)

@@ -6,6 +6,7 @@ from sqlalchemy.exc import SQLAlchemyError
 import util
 from db import session
 import model
+from util.config import successful_participant_trophy_id
 
 
 class Achievement(object):
@@ -126,6 +127,22 @@ class Achievement(object):
             session.close()
 
         self.on_get(req, resp, id)
+
+
+class AchievementSuccessfulParticipant:
+    def on_get(self, req, resp):
+        trophy_id = successful_participant_trophy_id()
+
+        if trophy_id is None:
+            req.context['result'] = {
+                'errors': [{
+                    'status': '404',
+                    'title': 'Not Found',
+                    'detail': 'Successful trophy was not set'
+                }]
+            }
+
+        return Achievement().on_get(req, resp, trophy_id)
 
 
 class Achievements(object):

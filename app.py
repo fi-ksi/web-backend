@@ -238,6 +238,7 @@ api.add_route('/years', endpoint.Years())
 api.add_route('/years/{id}', endpoint.Year())
 api.add_route('/feedbacks', endpoint.FeedbacksTask())
 api.add_route('/feedbacks/{id}', endpoint.FeedbackTask())
+api.add_route('/diplomas/{id}', endpoint.Diploma())
 
 """
 task-content endpoint contains: (defined in endpoint/content.py, see also
@@ -268,6 +269,7 @@ api.add_route('/admin/evalCodes/{id}', endpoint.admin.EvalCode())
 api.add_route('/admin/execs', endpoint.admin.Execs())
 api.add_route('/admin/execs/{id}', endpoint.admin.Exec())
 api.add_route('/admin/monitoring-dashboard', endpoint.admin.MonitoringDashboard())
+api.add_route('/admin/diploma/{id}/grant', endpoint.admin.DiplomaGrant())
 
 api.add_route('/unsubscribe/{id}', endpoint.Unsubscribe())
 

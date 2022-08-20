@@ -7,6 +7,8 @@ from db import session
 import model
 import subprocess
 
+from util import UserInfo
+
 """
 Specifikace \data v databazi modulu pro "text":
     text = {
@@ -41,7 +43,7 @@ def to_json(db_dict, user_id):
         return {'questions': db_dict['text']['questions']}
 
 
-def eval_text(eval_script, data, reporter):
+def eval_text(eval_script, data, reporter, user: UserInfo):
     """ Evaluate text module by a script. """
 
     path = tempfile.mkdtemp()
@@ -57,7 +59,10 @@ def eval_text(eval_script, data, reporter):
                 cmd,
                 stdout=stdout,
                 stderr=stderr,
-                cwd=path
+                cwd=path,
+                env={
+                    'KSI_USER': f"{user.id}"
+                }
             )
             p.wait(timeout=10)  # seconds
 
@@ -92,7 +97,7 @@ def eval_text(eval_script, data, reporter):
             shutil.rmtree(path)
 
 
-def evaluate(task, module, data, reporter):
+def evaluate(task, module, data, reporter, user: UserInfo):
     reporter += '=== Evaluating text id \'%s\' for task id \'%s\' ===\n\n' % (
           module.id, task)
     reporter += 'Raw data: ' + json.dumps(data, ensure_ascii=False) + '\n'
@@ -120,7 +125,7 @@ def evaluate(task, module, data, reporter):
         }
 
     elif 'eval_script' in text:
-        return eval_text(text['eval_script'], data, reporter)
+        return eval_text(text['eval_script'], data, reporter, user)
 
     else:
         reporter += 'No eval method specified!\n'

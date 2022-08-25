@@ -203,6 +203,7 @@ api.add_route('/articles', endpoint.Articles())
 api.add_route('/articles/{id}', endpoint.Article())
 api.add_route('/achievements', endpoint.Achievements())
 api.add_route('/achievements/{id}', endpoint.Achievement())
+api.add_route('/achievements/special/successful', endpoint.AchievementSuccessfulParticipant())
 api.add_route('/posts', endpoint.Posts())
 api.add_route('/posts/{id}', endpoint.Post())
 api.add_route('/tasks', endpoint.Tasks())
@@ -238,6 +239,8 @@ api.add_route('/years', endpoint.Years())
 api.add_route('/years/{id}', endpoint.Year())
 api.add_route('/feedbacks', endpoint.FeedbacksTask())
 api.add_route('/feedbacks/{id}', endpoint.FeedbackTask())
+api.add_route('/diplomas/{user}', endpoint.Diploma())
+api.add_route('/diplomas/{user}/{year}/show', endpoint.DiplomaDownload())
 
 """
 task-content endpoint contains: (defined in endpoint/content.py, see also
@@ -268,6 +271,7 @@ api.add_route('/admin/evalCodes/{id}', endpoint.admin.EvalCode())
 api.add_route('/admin/execs', endpoint.admin.Execs())
 api.add_route('/admin/execs/{id}', endpoint.admin.Exec())
 api.add_route('/admin/monitoring-dashboard', endpoint.admin.MonitoringDashboard())
+api.add_route('/admin/diploma/{id}/grant', endpoint.admin.DiplomaGrant())
 
 api.add_route('/unsubscribe/{id}', endpoint.Unsubscribe())
 

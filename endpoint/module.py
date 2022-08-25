@@ -295,7 +295,7 @@ class ModuleSubmit(object):
                 reporter = util.programming.Reporter()
                 try:
                     result = util.text.evaluate(module.task, module, data,
-                                                reporter)
+                                                reporter, user)
                 except util.text.ECheckError:
                     result = {
                         'result': 'error',

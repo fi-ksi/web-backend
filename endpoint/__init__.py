@@ -1,5 +1,5 @@
 from endpoint.article import Article, Articles
-from endpoint.achievement import Achievement, Achievements
+from endpoint.achievement import Achievement, Achievements, AchievementSuccessfulParticipant
 from endpoint.post import Post, Posts
 from endpoint.task import Task, Tasks, TaskDetails
 from endpoint.module import Module, ModuleSubmit, ModuleSubmittedFile
@@ -18,5 +18,6 @@ from endpoint.year import Year, Years
 from endpoint.robots import Robots
 from endpoint.csp import CSP
 from endpoint.unsubscribe import Unsubscribe
+from endpoint.diploma import Diploma, DiplomaDownload
 
 from . import admin

@@ -41,12 +41,19 @@ def mail_sender() -> Optional[str]:
     return get("mail_sender")
 
 
+def successful_participant_trophy_id() -> Optional[int]:
+    text = get('successful_participant_trophy_id')
+    return int(text) if text is not None else None
+
+
 def backend_url():
     return get("backend_url")
 
 
+
 def monitoring_dashboard_url():
     return get("monitoring_dashboard_url")
+
 
 
 def github_token():

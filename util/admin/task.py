@@ -52,10 +52,10 @@ def createGit(git_path, git_branch, author_id, title):
         "Authorization": "token " + util.config.github_token()
     }
 
-    data = str({"title": "Nova uloha: " + title,
-                "head": git_branch,
-                "base": "master"})
+    data = {"title": "Nova uloha: " + title,
+            "head": git_branch,
+            "base": "master"}
 
-    requests.post(url, headers=headers, data=data)
+    requests.post(url, headers=headers, data=json.dumps(data))
 
     return repo.head.commit.hexsha

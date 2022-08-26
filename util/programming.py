@@ -2,20 +2,18 @@ import datetime
 import random
 import time
 from pathlib import Path
-from typing import Optional, Dict
+from typing import Optional
 
 from humanfriendly import parse_timespan, parse_size
 import json
 import os
 import shutil
 import stat
-import traceback
 import subprocess
 from sqlalchemy import desc
 
 from db import session
 import model
-import util
 
 """
 Specifikace \data v databazi modulu pro "programming":
@@ -34,6 +32,7 @@ MODULE_LIB_PATH = 'data/module_lib/'
 EXEC_PATH = '/tmp/box/'
 MAX_CONCURRENT_EXEC = 3
 BOX_ID_PREFIX: int = 1
+assert BOX_ID_PREFIX > 0
 STORE_PATH = 'data/exec/'
 SOURCE_FILE = 'source'
 RESULT_FILE = 'eval.out'
@@ -233,7 +232,7 @@ def find_free_box_id() -> Optional[str]:
         return None
 
     while True:
-        box_name = f"{BOX_ID_PREFIX}{int(((time.time() * 1000 % 10**5) * random.randint(0, 1000))%100):02d}"
+        box_name = f"{BOX_ID_PREFIX}{int(((time.time() * 1000 % 10**5) * random.randint(0, 1000))%1000):03d}"
         if not dir_boxes.joinpath(box_name).exists():
             return box_name
         time.sleep(0.001)

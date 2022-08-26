@@ -19,3 +19,4 @@ from endpoint.admin.evalCode import EvalCode
 from endpoint.admin.execs import Execs
 from endpoint.admin.execs import Exec
 from endpoint.admin.monitoringDashboard import MonitoringDashboard
+from endpoint.admin.diploma import DiplomaGrant

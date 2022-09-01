@@ -54,5 +54,21 @@ def monitoring_dashboard_url():
     return get("monitoring_dashboard_url")
 
 
+def github_token() -> Optional[str]:
+    """
+    Get the OAuth2.0 personal access token for fi-ksi-admin GitHub account
+
+    This token can be used for making requests to the GitHub API
+    """
+    return get("github_token")
+
+
+def seminar_repo() -> Optional[str]:
+    """
+    Get the name of the seminar repository that contains tasks
+    """
+    return get("seminar_repo")
+
+
 def feedback():
     return [r for r, in session.query(model.FeedbackRecipient.email).all()]

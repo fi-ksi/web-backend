@@ -1,8 +1,13 @@
 import shutil
 import json
+from typing import Optional
+
 import git
 import requests
+
+import model
 import util
+from db import session
 
 LOCKFILE = '/var/lock/ksi-task-new'
 
@@ -49,17 +54,34 @@ def createGit(git_path, git_branch, author_id, title):
 
     if None not in (seminar_repo, github_token):
         # PR su per-service, teda treba urobit POST request na GitHub API
-        url = "https://api.github.com/repos/fi-ksi/" + util.config.seminar_repo() + "/pulls"
+        url_root = "https://api.github.com/repos/fi-ksi/" + util.config.seminar_repo()
 
         headers = {
             "Accept": "application/vnd.github+json",
             "Authorization": "token " + util.config.github_token()
         }
 
-        data = {"title": "Nova uloha: " + title,
+        pull_id = requests.post(
+            url_root + "/pulls",
+            headers=headers,
+            data=json.dumps({
+                "title": "Nova uloha: " + title,
                 "head": git_branch,
-                "base": "master"}
+                "base": "master"
+            })
+        ).json()['number']
 
-        requests.post(url, headers=headers, data=json.dumps(data))
+        author: Optional[model.User] = session.query(model.User).\
+            filter(model.User.id == int(author_id)).\
+            first()
+
+        if author.github:
+            requests.post(
+                url_root + f"/issues/{pull_id}/assignees",
+                headers=headers,
+                data=json.dumps({
+                    "assignees": [author.github]
+                })
+            )
 
     return repo.head.commit.hexsha

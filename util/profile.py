@@ -60,7 +60,7 @@ def to_json(user, profile, notify, year_obj, basic=False):
         }
 
 
-def _basic_profile_to_json(user):
+def _basic_profile_to_json(user: model.User) -> dict:
     return {
         'id': user.id,
         'signed_in': True,
@@ -71,7 +71,8 @@ def _basic_profile_to_json(user):
         'short_info': user.short_info,
         'email': user.email,
         'gender': user.sex,
-        'role': user.role
+        'role': user.role,
+        'github': user.github
     }
 
 

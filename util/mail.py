@@ -1,7 +1,7 @@
+import os
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email import charset as Charset
-import sys
 import copy
 import threading
 import random
@@ -10,6 +10,7 @@ import smtplib
 import queue
 from enum import Enum
 from collections import namedtuple
+import tempfile
 import pypandoc
 
 from db import session
@@ -80,11 +81,6 @@ def easteregg():
 def _send(to, subject, text, params, bcc, cc, plaintext=None):
     """Odeslani emailu."""
     sender = config.mail_sender()
-    if sender is None:
-        logger.get_log().warning(f"Skipping sending mail to '{to}', because sender is not set in config")
-        return
-
-    global emailThread
 
     Charset.add_charset('utf-8', Charset.QP, Charset.QP, 'utf-8')
     text = "<html>" + text + "</html>"
@@ -111,6 +107,14 @@ def _send(to, subject, text, params, bcc, cc, plaintext=None):
                   (cc if isinstance(cc, (list)) else [cc]) +
                   (bcc if isinstance(bcc, (list)) else [bcc]))
 
+    if sender is None:
+        handle, tmp_file_path = tempfile.mkstemp(prefix='ksi_mail_', suffix='.eml', text=False)
+        logger.get_log().warning(f"Redirecting mail to '{to}' into '{tmp_file_path}', because sender is not set in config")
+        os.write(handle, msg.as_bytes())
+        os.close(handle)
+        return
+
+    global emailThread
     # Vlozime email do fronty
     queueLock.acquire()
     emailQueue.put(emailData(msg['Sender'], send_to, msg.as_string()))

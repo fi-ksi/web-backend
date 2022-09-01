@@ -75,7 +75,7 @@ def createGit(git_path, git_branch, author_id, title):
             filter(model.User.id == int(author_id)).\
             first()
 
-        if author.github is not None:
+        if author.github:
             requests.post(
                 url_root + f"/issues/{pull_id}/assignees",
                 headers=headers,

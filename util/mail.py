@@ -1,15 +1,18 @@
+import os
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email import charset as Charset
-import sys
 import copy
 import threading
 import random
+from typing import Optional, List, Dict
+
 import model
 import smtplib
 import queue
 from enum import Enum
 from collections import namedtuple
+import tempfile
 import pypandoc
 
 from db import session
@@ -80,11 +83,6 @@ def easteregg():
 def _send(to, subject, text, params, bcc, cc, plaintext=None):
     """Odeslani emailu."""
     sender = config.mail_sender()
-    if sender is None:
-        logger.get_log().warning(f"Skipping sending mail to '{to}', because sender is not set in config")
-        return
-
-    global emailThread
 
     Charset.add_charset('utf-8', Charset.QP, Charset.QP, 'utf-8')
     text = "<html>" + text + "</html>"
@@ -111,6 +109,14 @@ def _send(to, subject, text, params, bcc, cc, plaintext=None):
                   (cc if isinstance(cc, (list)) else [cc]) +
                   (bcc if isinstance(bcc, (list)) else [bcc]))
 
+    if sender is None:
+        handle, tmp_file_path = tempfile.mkstemp(prefix='ksi_mail_', suffix='.eml', text=False)
+        logger.get_log().warning(f"Redirecting mail to '{to}' into '{tmp_file_path}', because sender is not set in config")
+        os.write(handle, msg.as_bytes())
+        os.close(handle)
+        return
+
+    global emailThread
     # Vlozime email do fronty
     queueLock.acquire()
     emailQueue.put(emailData(msg['Sender'], send_to, msg.as_string()))
@@ -122,8 +128,16 @@ def _send(to, subject, text, params, bcc, cc, plaintext=None):
         emailThread.start()
 
 
-def send(to, subject, text, unsubscribe=None, params=None, bcc=None, cc=None,
-         plaintext=None):
+def send(
+        to: str,
+        subject: str,
+        text: str,
+        unsubscribe=None,
+        params: Optional[Dict[str, str]] = None,
+        bcc: Optional[List[str]] = None,
+        cc: Optional[List[str]] = None,
+        plaintext: Optional[str] =None
+        ):
     if params is None:
         params = {}
     if bcc is None:

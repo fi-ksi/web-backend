@@ -5,6 +5,8 @@ from email import charset as Charset
 import copy
 import threading
 import random
+from typing import Optional, List, Dict
+
 import model
 import smtplib
 import queue
@@ -126,8 +128,16 @@ def _send(to, subject, text, params, bcc, cc, plaintext=None):
         emailThread.start()
 
 
-def send(to, subject, text, unsubscribe=None, params=None, bcc=None, cc=None,
-         plaintext=None):
+def send(
+        to: str,
+        subject: str,
+        text: str,
+        unsubscribe=None,
+        params: Optional[Dict[str, str]] = None,
+        bcc: Optional[List[str]] = None,
+        cc: Optional[List[str]] = None,
+        plaintext: Optional[str] =None
+        ):
     if params is None:
         params = {}
     if bcc is None:

@@ -212,17 +212,17 @@ class FeedbacksTask(object):
         self, task_id: int, user_id: int, feedback_content: List[Dict[str, Any]]
     ):
         task = session.query(model.Task).get(task_id)
-        recipients, wave_garant_email = self._get_feedback_email_recipients(task)
+        author_email, recipients_copy = self._get_feedback_email_recipients(task)
         body = self._get_feedback_email_body(task, user_id, feedback_content)
 
         util.mail.send(
-            to=recipients,
+            to=author_email,
             subject=f"[KSI-WEB] Nový feedback k úloze {task.title}",
             text=body,
-            cc=wave_garant_email,
+            cc=recipients_copy,
         )
 
-    def _get_feedback_email_recipients(self, task: Task) -> Tuple[List[str], str]:
+    def _get_feedback_email_recipients(self, task: Task) -> Tuple[str, List[str]]:
         author_email = (
             session.query(model.User.email)
             .filter(model.User.id == task.author)
@@ -235,15 +235,18 @@ class FeedbacksTask(object):
             .filter(model.Task.id == task.id)
             .scalar()
         )
-        recipients = [author_email]
+        recipients_copy = []
+        if wave_garant_email != author_email:
+            recipients_copy.append(wave_garant_email)
+
         if task.co_author is not None:
             co_author_email = (
                 session.query(model.User.email)
                 .filter(model.User.id == task.co_author)
                 .scalar()
             )
-            recipients.append(co_author_email)
-        return recipients, wave_garant_email
+            recipients_copy.append(co_author_email)
+        return author_email, recipients_copy
 
     def _get_feedback_email_body(
         self, task: Task, user_id: int, feedback_content: List[Dict[str, Any]]

@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Optional
 import falcon
 from sqlalchemy.exc import SQLAlchemyError
 import datetime
@@ -212,8 +212,11 @@ class FeedbacksTask(object):
         self, task_id: int, user_id: int, feedback_content: List[Dict[str, Any]]
     ):
         task = session.query(model.Task).get(task_id)
-        author_email, recipients_copy = self._get_feedback_email_recipients(task)
         body = self._get_feedback_email_body(task, user_id, feedback_content)
+        if body is None:
+            return
+
+        author_email, recipients_copy = self._get_feedback_email_recipients(task)
 
         util.mail.send(
             to=author_email,
@@ -250,11 +253,16 @@ class FeedbacksTask(object):
 
     def _get_feedback_email_body(
         self, task: Task, user_id: int, feedback_content: List[Dict[str, Any]]
-    ) -> str:
+    ) -> Optional[str]:
+        has_text_answer = any([self._get_answer_string(x)[1] for x in feedback_content])
+        if not has_text_answer:
+            return None
+
         user = session.query(model.User).get(user_id)
+
         feedback_text = "\n".join(
             [
-                f"<p><i>\"{category['text']}\"</i>:</p><p>{self._get_answer_string(category)}</p>"
+                f"<p><i>\"{category['text']}\"</i>:</p><p>{self._get_answer_string(category)[0]}</p>"
                 for category in feedback_content
             ]
         )
@@ -267,8 +275,14 @@ class FeedbacksTask(object):
             f"{util.config.mail_sign()}"
         )
 
-    def _get_answer_string(self, rating_category: Dict[str, Any]) -> str:
+    def _get_answer_string(self, rating_category: Dict[str, Any]) -> Tuple[str, bool]:
         answer = rating_category["answer"]
+        contains_text_answer = False
+
         if rating_category["ftype"] in ["stars", "line"]:
-            return "★" * answer + "☆" * (5 - answer)
-        return answer
+            answer = "★" * answer + "☆" * (5 - answer)
+        else:
+            if str(answer).strip():
+                contains_text_answer = True
+
+        return answer, contains_text_answer

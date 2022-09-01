@@ -44,18 +44,22 @@ def createGit(git_path, git_branch, author_id, title):
     g.execute(["git", "push", "-u", "origin", git_branch+':'+git_branch])
 
     # Pull request
-    # PR su per-service, teda treba urobit POST request na GitHub API
-    url = "https://api.github.com/repos/fi-ksi/" + util.config.seminar_repo() + "/pulls"
+    seminar_repo = util.config.seminar_repo()
+    github_token = util.config.github_token()
 
-    headers = {
-        "Accept": "application/vnd.github+json",
-        "Authorization": "token " + util.config.github_token()
-    }
+    if None not in (seminar_repo, github_token):
+        # PR su per-service, teda treba urobit POST request na GitHub API
+        url = "https://api.github.com/repos/fi-ksi/" + util.config.seminar_repo() + "/pulls"
 
-    data = {"title": "Nova uloha: " + title,
-            "head": git_branch,
-            "base": "master"}
+        headers = {
+            "Accept": "application/vnd.github+json",
+            "Authorization": "token " + util.config.github_token()
+        }
 
-    requests.post(url, headers=headers, data=json.dumps(data))
+        data = {"title": "Nova uloha: " + title,
+                "head": git_branch,
+                "base": "master"}
+
+        requests.post(url, headers=headers, data=json.dumps(data))
 
     return repo.head.commit.hexsha

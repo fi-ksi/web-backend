@@ -50,6 +50,7 @@ class Profile(object):
             user.email = data['email']
             user.sex = data['gender']
             user.short_info = data['short_info']
+            user.github = data['github']
 
             profile.addr_street = data['addr_street']
             profile.addr_city = data['addr_city']

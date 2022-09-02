@@ -54,7 +54,7 @@ def createGit(git_path, git_branch, author_id, title):
 
     if None not in (seminar_repo, github_token):
         # PR su per-service, teda treba urobit POST request na GitHub API
-        url_root = "https://api.github.com/repos/fi-ksi/" + util.config.seminar_repo()
+        url_root = "https://api.github.com/repos/fi-naskoc/" + util.config.seminar_repo()
 
         headers = {
             "Accept": "application/vnd.github+json",

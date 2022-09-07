@@ -196,6 +196,17 @@ class Posts(object):
                 resp.status = falcon.HTTP_400
                 return
 
+            # ------------------------------------------
+            # Pridani prispevku
+            post = model.Post(thread=thread_id, author=user.id,
+                              body=data['body'], parent=data['parent'])
+            session.add(post)
+            session.commit()
+
+            # Pokial je toto odpoved na predosly komentar v diskusii,
+            # thread zacne parentom (aby sme videli predosly komentar)
+            thread_start = data['parent'] if data['parent'] else str(post.id)
+
             # Aktualizace navstivenosti vlakna
             visit = util.thread.get_visit(user.id, thread_id)
             if visit:
@@ -236,6 +247,7 @@ class Posts(object):
                             scalar()
                         sent_emails.add(task_co_author_email)
                         recipients.append(task_co_author_email)
+
                     try:
                         body = (
                             '<p>Ahoj,<br/>k tvé úloze <a href="' +
@@ -245,8 +257,8 @@ class Posts(object):
                             '</a> byl přidán nový komentář:</p><p><i>' +
                             user_class.first_name + ' ' + user_class.last_name +
                             ':</i></p>' + data['body'] + '<p><a href="' +
-                            config.ksi_web() + '/ulohy/' + str(task_thread.id) +
-                            '/diskuse">Přejít do diskuze.</a> ' + '<a href="' +
+                            config.ksi_web() + '/forum/' + str(thread.id) +
+                            '#' + thread_start + '">Přejít do diskuze.</a> ' + '<a href="' +
                             config.ksi_web() + '/admin/opravovani?participant_=' +
                             str(user_class.id) + '&task_=' + str(task_thread.id) +
                             '">Přejít na opravení.</a>'
@@ -338,13 +350,6 @@ class Posts(object):
                                                   file=sys.stderr)
 
             # ------------------------------------------
-            # Pridani prispevku
-            post = model.Post(thread=thread_id, author=user.id,
-                              body=data['body'], parent=data['parent'])
-            session.add(post)
-            session.commit()
-
-            # ------------------------------------------
             # Odesilani emailu v reakci na muj prispevek:
 
             if parent:
@@ -359,7 +364,7 @@ class Posts(object):
                             '<p>Ahoj,<br>do diskuze <a href="%s">%s</a> byl '
                             'přidán nový příspěvek.</p>' %
                             (util.config.ksi_web() + "/forum/" +
-                             str(thread.id), thread.title)
+                             str(thread.id) + "#" + thread_start, thread.title)
                         )
                         body += util.post.to_html(parent, parent_user)
                         body += ("<div style='margin-left: 50px;'>%s</div>" %

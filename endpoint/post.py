@@ -205,7 +205,7 @@ class Posts(object):
 
             # Pokial je toto odpoved na predosly komentar v diskusii,
             # thread zacne parentom (aby sme videli predosly komentar)
-            thread_start = data['parent'] if data['parent'] else str(post.id)
+            thread_start = str(data['parent']) if data['parent'] else str(post.id)
 
             # Aktualizace navstivenosti vlakna
             visit = util.thread.get_visit(user.id, thread_id)

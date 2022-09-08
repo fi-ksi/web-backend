@@ -101,7 +101,8 @@ class Profile(object):
             notify = session.query(model.UserNotify).get(userinfo.id)
             req.context['result'] = util.profile.to_json(
                 userinfo.user, profile, notify, req.context['year_obj'],
-                basic=False
+                basic=False,
+                sensitive=True
             )
         except SQLAlchemyError:
             session.rollback()
@@ -174,7 +175,8 @@ class OrgProfile(object):
                 user,
                 profile,
                 notify,
-                req.context['year_obj']
+                req.context['year_obj'],
+                sensitive=userinfo.is_admin()
             )
         except SQLAlchemyError:
             session.rollback()

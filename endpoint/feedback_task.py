@@ -1,4 +1,5 @@
 import json
+import re
 from typing import Any, Dict, List, Tuple, Optional
 import falcon
 from sqlalchemy.exc import SQLAlchemyError
@@ -282,7 +283,9 @@ class FeedbacksTask(object):
         if rating_category["ftype"] in ["stars", "line"]:
             answer = "★" * answer + "☆" * (5 - answer)
         else:
-            if str(answer).strip():
+            answer = re.sub(r'\s+', ' ', answer).strip()
+            # must have at least 14 words
+            if answer.count(' ') > 14:
                 contains_text_answer = True
 
         return answer, contains_text_answer

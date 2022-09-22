@@ -64,15 +64,15 @@ class EMergeError(Exception):
 
 
 class Reporter(object):
-    def __init__(self, initial_value: str = "", max_size: Optional[int] = None) -> None:
+    def __init__(self, initial_value: str = "", max_size: int = 1024**3) -> None:
         """
         Keeps string report.
         Adding a string will add a string into a report attribute
-        :param max_size: maximal byte length of the saved string when truncated report is queried, None for infinity
+        :param max_size: maximal byte length of the saved string when truncated report is queried, default to 1 GiB
         """
         self.__report_start: str = initial_value
         self.__report_end: str = ''
-        self.__max_size: int = max_size or math.inf
+        self.__max_size: int = max_size
         self.__truncated_length: int = 0
 
     @property

@@ -1,4 +1,5 @@
 import datetime
+import math
 import random
 import time
 from pathlib import Path
@@ -69,16 +70,18 @@ class Reporter(object):
         Adding a string will add a string into a report attribute
         :param max_size: maximal byte length of the saved string when truncated report is queried, None for infinity
         """
-        self.__report: str = initial_value
-        self.__max_size: int = max_size
+        self.__report_start: str = initial_value
+        self.__report_end: str = ''
+        self.__max_size: int = max_size or math.inf
+        self.__truncated_length: int = 0
 
     @property
     def report(self) -> str:
         """
-        Gets the full report, no maximal size applied
+        Gets the full report up to the maximal size without truncation warning
         :return: full report content
         """
-        return self.__report
+        return self.__report_start
 
     @property
     def report_truncated(self) -> str:
@@ -86,13 +89,11 @@ class Reporter(object):
         Gets the report, possibly truncating the content if size is larger than max_size
         :return: full report with maximal size of max_size
         """
-        if self.__max_size is None:
-            return self.__report
-        byte_size = len(self.__report.encode('utf8'))
+        byte_size = len(self.__report_start.encode('utf8'))
         if byte_size < self.__max_size:
-            return self.__report
-        text_truncated = f" [TRUNCATED FROM {len(self.__report)} CHARACTERS]"
-        return self.__report[:self.__max_size - len(text_truncated)] + text_truncated
+            return self.__report_start
+        text_truncated = f" [TRUNCATED {self.__truncated_length} CHARACTERS] "
+        return self.__report_start[:self.__max_size - len(text_truncated)] + text_truncated + self.__report_end
 
     def __iadd__(self, other: str) -> "Reporter":
         """
@@ -100,7 +101,18 @@ class Reporter(object):
         :param other: another string to append to the report
         :return: self
         """
-        self.__report += other
+        max_new_length = self.__max_size - len(self.__report_start)
+        if max_new_length <= 0:
+            self.__truncated_length += len(other)
+
+            # we possibly want to keep both the beginning of the output and the end
+            # so we strip out the middle part
+            if abs(len(self.__report_start) - len(self.__report_end)) > 10:
+                self.__report_start = self.__report_start[:min(self.__max_size, len(other))]
+                self.__report_end += other[:self.__max_size]
+            return self
+        self.__truncated_length += max(0, len(other) - max_new_length)
+        self.__report_start += other[:max_new_length]
         return self
 
 
@@ -147,7 +159,7 @@ def exec_to_json(ex):
     }
 
 
-def evaluate(task, module, user_id, code, eval_id, reporter):
+def evaluate(task, module, user_id, code, eval_id, reporter: Reporter):
     """Evaluate task. Run merge, code, check."""
 
     prog_info = json.loads(module.data)['programming']
@@ -369,7 +381,7 @@ def run(module, user_id, code, exec_id, reporter):
     }
 
 
-def _run(prog_info, code, box_id, reporter, user_id, run_type = 'exec'):
+def _run(prog_info, code, box_id, reporter: Reporter, user_id, run_type = 'exec'):
     """
     Run merge and runs the merged file inside of a sandbox. Requires
     initialized sandbox with id \box_id (str). \data is participant`s code.
@@ -457,7 +469,7 @@ def _merge(wd, merge_script, code, code_merged, reporter, user_id, run_type):
     os.chmod(code_merged, st.st_mode | stat.S_IEXEC)
 
 
-def _exec(sandbox_dir, box_id, filename, stdin_path, reporter, limits):
+def _exec(sandbox_dir, box_id, filename, stdin_path, reporter: Reporter, limits):
     """Execute single file inside a sandbox."""
 
     stdout_path = os.path.join(sandbox_dir, "stdout")
@@ -537,9 +549,25 @@ def _exec(sandbox_dir, box_id, filename, stdin_path, reporter, limits):
     reporter += "Return code: %d\n" % (p.returncode)
     if p.returncode != 0:
         with open(stdout_path, 'r') as stdout:
-            reporter += "Stdout: " + stdout.read() + "\n"
+            reporter += "Stdout: "
+
+            while True:
+                data = stdout.read(4096)
+                if not data:
+                    break
+                reporter += data
+
+            reporter += "\n"
         with open(stderr_path, 'r') as stderr:
-            reporter += "Stderr: " + stderr.read() + "\n"
+            reporter += "Stderr: "
+
+            while True:
+                data = stderr.read(4096)
+                if not data:
+                    break
+                reporter += data
+
+            reporter += "\n"
 
         if p.returncode != 1: # 1 = error in sadbox, >1 = isolate error
             raise EIsolateError("Isolate --run returned code " +
@@ -574,7 +602,7 @@ def _exec(sandbox_dir, box_id, filename, stdin_path, reporter, limits):
     return (p.returncode, output_path, secret_path, stderr_path)
 
 
-def _check(sandbox_dir, check_script, sandbox_stdout, reporter, user_id):
+def _check(sandbox_dir, check_script, sandbox_stdout, reporter: Reporter, user_id):
     """Run check script."""
 
     cmd = [
@@ -610,7 +638,11 @@ def _check(sandbox_dir, check_script, sandbox_stdout, reporter, user_id):
     if os.path.getsize(stderr_path) > 0:
         reporter += "Check script returned nonempty stderr:\n"
         with open(stderr_path, 'r') as f:
-            reporter += f.read()
+            while True:
+                data = f.read(4096)
+                if not data:
+                    break
+                reporter += data
         raise ECheckError("Check script returned non-empty stderr!")
 
     # Load results from optional file.

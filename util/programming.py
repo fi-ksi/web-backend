@@ -574,26 +574,24 @@ def _exec(sandbox_dir, box_id, filename, stdin_path, reporter: Reporter, limits)
                                 str(p.returncode))
 
     # Post process stdout
-    with open(stdout_path, 'r') as f:
-        lines = f.readlines()
+    ksi_meta_found = False
 
-    out = []
-    secret = []
+    with open(stdout_path, 'r') as stdout_in:
+        with open(output_path, 'w') as stdout_out:
+            with open(secret_path, 'w') as secret_out:
+                while True:
+                    # read at most 4096 characters at the time
+                    # if whole line is read, the string ends with '\n'
+                    line = stdout_in.readline(4096)
+                    if not line:
+                        break
 
-    found = False
-    for line in lines:
-        if '#KSI_META_OUTPUT_0a859a#' in line:
-            found = True
-        elif found or line.strip().startswith('#KSI_'):
-            secret.append(line)
-        else:
-            out.append(line)
-
-    with open(output_path, 'w') as f:
-        f.write(''.join(out))
-
-    with open(secret_path, 'w') as f:
-        f.write(''.join(secret))
+                    if '#KSI_META_OUTPUT_0a859a#' in line:
+                        ksi_meta_found = True
+                    elif ksi_meta_found or line.strip().startswith('#KSI_'):
+                        secret_out.write(line)
+                    else:
+                        stdout_out.write(line)
 
     # Post process stderr
     # _parse_stderr(stderr_path, timeout,

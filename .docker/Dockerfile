@@ -31,6 +31,7 @@ RUN bash -c 'cd $DIR_BE && source ksi-py3-venv/bin/activate && pip install --no-
     && chmod 644 /usr/local/etc/isolate \
     && chmod u+s /usr/bin/isolate \
     && chown root:root /usr/local/etc/isolate \
+    && sed -e 's/DISABLE_CORS = False/DISABLE_CORS = True/' -i app.py \
     && sed -e 's/READ COMMITTED/SERIALIZABLE/' -i db.py \
     && sed -e 's/127.0.0.1/0.0.0.0/' -i gunicorn_cfg.py \
     && sed -e 's/CURRENT_TIMESTAMP + INTERVAL 1 SECOND/datetime("now", "+1 seconds")/' -i endpoint/post.py

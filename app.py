@@ -16,6 +16,9 @@ import util
 from db import engine, session
 from util import UserInfo
 
+# sets CORS header to *, applied when running in a docker container
+DISABLE_CORS = False
+
 # Cache of the current year.
 c_year = None
 c_year_update = None
@@ -102,6 +105,18 @@ class Year_fill(object):
                 raise
 
 
+class AddCORS:
+    def process_request(self, req, resp):
+        return
+
+    def process_response(self, req, resp, endpoint):
+        if 'result' not in req.context:
+            return
+
+        if DISABLE_CORS:
+            resp.set_header('Access-Control-Allow-Origin', '*')
+
+
 def log(req, resp):
     try:
         ip = req.env['HTTP_X_FORWARDED_FOR'].split(',')[-1].strip()
@@ -174,7 +189,7 @@ def error_handler(ex, req, resp, params):
 
 # Add Logger() to middleware for logging
 api = falcon.API(middleware=[JSONTranslator(), Authorizer(), Year_fill(),
-                 Corser()])
+                 Corser(), AddCORS()])
 api.add_error_handler(Exception, handler=error_handler)
 api.req_options.auto_parse_form_urlencoded = True
 

@@ -16,10 +16,12 @@ RUN wget -O - https://deb.adamhlavacek.com/pub.gpg | apt-key add - \
     && mkdir /opt/etc \
     && echo 'SQL_ALCHEMY_URI = "sqlite:////var/ksi-be/db.sqlite"' > config.py
 
+ADD requirements.txt $DIR_BE/requirements.txt
+RUN bash -c 'cd $DIR_BE && source ksi-py3-venv/bin/activate && pip install --no-cache-dir -r requirements.txt'
+
 ADD . $DIR_BE/
 
-RUN bash -c 'cd $DIR_BE && source ksi-py3-venv/bin/activate && pip install --no-cache-dir -r requirements.txt' \
-    && bash -c 'cd $DIR_BE  && ./init-makedirs.sh' \
+RUN bash -c 'cd $DIR_BE  && ./init-makedirs.sh' \
     && bash -c 'cd $DIR_BE  && chmod +x .docker/entrypoint.sh' \
     && mkdir /var/ksi-be.ro \
     && mkdir /var/ksi-be \

@@ -109,10 +109,7 @@ class AddCORS:
     def process_request(self, req, resp):
         return
 
-    def process_response(self, req, resp, endpoint):
-        if 'result' not in req.context:
-            return
-
+    def process_response(self, req, resp, *_):
         if DISABLE_CORS:
             resp.set_header('Access-Control-Allow-Origin', '*')
 

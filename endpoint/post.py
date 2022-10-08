@@ -237,6 +237,7 @@ class Posts(object):
                         sent_emails.add(task_co_author_email)
                         recipients.append(task_co_author_email)
                     try:
+                        tmp_admin_url = "https://ksi-admin.ahlava.cz"
                         body = (
                             '<p>Ahoj,<br/>k tvé úloze <a href="' +
                             config.ksi_web() + '/ulohy/' + str(task_thread.id) +
@@ -247,13 +248,13 @@ class Posts(object):
                             ':</i></p>' + data['body'] + '<p><a href="' +
                             config.ksi_web() + '/ulohy/' + str(task_thread.id) +
                             '/diskuse">Přejít do diskuze.</a> ' + '<a href="' +
-                            config.ksi_web() + '/admin/opravovani?participant_=' +
+                            tmp_admin_url + '/admin/opravovani?participant_=' +
                             str(user_class.id) + '&task_=' + str(task_thread.id) +
                             '">Přejít na opravení.</a>'
                         )
 
                         if len(prog_modules) > 0:
-                            body += (' <a href="' + config.ksi_web() +
+                            body += (' <a href="' + tmp_admin_url +
                                      '/admin/execs?user=' + str(user_class.id))
                             if len(prog_modules) == 1:
                                 body += '&module=' + str(prog_modules[0].id)

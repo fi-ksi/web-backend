@@ -247,7 +247,7 @@ class Posts(object):
                             user_class.first_name + ' ' + user_class.last_name +
                             ':</i></p>' + data['body'] + '<p><a href="' +
                             config.ksi_web() + '/ulohy/' + str(task_thread.id) +
-                            '/diskuse">Přejít do diskuze.</a> ' + '<a href="' +
+                            '#diskuze">Přejít do diskuze.</a> ' + '<a href="' +
                             tmp_admin_url + '/admin/opravovani?participant_=' +
                             str(user_class.id) + '&task_=' + str(task_thread.id) +
                             '">Přejít na opravení.</a>'

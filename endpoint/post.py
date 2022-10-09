@@ -12,6 +12,7 @@ from .thread import Thread
 from util import config
 
 MAX_POST_LEN = 8000
+TMP_ADMIN_URL = "https://ksi-admin.ahlava.cz"  # TODO remove after deploying new admin
 
 
 class Post(object):
@@ -237,7 +238,6 @@ class Posts(object):
                         sent_emails.add(task_co_author_email)
                         recipients.append(task_co_author_email)
                     try:
-                        tmp_admin_url = "https://ksi-admin.ahlava.cz"
                         body = (
                             '<p>Ahoj,<br/>k tvé úloze <a href="' +
                             config.ksi_web() + '/ulohy/' + str(task_thread.id) +
@@ -248,13 +248,13 @@ class Posts(object):
                             ':</i></p>' + data['body'] + '<p><a href="' +
                             config.ksi_web() + '/ulohy/' + str(task_thread.id) +
                             '#diskuze">Přejít do diskuze.</a> ' + '<a href="' +
-                            tmp_admin_url + '/admin/opravovani?participant_=' +
+                            TMP_ADMIN_URL + '/admin/opravovani?participant_=' +
                             str(user_class.id) + '&task_=' + str(task_thread.id) +
                             '">Přejít na opravení.</a>'
                         )
 
                         if len(prog_modules) > 0:
-                            body += (' <a href="' + tmp_admin_url +
+                            body += (' <a href="' + TMP_ADMIN_URL +
                                      '/admin/execs?user=' + str(user_class.id))
                             if len(prog_modules) == 1:
                                 body += '&module=' + str(prog_modules[0].id)
@@ -301,7 +301,7 @@ class Posts(object):
                                 correctors,
                                 '[KSI-WEB] Nový komentář k tvé korektuře úlohy ' + task.title,
                                 '<p>Ahoj,<br/>k tvé <a href="' +
-                                config.ksi_web() + '/admin/opravovani?task_=' +
+                                TMP_ADMIN_URL + '/admin/opravovani?task_=' +
                                 str(task.id) + '&participant_='+str(user_class.id) +
                                 '">korektuře</a> úlohy <a href="' + config.ksi_web() +
                                 '/ulohy/' + str(task.id) + '">' + task.title +

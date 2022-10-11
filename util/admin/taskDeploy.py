@@ -1,6 +1,3 @@
-from dataclasses import dataclass
-from typing import Optional
-
 from sqlalchemy import and_
 from lockfile import LockFile
 import json
@@ -28,19 +25,6 @@ LOGFILE = 'data/deploy.log'
 # Deploy je spousten v samostatnem vlakne.
 session = None
 eval_public = True
-
-
-@dataclass
-class ReplacementMetadata:
-    """
-    Class for holding metadata about current replacements of markdown code
-    Useful for keeping track of global ids across assigment and multiple modules
-    """
-    collapse_max_id: int
-
-    @staticmethod
-    def get_default() -> "ReplacementMetadata":
-        return ReplacementMetadata(collapse_max_id=0)
 
 
 def deploy(task_id, deployLock, scoped):
@@ -156,8 +140,6 @@ def process_task(task, path):
         process_meta(task, path + "/task.json")
         session.commit()
 
-        replacement_metadata = ReplacementMetadata.get_default()
-
         # Remove non-mangled path
         to_remove = f"{DATAPATH}/zadani"
         if os.path.isdir(to_remove):
@@ -170,11 +152,11 @@ def process_task(task, path):
             f"data/task-content/{task.id}", "reseni_")
 
         log("Processing assignment")
-        process_assignment(task, path + "/assignment.md", replacement_metadata)
+        process_assignment(task, path + "/assignment.md")
         session.commit()
 
         log("Processing solution")
-        process_solution(task, path + "/solution.md", replacement_metadata)
+        process_solution(task, path + "/solution.md")
         session.commit()
 
         log("Processing icons & data")
@@ -185,7 +167,7 @@ def process_task(task, path):
                   os.path.join(DATAPATH, task.mangled_soldir))
 
         log("Processing modules")
-        process_modules(task, path, replacement_metadata)
+        process_modules(task, path)
         session.commit()
     except BaseException:
         session.rollback()
@@ -345,7 +327,7 @@ def parse_prereq_logic(logic, prereq):
         log('ERROR: Unknown type of variable in prerequisite!')
 
 
-def process_assignment(task, filename: str, replacement_metadata: Optional[ReplacementMetadata] = None) -> None:
+def process_assignment(task, filename: str) -> None:
     """Vlozi zadani ulohy do databaze"""
 
     with open(filename, 'r') as f:
@@ -377,12 +359,12 @@ def process_assignment(task, filename: str, replacement_metadata: Optional[Repla
     task.body = body
 
 
-def process_solution(task, filename, replacement_metadata: Optional[ReplacementMetadata] = None):
+def process_solution(task, filename):
     """Add solution to database."""
     if os.path.isfile(filename):
         with open(filename, 'r') as f:
             data = f.read()
-        task.solution = parse_simple_text(task, data, replacement_metadata)
+        task.solution = parse_simple_text(task, data)
     else:
         task.solution = None
 
@@ -430,7 +412,7 @@ def copy_data(task, source_path, target_path):
         shutil.copytree(source_path, target_path)
 
 
-def process_modules(task, git_path, replacement_metadata: Optional[ReplacementMetadata] = None):
+def process_modules(task, git_path):
     # Aktualni moduly v databazi
     modules = session.query(model.Module).\
         filter(model.Module.task == task.id).\
@@ -452,7 +434,7 @@ def process_modules(task, git_path, replacement_metadata: Optional[ReplacementMe
             session.commit()
 
         log("Processing module" + str(i + 1))
-        process_module(module, git_path + "/module" + str(i + 1), task, replacement_metadata)
+        process_module(module, git_path + "/module" + str(i + 1), task)
 
         try:
             session.commit()
@@ -480,7 +462,7 @@ def process_modules(task, git_path, replacement_metadata: Optional[ReplacementMe
         i += 1
 
 
-def process_module(module, module_path, task, replacement_metadata: Optional[ReplacementMetadata] = None):
+def process_module(module, module_path, task):
     """Zpracovani modulu
     'module' je vzdy inicializovany
     'module'_path muze byt bez lomitka na konci
@@ -497,7 +479,7 @@ def process_module(module, module_path, task, replacement_metadata: Optional[Rep
 
     module.custom = os.path.isfile(os.path.join(target_path, "module-gen"))
 
-    process_module_md(module, module_path + "/module.md", specific, task, replacement_metadata)
+    process_module_md(module, module_path + "/module.md", specific, task)
 
 
 def process_module_json(module, filename):
@@ -537,7 +519,7 @@ def process_module_json(module, filename):
     return specific
 
 
-def process_module_md(module, filename, specific, task, replacement_metadata: Optional[ReplacementMetadata] = None):
+def process_module_md(module, filename, specific, task):
     """Zpracovani module.md
     Pandoc spoustime az uplne nakonec, abychom mohli provest analyzu souboru.
     """
@@ -576,7 +558,7 @@ def process_module_md(module, filename, specific, task, replacement_metadata: Op
     log("Processing body")
 
     # Parsovani tela zadani
-    module.description = parse_simple_text(task, ''.join(data), replacement_metadata)
+    module.description = parse_simple_text(task, ''.join(data))
 
 
 def process_module_general(module, lines, specific):
@@ -630,7 +612,7 @@ def process_module_programming(module, lines, specific, source_path):
     return lines[:line]
 
 
-def process_module_quiz(module, lines, specific, task, replacement_metadata: Optional[ReplacementMetadata] = None):
+def process_module_quiz(module, lines, specific, task):
     log("Processing quiz module")
 
     # Hledame jednotlive otazky
@@ -661,7 +643,7 @@ def process_module_quiz(module, lines, specific, task, replacement_metadata: Opt
         end = line
         while (end < len(lines)) and (not re.match(r"^~", lines[end])):
             end += 1
-        question['text'] = parse_simple_text(task, ''.join(lines[line:end]), replacement_metadata)
+        question['text'] = parse_simple_text(task, ''.join(lines[line:end]))
 
         # Parsujeme mozne odpovedi
         line = end
@@ -750,7 +732,7 @@ def get_sortable_offset(text):
     return 0
 
 
-def process_module_text(module, lines, specific, path, task, replacement_metadata: Optional[ReplacementMetadata] = None):
+def process_module_text(module, lines, specific, path, task):
     log("Processing text module")
 
     text_data = {"inputs": 0}
@@ -771,7 +753,7 @@ def process_module_text(module, lines, specific, path, task, replacement_metadat
         if not match:
             break
 
-        questions.append(parse_simple_text(task, match.group(1), replacement_metadata).
+        questions.append(parse_simple_text(task, match.group(1)).
                          replace("<p>", "").replace("</p>", ""))
 
         inputs_cnt += 1
@@ -864,7 +846,7 @@ def add_table_class(source):
     return re.sub(r"<table>", "<table class='table table-striped'>", source)
 
 
-def parse_simple_text(task, text: str, replacement_metadata: Optional[ReplacementMetadata] = None):
+def parse_simple_text(task, text: str):
     return add_table_class(
         change_links(
             task, replace_h(

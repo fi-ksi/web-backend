@@ -351,8 +351,6 @@ def process_assignment(task, filename: str, replacement_metadata: Optional[Repla
     with open(filename, 'r') as f:
         data = f.read()
     data = format_custom_tags(data)
-    data = ksi_pseudocode(data)
-    data = ksi_collapse(data, replacement_metadata)
     parsed = parse_pandoc(data).splitlines()
 
     # Intro ulohy
@@ -890,12 +888,12 @@ def ksi_collapse(source: str, replacement_metadata: Optional[ReplacementMetadata
 
 def format_custom_tags(source: str) -> str:
     """
-    Replaces all custom-defined tags with divs TODO: also support ksi-collapsible and ksi-pseudocode
+    Replaces all custom-defined tags with divs
     e.g. <ksi-tip> is replaced with <div class="ksi-custom ksi-tip">
     :param source: HTML to adjust
     :return: adjusted HTML
     """
-    tags = ('ksi-tip',)
+    tags = ('ksi-tip', 'ksi-collapse', 'ksi-pseudocode')
     for tag in tags:
         tag_escaped = re.escape(tag)
         source = re.sub(fr'<{tag_escaped}(.*?)>', fr'<div class="ksi-custom {tag}"\1>', source, flags=re.IGNORECASE)
@@ -935,13 +933,8 @@ def parse_simple_text(task, text: str, replacement_metadata: Optional[Replacemen
         change_links(
             task, replace_h(
                 parse_pandoc(
-                    ksi_collapse(
-                        ksi_pseudocode(
-                            format_custom_tags(
+                    format_custom_tags(
                                 text
-                            )
-                        ),
-                        replacement_metadata
                     )
                 )
             )

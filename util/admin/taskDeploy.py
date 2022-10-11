@@ -861,6 +861,70 @@ def replace_h(source: str) -> str:
         replace("<h1", "<h3").replace("</h1>", "</h3>")
 
 
+def one_ksi_pseudocode(match):
+    """Stara se o vnitrek jednoho pseudokodu
+    na vstup dostane \match, \match.group() obsahuje
+    "<ksi-pseudocode>TEXT</ksi-pseudocode>".
+    """
+
+    source = match.group()
+    source = re.sub(
+        r"(function|funkce|procedure|Vstup|Výstup|then|return|else)",
+        r"**\1**", source
+    )
+
+    # Za klicovym slovem musi nasledovat mezera
+    source = re.sub(r"(if|while|for) ", r"**\1** ", source)
+
+    # Pred klicovymslovem musi nasledovat mezera
+    source = re.sub(r" (do)", r" **\1**", source)
+
+    # Klicove slovo musi byt na samostatnem radku
+    source = re.sub(r"\n(\s*)(od|fi)\s*(\\?)\n", r"\n\1**\2**\3\n", source)
+    source = re.sub(r"<ksi-pseudocode>", r"<div style='padding-left:20px'>\n",
+                    source)
+    source = re.sub(r"</ksi-pseudocode>", r"</div>", source)
+
+    # Takto donutime pandoc davat kazdy radek do samostateho odstavce
+    source = re.sub(r"\n", r"\n\n", source)
+    source = re.sub(r"(\t|    )", r"&emsp;", source)
+    return source
+
+
+def ksi_pseudocode(source):
+    """Nahrazuje <ksi-pseudocode> za prislusne HTML"""
+
+    source = re.sub("<ksi-pseudocode>\n((.|\n)*?)</ksi-pseudocode>",
+                    one_ksi_pseudocode, source)
+    return source
+
+
+def one_ksi_collapse(match: re.Match, metadata: ReplacementMetadata) -> str:
+    """Nahrauje jedno <ksi-collapse>"""
+    metadata.collapse_max_id += 1
+    collapse_id = metadata.collapse_max_id
+
+    return """
+<div class="panel panel-ksi panel-group">
+<div class="panel-heading panel-heading-ksi"><h4 class="panel-title"><a data-toggle="collapse" href="#collapse""" \
+           + str(collapse_id) + """">""" + match.group(1) + """</a></h4></div>
+<div id="collapse""" + str(collapse_id) + """" class="panel-collapse collapse">
+<div class="panel-body">"""
+
+
+def ksi_collapse(source: str, replacement_metadata: Optional[ReplacementMetadata] = None) -> str:
+    """Nahrazuje <ksi-collapse> za HTML plne silenych <div>u"""
+    if replacement_metadata is None:
+        replacement_metadata = ReplacementMetadata.get_default()
+
+    source = re.sub(
+        r"<ksi-collapse title=\"(.*?)\">",
+        lambda match: one_ksi_collapse(match, replacement_metadata),
+        source
+    )
+    return source.replace("</ksi-collapse>", "</div></div></div>")
+
+
 def format_custom_tags(source: str) -> str:
     """
     Replaces all custom-defined tags with divs

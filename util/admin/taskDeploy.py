@@ -1,6 +1,3 @@
-from dataclasses import dataclass
-from typing import Optional
-
 from sqlalchemy import and_
 from lockfile import LockFile
 import json
@@ -28,19 +25,6 @@ LOGFILE = 'data/deploy.log'
 # Deploy je spousten v samostatnem vlakne.
 session = None
 eval_public = True
-
-
-@dataclass
-class ReplacementMetadata:
-    """
-    Class for holding metadata about current replacements of markdown code
-    Useful for keeping track of global ids across assigment and multiple modules
-    """
-    collapse_max_id: int
-
-    @staticmethod
-    def get_default() -> "ReplacementMetadata":
-        return ReplacementMetadata(collapse_max_id=0)
 
 
 def deploy(task_id, deployLock, scoped):
@@ -156,8 +140,6 @@ def process_task(task, path):
         process_meta(task, path + "/task.json")
         session.commit()
 
-        replacement_metadata = ReplacementMetadata.get_default()
-
         # Remove non-mangled path
         to_remove = f"{DATAPATH}/zadani"
         if os.path.isdir(to_remove):
@@ -170,11 +152,11 @@ def process_task(task, path):
             f"data/task-content/{task.id}", "reseni_")
 
         log("Processing assignment")
-        process_assignment(task, path + "/assignment.md", replacement_metadata)
+        process_assignment(task, path + "/assignment.md")
         session.commit()
 
         log("Processing solution")
-        process_solution(task, path + "/solution.md", replacement_metadata)
+        process_solution(task, path + "/solution.md")
         session.commit()
 
         log("Processing icons & data")
@@ -185,7 +167,7 @@ def process_task(task, path):
                   os.path.join(DATAPATH, task.mangled_soldir))
 
         log("Processing modules")
-        process_modules(task, path, replacement_metadata)
+        process_modules(task, path)
         session.commit()
     except BaseException:
         session.rollback()
@@ -345,14 +327,12 @@ def parse_prereq_logic(logic, prereq):
         log('ERROR: Unknown type of variable in prerequisite!')
 
 
-def process_assignment(task, filename: str, replacement_metadata: Optional[ReplacementMetadata] = None) -> None:
+def process_assignment(task, filename: str) -> None:
     """Vlozi zadani ulohy do databaze"""
 
     with open(filename, 'r') as f:
         data = f.read()
     data = format_custom_tags(data)
-    data = ksi_pseudocode(data)
-    data = ksi_collapse(data, replacement_metadata)
     parsed = parse_pandoc(data).splitlines()
 
     # Intro ulohy
@@ -379,12 +359,12 @@ def process_assignment(task, filename: str, replacement_metadata: Optional[Repla
     task.body = body
 
 
-def process_solution(task, filename, replacement_metadata: Optional[ReplacementMetadata] = None):
+def process_solution(task, filename):
     """Add solution to database."""
     if os.path.isfile(filename):
         with open(filename, 'r') as f:
             data = f.read()
-        task.solution = parse_simple_text(task, data, replacement_metadata)
+        task.solution = parse_simple_text(task, data)
     else:
         task.solution = None
 
@@ -432,7 +412,7 @@ def copy_data(task, source_path, target_path):
         shutil.copytree(source_path, target_path)
 
 
-def process_modules(task, git_path, replacement_metadata: Optional[ReplacementMetadata] = None):
+def process_modules(task, git_path):
     # Aktualni moduly v databazi
     modules = session.query(model.Module).\
         filter(model.Module.task == task.id).\
@@ -454,7 +434,7 @@ def process_modules(task, git_path, replacement_metadata: Optional[ReplacementMe
             session.commit()
 
         log("Processing module" + str(i + 1))
-        process_module(module, git_path + "/module" + str(i + 1), task, replacement_metadata)
+        process_module(module, git_path + "/module" + str(i + 1), task)
 
         try:
             session.commit()
@@ -482,7 +462,7 @@ def process_modules(task, git_path, replacement_metadata: Optional[ReplacementMe
         i += 1
 
 
-def process_module(module, module_path, task, replacement_metadata: Optional[ReplacementMetadata] = None):
+def process_module(module, module_path, task):
     """Zpracovani modulu
     'module' je vzdy inicializovany
     'module'_path muze byt bez lomitka na konci
@@ -499,7 +479,7 @@ def process_module(module, module_path, task, replacement_metadata: Optional[Rep
 
     module.custom = os.path.isfile(os.path.join(target_path, "module-gen"))
 
-    process_module_md(module, module_path + "/module.md", specific, task, replacement_metadata)
+    process_module_md(module, module_path + "/module.md", specific, task)
 
 
 def process_module_json(module, filename):
@@ -539,7 +519,7 @@ def process_module_json(module, filename):
     return specific
 
 
-def process_module_md(module, filename, specific, task, replacement_metadata: Optional[ReplacementMetadata] = None):
+def process_module_md(module, filename, specific, task):
     """Zpracovani module.md
     Pandoc spoustime az uplne nakonec, abychom mohli provest analyzu souboru.
     """
@@ -578,7 +558,7 @@ def process_module_md(module, filename, specific, task, replacement_metadata: Op
     log("Processing body")
 
     # Parsovani tela zadani
-    module.description = parse_simple_text(task, ''.join(data), replacement_metadata)
+    module.description = parse_simple_text(task, ''.join(data))
 
 
 def process_module_general(module, lines, specific):
@@ -632,7 +612,7 @@ def process_module_programming(module, lines, specific, source_path):
     return lines[:line]
 
 
-def process_module_quiz(module, lines, specific, task, replacement_metadata: Optional[ReplacementMetadata] = None):
+def process_module_quiz(module, lines, specific, task):
     log("Processing quiz module")
 
     # Hledame jednotlive otazky
@@ -663,7 +643,7 @@ def process_module_quiz(module, lines, specific, task, replacement_metadata: Opt
         end = line
         while (end < len(lines)) and (not re.match(r"^~", lines[end])):
             end += 1
-        question['text'] = parse_simple_text(task, ''.join(lines[line:end]), replacement_metadata)
+        question['text'] = parse_simple_text(task, ''.join(lines[line:end]))
 
         # Parsujeme mozne odpovedi
         line = end
@@ -752,7 +732,7 @@ def get_sortable_offset(text):
     return 0
 
 
-def process_module_text(module, lines, specific, path, task, replacement_metadata: Optional[ReplacementMetadata] = None):
+def process_module_text(module, lines, specific, path, task):
     log("Processing text module")
 
     text_data = {"inputs": 0}
@@ -773,7 +753,7 @@ def process_module_text(module, lines, specific, path, task, replacement_metadat
         if not match:
             break
 
-        questions.append(parse_simple_text(task, match.group(1), replacement_metadata).
+        questions.append(parse_simple_text(task, match.group(1)).
                          replace("<p>", "").replace("</p>", ""))
 
         inputs_cnt += 1
@@ -824,78 +804,14 @@ def replace_h(source):
         replace("<h1", "<h3").replace("</h1>", "</h3>")
 
 
-def one_ksi_pseudocode(match):
-    """Stara se o vnitrek jednoho pseudokodu
-    na vstup dostane \match, \match.group() obsahuje
-    "<ksi-pseudocode>TEXT</ksi-pseudocode>".
-    """
-
-    source = match.group()
-    source = re.sub(
-        r"(function|funkce|procedure|Vstup|Výstup|then|return|else)",
-        r"**\1**", source
-    )
-
-    # Za klicovym slovem musi nasledovat mezera
-    source = re.sub(r"(if|while|for) ", r"**\1** ", source)
-
-    # Pred klicovymslovem musi nasledovat mezera
-    source = re.sub(r" (do)", r" **\1**", source)
-
-    # Klicove slovo musi byt na samostatnem radku
-    source = re.sub(r"\n(\s*)(od|fi)\s*(\\?)\n", r"\n\1**\2**\3\n", source)
-    source = re.sub(r"<ksi-pseudocode>", r"<div style='padding-left:20px'>\n",
-                    source)
-    source = re.sub(r"</ksi-pseudocode>", r"</div>", source)
-
-    # Takto donutime pandoc davat kazdy radek do samostateho odstavce
-    source = re.sub(r"\n", r"\n\n", source)
-    source = re.sub(r"(\t|    )", r"&emsp;", source)
-    return source
-
-
-def ksi_pseudocode(source):
-    """Nahrazuje <ksi-pseudocode> za prislusne HTML"""
-
-    source = re.sub("<ksi-pseudocode>\n((.|\n)*?)</ksi-pseudocode>",
-                    one_ksi_pseudocode, source)
-    return source
-
-
-def one_ksi_collapse(match: re.Match, metadata: ReplacementMetadata) -> str:
-    """Nahrauje jedno <ksi-collapse>"""
-    metadata.collapse_max_id += 1
-    collapse_id = metadata.collapse_max_id
-
-    return """
-<div class="panel panel-ksi panel-group">
-<div class="panel-heading panel-heading-ksi"><h4 class="panel-title"><a data-toggle="collapse" href="#collapse""" \
-           + str(collapse_id) + """">""" + match.group(1) + """</a></h4></div>
-<div id="collapse""" + str(collapse_id) + """" class="panel-collapse collapse">
-<div class="panel-body">"""
-
-
-def ksi_collapse(source: str, replacement_metadata: Optional[ReplacementMetadata] = None) -> str:
-    """Nahrazuje <ksi-collapse> za HTML plne silenych <div>u"""
-    if replacement_metadata is None:
-        replacement_metadata = ReplacementMetadata.get_default()
-
-    source = re.sub(
-        r"<ksi-collapse title=\"(.*?)\">",
-        lambda match: one_ksi_collapse(match, replacement_metadata),
-        source
-    )
-    return source.replace("</ksi-collapse>", "</div></div></div>")
-
-
 def format_custom_tags(source: str) -> str:
     """
-    Replaces all custom-defined tags with divs TODO: also support ksi-collapsible and ksi-pseudocode
+    Replaces all custom-defined tags with divs
     e.g. <ksi-tip> is replaced with <div class="ksi-custom ksi-tip">
     :param source: HTML to adjust
     :return: adjusted HTML
     """
-    tags = ('ksi-tip',)
+    tags = ('ksi-tip', 'ksi-collapse', 'ksi-pseudocode')
     for tag in tags:
         tag_escaped = re.escape(tag)
         source = re.sub(fr'<{tag_escaped}(.*?)>', fr'<div class="ksi-custom {tag}"\1>', source, flags=re.IGNORECASE)
@@ -930,18 +846,13 @@ def add_table_class(source):
     return re.sub(r"<table>", "<table class='table table-striped'>", source)
 
 
-def parse_simple_text(task, text: str, replacement_metadata: Optional[ReplacementMetadata] = None):
+def parse_simple_text(task, text: str):
     return add_table_class(
         change_links(
             task, replace_h(
                 parse_pandoc(
-                    ksi_collapse(
-                        ksi_pseudocode(
-                            format_custom_tags(
+                    format_custom_tags(
                                 text
-                            )
-                        ),
-                        replacement_metadata
                     )
                 )
             )

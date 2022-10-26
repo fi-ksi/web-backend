@@ -1,12 +1,9 @@
 import datetime
-from typing import Any
-from typing import TypedDict
-from typing import Union
+from typing import Dict, List, Tuple, Optional, Any, TypedDict, Set
 
 from sqlalchemy import func, distinct, or_, and_, desc
 from sqlalchemy.dialects import mysql
 import os
-from typing import Dict, List, Tuple, Optional
 
 from db import session
 import model
@@ -63,7 +60,7 @@ def fully_submitted(user_id: Optional[int], year_id: Optional[int] = None)\
 
 
 def any_submitted(user_id: int, year_id: int)\
-        -> List[...]:
+        -> Tuple[model.Task, float, model.Wave, model.Prerequisite]:
     """Vraci ntici ( model.Task, sum(body), model.Wave, model.Prerequisite )
     pro vsechny jakkoliv odevzdane ulohy.
     sum(body) je suma bodu za vsechny moduly v dane uloze.
@@ -91,7 +88,7 @@ def any_submitted(user_id: int, year_id: int)\
         group_by(model.Task).all()
 
 
-def after_deadline() -> set[int]:
+def after_deadline() -> Set[int]:
     return {
         int(task.id) for task in
         (session.query(model.Task).
@@ -184,7 +181,7 @@ def max_points_year_dict(bonus: bool = False) -> Dict[int, Tuple[float, int]]:
     }
 
 
-def points_per_module(task_id: int, user_id: int) -> List[...]:
+def points_per_module(task_id: int, user_id: int):
     return session.query(model.Module,
                          func.max(model.Evaluation.points).label('points'),
                          model.Evaluation.evaluator.label('evaluator')).\
@@ -272,7 +269,7 @@ def autocorrected_full(user_id: int) -> List[int]:
 
 def status(task: model.Task,
            user: model.User,
-           adeadline: Optional[set[int]] = None,
+           adeadline: Optional[Set[int]] = None,
            fsubmitted: Optional[Dict[int, int]] = None,
            wave: Optional[model.Wave] = None,
            corr: Optional[bool] = None,
@@ -358,7 +355,7 @@ class TaskDict(TypedDict):
     time_published: str
     time_deadline: Optional[str]
     state: str
-    prerequisities: List[...]
+    prerequisities: List[Any]
     picture_base: str
     picture_suffix: str
     wave: int
@@ -367,7 +364,7 @@ class TaskDict(TypedDict):
 
 def to_json(task: model.Task, prereq_obj,
             user: Optional[model.User] = None,
-            adeadline: Optional[set[int]] = None,
+            adeadline: Optional[Set[int]] = None,
             fsubmitted: Optional[Dict[int, int]] = None,
             wave: Optional[model.Wave] = None,
             corr: Optional[bool] = None,

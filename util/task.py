@@ -60,7 +60,7 @@ def fully_submitted(user_id: Optional[int], year_id: Optional[int] = None)\
 
 
 def any_submitted(user_id: int, year_id: int)\
-        -> Tuple[model.Task, float, model.Wave, model.Prerequisite]:
+        -> List[Tuple[model.Task, float, model.Wave, model.Prerequisite]]:
     """Vraci ntici ( model.Task, sum(body), model.Wave, model.Prerequisite )
     pro vsechny jakkoliv odevzdane ulohy.
     sum(body) je suma bodu za vsechny moduly v dane uloze.

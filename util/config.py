@@ -1,5 +1,5 @@
 import os
-from typing import Optional
+from typing import Optional, List
 
 from sqlalchemy import func
 
@@ -22,15 +22,15 @@ def get(key: str, default: Optional[str] = None) -> Optional[str]:
     return prop.value if prop is not None else default
 
 
-def ksi_conf():
+def ksi_conf() -> Optional[str]:
     return get("ksi_conf")
 
 
-def mail_sign():
+def mail_sign() -> Optional[str]:
     return get("mail_sign")
 
 
-def ksi_web():
+def ksi_web() -> Optional[str]:
     return get("web_url")
 
 
@@ -46,11 +46,11 @@ def successful_participant_trophy_id() -> Optional[int]:
     return int(text) if text is not None else None
 
 
-def backend_url():
+def backend_url() -> Optional[str]:
     return get("backend_url")
 
 
-def monitoring_dashboard_url():
+def monitoring_dashboard_url() -> Optional[str]:
     return get("monitoring_dashboard_url")
 
 
@@ -70,5 +70,5 @@ def seminar_repo() -> Optional[str]:
     return get("seminar_repo")
 
 
-def feedback():
+def feedback() -> List[str]:
     return [r for r, in session.query(model.FeedbackRecipient.email).all()]

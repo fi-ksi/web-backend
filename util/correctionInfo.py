@@ -1,4 +1,6 @@
 import datetime
+from typing import List, Optional, TypedDict
+
 from sqlalchemy import func, distinct, or_, and_, not_, desc
 from sqlalchemy.dialects import mysql
 
@@ -7,7 +9,16 @@ import model
 import util
 
 
-def user_to_json(user):
+class UserJson(TypedDict):
+    id: int
+    first_name: str
+    last_name: str
+    role: str
+    profile_picture: Optional[str]
+    gender: str
+
+
+def user_to_json(user: model.User) -> UserJson:
     return {
         'id': user.id,
         'first_name': user.first_name,
@@ -18,7 +29,8 @@ def user_to_json(user):
     }
 
 
-def _task_corr_state(task, evaluating=None, tasks_corrected=None):
+def _task_corr_state(task: model.Task, evaluating: Optional[bool] = None,
+                     tasks_corrected: Optional[List[int]] = None) -> str:
     if task.evaluation_public:
         return "published"
     if tasks_corrected is None:
@@ -35,7 +47,19 @@ def _task_corr_state(task, evaluating=None, tasks_corrected=None):
     return 'working' if evaluating else 'base'
 
 
-def task_to_json(task, solvers=None, evaluating=None, tasks_corrected=None):
+class TaskJson(TypedDict):
+    id: int
+    title: str
+    wave: int
+    author: int
+    corr_state: str
+    solvers: List[int]
+
+
+def task_to_json(task: model.Task,
+                 solvers: Optional[List[int]] = None,
+                 evaluating: Optional[bool] = None,
+                 tasks_corrected: Optional[List[int]] = None) -> TaskJson:
     if solvers is None:
         q = session.query(model.User.id).\
             join(model.Evaluation, model.Evaluation.user == model.User.id).\

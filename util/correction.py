@@ -1,5 +1,7 @@
 import datetime
 import os
+from typing import Dict, List, Optional, TypedDict, Tuple
+
 from sqlalchemy import func, distinct, or_, and_, not_, desc
 from sqlalchemy.dialects import mysql
 
@@ -10,7 +12,7 @@ import util
 
 # Vraci seznam plne opravenych uloh (tj. takovych uloh, kde jsou vsechna
 # reseni jiz opravena)
-def tasks_corrected():
+def tasks_corrected() -> List[int]:
     task_corrected = session.query(
             model.Task.id.label('task_id'),
             (func.count(model.Evaluation.id) > 0).label('notcorrected')).\
@@ -27,7 +29,7 @@ def tasks_corrected():
 
 
 # Pomocny vypocet toho, jestli je dane hodnoceni opravene / neopravene
-def corr_corrected(task_id, user_id):
+def corr_corrected(task_id: int, user_id: int) -> bool:
     return session.query(model.Evaluation).\
         join(model.Module, model.Evaluation.module == model.Module.id).\
         filter(model.Evaluation.user == user_id,
@@ -36,8 +38,16 @@ def corr_corrected(task_id, user_id):
                    model.Evaluation.evaluator != None)).count() > 0
 
 
+class FileInfo(TypedDict):
+    id: int
+    filename: str
+
+
 # \files je nepovinny seznam souboru pro zmenseni poctu SQL dotazu
-def _corr_general_to_json(module, evaluation, files=None):
+def _corr_general_to_json(module: model.Module,
+                          evaluation: model.Evaluation,
+                          files: Optional[List[model.SubmittedFile]] = None)\
+        -> Dict[str, List[FileInfo]]:
     if files is None:
         files = session.query(model.SubmittedFile).\
             join(model.Evaluation,
@@ -53,8 +63,25 @@ def _corr_general_to_json(module, evaluation, files=None):
     }
 
 
+class CorrInfo(TypedDict):
+    eval_id: int
+    points: float
+    last_modified: str
+    corrected_by: int
+    full_report: str
+    cheat: bool
+    general: Dict[str, List[FileInfo]]
+    programming: Dict
+    quiz: Dict
+    sortable: Dict
+    text: Dict
+
+
 # \files je seznam souboru pro souborovy modul
-def corr_eval_to_json(module, evaluation, files=None):
+def corr_eval_to_json(module: model.Module,
+                      evaluation: model.Evaluation,
+                      files: Optional[List[model.SubmittedFile]] = None)\
+        -> CorrInfo:
     res = {
         'eval_id': evaluation.id,
         'points': evaluation.points,
@@ -78,11 +105,20 @@ def corr_eval_to_json(module, evaluation, files=None):
     return res
 
 
+class ModuleCorr(TypedDict):
+    module_id: int
+    evaluations_list: List[int]
+    evaluation: CorrInfo
+
+
 # U modulu se zobrazuje jen jedno evaluation:
 #  Pokud to ma byt nejadekvatnejsi evaluation, je \evl=None.
 #  Pokud to ma byt specificke evaluation, je toto evalustion ulozeno v \evl
 # \files je seznam souboru pro souborovy modul
-def _corr_module_to_json(evals, module, evl=None, files=None):
+def _corr_module_to_json(evals: List[model.Evaluation], module: model.Module,
+                         evl: Optional[model.Evaluation] = None,
+                         files: Optional[List[model.SubmittedFile]] = None)\
+        -> ModuleCorr:
     if evl is None:
         # Ano, v Pythonu neexistuje max() pres dva klice
         evl = sorted(evals, key=lambda x: (x.points, x.time), reverse=True)[0]
@@ -94,14 +130,31 @@ def _corr_module_to_json(evals, module, evl=None, files=None):
     }
 
 
+class CorrJson(TypedDict):
+    id: int
+    task_id: int
+    state: str
+    user: int
+    comment: Optional[int]
+    achievements: List[int]
+    modules: List[ModuleCorr]
+
+
 # \modules je [(Evaluation, Module, specific_eval)] a je seskupeno podle modulu
 # specific_eval je Evaluation pokud se ma klientovi poslat jen jedno evaluation
 # \evals je [Evaluation]
 # \achievements je [Ahievement.id]
 # \corrected je Bool
 # \files je seznam souboru
-def to_json(modules, evals, task_id, thread_id=None, achievements=None,
-            corrected=None, files=None):
+def to_json(modules: List[Tuple[model.Evaluation,
+                                model.Module,
+                                Optional[model.Evaluation]]],
+            evals: List[model.Evaluation],
+            task_id: int,
+            thread_id: Optional[int] = None,
+            achievements: Optional[List[int]] = None,
+            corrected: Optional[bool] = None,
+            files: Optional[List[model.SubmittedFile]] = None) -> CorrJson:
     user_id = evals[0].user
 
     if thread_id is None:
@@ -127,7 +180,15 @@ def to_json(modules, evals, task_id, thread_id=None, achievements=None,
     }
 
 
-def module_to_json(module):
+class ModuleJson(TypedDict):
+    id: int
+    type: str
+    name: str
+    autocorrect: bool
+    max_points: float
+
+
+def module_to_json(module: model.Module) -> ModuleJson:
     return {
         'id': module.id,
         'type': module.type,
@@ -137,7 +198,12 @@ def module_to_json(module):
     }
 
 
-def task_to_json(task):
+class TaskJson(TypedDict):
+    id: int
+    title: str
+
+
+def task_to_json(task: model.Task) -> TaskJson:
     return {
         'id': task.id,
         'title': task.title

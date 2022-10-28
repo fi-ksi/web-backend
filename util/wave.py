@@ -1,9 +1,23 @@
 from db import session
 import model
 import util
+from typing import TypedDict, Tuple, Optional
 
 
-def to_json(wave, sum_points=None):
+class Wave(TypedDict):
+    id: int
+    year: int
+    index: int
+    caption: str
+    garant: int
+    time_published: str
+    public: bool
+    sum_points: float
+    tasks_cnt: int
+
+
+def to_json(wave: model.Wave,
+            sum_points: Optional[Tuple[float, int]] = None) -> Wave:
     if sum_points is None:
         sum_points = util.task.max_points_wave_dict()[wave.id]
 

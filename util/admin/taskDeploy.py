@@ -1,3 +1,5 @@
+from typing import Dict, Union
+
 from sqlalchemy import and_
 from lockfile import LockFile
 import json
@@ -14,6 +16,7 @@ import random
 import string
 import pyparsing as pp
 import dateutil.parser
+from typing import Callable, List, Any, Tuple, TypedDict
 
 import util
 import model
@@ -27,7 +30,7 @@ session = None
 eval_public = True
 
 
-def deploy(task_id, deployLock, scoped):
+def deploy(task_id: int, deployLock: LockFile, scoped: Callable) -> None:
     """
     Tato funkce je spoustena v samostatnem vlakne.
     Je potreba vyuzit podpory vice vlaken v SQL alchemy:
@@ -128,7 +131,7 @@ def deploy(task_id, deployLock, scoped):
 # Parsovani dat z repozitare:
 
 
-def process_task(task, path):
+def process_task(task: model.Task, path: str) -> None:
     """Zpracovani cele ulohy
     Data commitujeme do databaze postupne, abychom videli, kde doslo k
     pripadnemu selhani operace.
@@ -176,8 +179,8 @@ def process_task(task, path):
         log("Task processing done")
 
 
-def process_meta(task, filename):
-    def local2UTC(LocalTime):
+def process_meta(task: model.Task, filename: str) -> None:
+    def local2UTC(LocalTime: datetime) -> datetime:
         EpochSecond = time.mktime(LocalTime.timetuple())
         return datetime.datetime.utcfromtimestamp(EpochSecond)
 
@@ -245,7 +248,7 @@ def process_meta(task, filename):
         task.prerequisite = None
 
 
-def parse_prereq_text(text):
+def parse_prereq_text(text: str):
     """Konvertuje text prerekvizit do seznamu [[['7', '&&', '12'], '||', '4']]
     Seznam na danem zanoreni obsahuje bud teminal, nebo seznam tri prvku
     """
@@ -258,7 +261,7 @@ def parse_prereq_text(text):
     return expr.parseString(text)
 
 
-def parse_prereq_logic(logic, prereq):
+def parse_prereq_logic(logic, prereq) -> None:
     """'logic' je vysledek z parsovani parse_prereq_text
     'prereq' je aktualne zpracovana prerekvizita (model.Prerequisite)
     """
@@ -327,7 +330,7 @@ def parse_prereq_logic(logic, prereq):
         log('ERROR: Unknown type of variable in prerequisite!')
 
 
-def process_assignment(task, filename: str) -> None:
+def process_assignment(task: model.Task, filename: str) -> None:
     """Vlozi zadani ulohy do databaze"""
 
     with open(filename, 'r') as f:
@@ -359,7 +362,7 @@ def process_assignment(task, filename: str) -> None:
     task.body = body
 
 
-def process_solution(task, filename):
+def process_solution(task: model.Task, filename: str) -> None:
     """Add solution to database."""
     if os.path.isfile(filename):
         with open(filename, 'r') as f:
@@ -369,7 +372,7 @@ def process_solution(task, filename):
         task.solution = None
 
 
-def copy_icons(task, source_path):
+def copy_icons(task: model.Task, source_path: str) -> None:
     """Copy icons from repository to backend path."""
     target_path = f"data/task-content/{task.id}/icon/"
     files = ["base.svg", "correcting.svg", "locked.svg", "done.svg"]
@@ -403,7 +406,7 @@ def mangled_dirname(base_directory: str, prefix: str) -> str:
         return prefix+suffix
 
 
-def copy_data(task, source_path, target_path):
+def copy_data(task: model.Task, source_path: str, target_path: str) -> None:
     """Copy all data from repository to backend path."""
     if not os.path.isdir(target_path):
         os.makedirs(target_path)
@@ -412,7 +415,7 @@ def copy_data(task, source_path, target_path):
         shutil.copytree(source_path, target_path)
 
 
-def process_modules(task, git_path):
+def process_modules(task: model.Task, git_path: str) -> None:
     # Aktualni moduly v databazi
     modules = session.query(model.Module).\
         filter(model.Module.task == task.id).\
@@ -462,7 +465,8 @@ def process_modules(task, git_path):
         i += 1
 
 
-def process_module(module, module_path, task):
+def process_module(module: model.Module, module_path: str,
+                   task: model.Task) -> None:
     """Zpracovani modulu
     'module' je vzdy inicializovany
     'module'_path muze byt bez lomitka na konci
@@ -482,7 +486,11 @@ def process_module(module, module_path, task):
     process_module_md(module, module_path + "/module.md", specific, task)
 
 
-def process_module_json(module, filename):
+ModuleSpecs = Dict[str, Union[str, int, float, bool, None,
+                              Dict[str, Union[str, int]]]]
+
+
+def process_module_json(module: model.Module, filename: str) -> ModuleSpecs:
     """Zpracovani souboru module.json"""
 
     log("Processing module json")
@@ -519,7 +527,8 @@ def process_module_json(module, filename):
     return specific
 
 
-def process_module_md(module, filename, specific, task):
+def process_module_md(module: model.Module, filename: str,
+                      specific: ModuleSpecs, task: model.Task) -> None:
     """Zpracovani module.md
     Pandoc spoustime az uplne nakonec, abychom mohli provest analyzu souboru.
     """
@@ -561,7 +570,8 @@ def process_module_md(module, filename, specific, task):
     module.description = parse_simple_text(task, ''.join(data))
 
 
-def process_module_general(module, lines, specific):
+def process_module_general(module: model.Module, lines: List[str],
+                           specific: ModuleSpecs) -> List[str]:
     """Tady opravdu nema nic byt, general module nema zadnou logiku"""
 
     log("Processing general module")
@@ -569,7 +579,9 @@ def process_module_general(module, lines, specific):
     return lines
 
 
-def process_module_programming(module, lines, specific, source_path):
+def process_module_programming(module: model.Module, lines: List[str],
+                               specific: ModuleSpecs,
+                               source_path: str) -> List[str]:
     log("Processing programming module")
 
     # Hledame vzorovy kod v zadani
@@ -612,7 +624,8 @@ def process_module_programming(module, lines, specific, source_path):
     return lines[:line]
 
 
-def process_module_quiz(module, lines, specific, task):
+def process_module_quiz(module: model.Module, lines: List[str],
+                        specific: ModuleSpecs, task: model.Task) -> List[str]:
     log("Processing quiz module")
 
     # Hledame jednotlive otazky
@@ -671,7 +684,9 @@ def process_module_quiz(module, lines, specific, task):
     return lines[:text_end]
 
 
-def process_module_sortable(module, lines, specific):
+def process_module_sortable(module: model.Module,
+                            lines: List[str],
+                            specific: ModuleSpecs) -> List[str]:
     log("Processing sortable module")
 
     sort_data = {}
@@ -724,7 +739,7 @@ def process_module_sortable(module, lines, specific):
     return lines[:text_end]
 
 
-def get_sortable_offset(text):
+def get_sortable_offset(text: str) -> int:
     if re.match(r"^(if|Vstup:|while|for|def) ", text):
         return 1
     elif re.match(r"^(fi|od)$", text) or re.match(r"^return ", text):
@@ -732,7 +747,9 @@ def get_sortable_offset(text):
     return 0
 
 
-def process_module_text(module, lines, specific, path, task):
+def process_module_text(module: model.Module, lines: List[str],
+                        specific: ModuleSpecs, path: str,
+                        task: model.Task) -> List[str]:
     log("Processing text module")
 
     text_data = {"inputs": 0}
@@ -784,7 +801,7 @@ def process_module_text(module, lines, specific, path, task):
 # Pomocne parsovaci funkce:
 
 
-def parse_pandoc(source):
+def parse_pandoc(source: str) -> str:
     """Parsovani stringu \source pandocem"""
 
     return pypandoc.convert(
@@ -795,7 +812,7 @@ def parse_pandoc(source):
     )
 
 
-def replace_h(source):
+def replace_h(source: str) -> str:
     """<h2> -> <h3>, <h3> -> <h4>, <h4> -> <h5> (to musi stacit)"""
 
     return source.replace("<h4", "<h5").replace("</h4>", "</h5>"). \
@@ -819,7 +836,7 @@ def format_custom_tags(source: str) -> str:
     return source
 
 
-def change_links(task, source):
+def change_links(task: model.Task, source: str) -> str:
     """Nahrazuje odkazy do ../data/ a data/ za odkazy do backendu."""
 
     allowed_prefixes = ['(../', '(', '"']  # These should be mutually exclusive
@@ -837,7 +854,7 @@ def change_links(task, source):
     return res
 
 
-def add_table_class(source):
+def add_table_class(source: str) -> str:
     """Doplni ke kazde tabulce class="table table-striped"
     Tohleto bohuzel nejde udelat lip (napriklad explicitnim napsanim do
     markdownu).
@@ -846,7 +863,7 @@ def add_table_class(source):
     return re.sub(r"<table>", "<table class='table table-striped'>", source)
 
 
-def parse_simple_text(task, text: str):
+def parse_simple_text(task: model.Task, text: str) -> str:
     return add_table_class(
         change_links(
             task, replace_h(
@@ -862,12 +879,12 @@ def parse_simple_text(task, text: str):
 ###############################################################################
 
 
-def create_log(task, status):
+def create_log(task: model.Task, status: str) -> None:
     with open(LOGFILE, 'w') as f:
         f.write(str(task.id) + '\n')
 
 
-def log(text):
+def log(text: str) -> None:
     with open(LOGFILE, 'a') as f:
         f.write(text + '\n')
 

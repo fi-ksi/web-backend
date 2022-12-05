@@ -232,8 +232,10 @@ class Users(object):
                 filter(model.Wave.year == year.id).\
                 group_by(model.User, model.Task).all()
 
-            max_points = util.task.sum_points(req.context['year'],
-                                              bonus=False) + year.point_pad
+            max_points = max(
+                util.task.sum_points(req.context['year'], bonus=False),
+                year.point_pad
+            )
 
             # Uzivatele s nedefinovanymi tasks_cnt v tomto rocniku
             # neodevzdali zadnou ulohu

@@ -123,12 +123,12 @@ class UserExport(object):
                                        year_end).\
                 all()
 
-            sum_points = util.task.sum_points(
-                req.context['year'],
-                bonus=False) + year_obj.point_pad
-            sum_points_bonus = util.task.sum_points(
-                req.context['year'],
-                bonus=True) + year_obj.point_pad
+            sum_points_real = util.task.sum_points(req.context['year'], bonus=False)
+            sum_points_bonus_real = util.task.sum_points(req.context['year'], bonus=True)
+            sum_points = max(
+                sum_points_real,
+                year_obj.point_pad
+            )
 
             table_header = \
                 "Pořadí;" +\
@@ -152,8 +152,8 @@ class UserExport(object):
                 "Velikost trička\n"
 
             inMemoryOutputFile.write(
-                "Celkem bodů: " + str(sum_points) +
-                ", včetně bonusových úloh: " + str(sum_points_bonus) +
+                "Celkem bodů: " + str(sum_points_real) +
+                ", včetně bonusových úloh: " + str(sum_points_bonus_real) +
                 ", bodová vycpávka: " + str(year_obj.point_pad) + '\n'
             )
 

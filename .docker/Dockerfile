@@ -1,4 +1,4 @@
-FROM python:3.7-buster
+FROM python:3.9-buster
 ENV DIR_BE /opt/web-backend
 
 RUN mkdir $DIR_BE

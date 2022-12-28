@@ -39,7 +39,7 @@ class CorrectionsEmail(object):
             )
 
         body += ("<p>Můžeš si prohlédnout <a href=\"%s\">výsledkovku</a>, ") % (
-            util.config.ksi_web() + "/vysledky"
+            util.config.ksi_web() + "#vysledky"
         )
 
         if solution_comment:
@@ -49,13 +49,13 @@ class CorrectionsEmail(object):
                 util.config.ksi_web() + "/ulohy/" +
                 str(task.id) + "/reseni",
                 util.config.ksi_web() + "/ulohy/" +
-                str(task.id) + "/hodnoceni"
+                str(task.id) + "#hodnoceni"
             )
         else:
             body += ("nebo se podívat na <a href=\"%s\">"
                      "vzorové řešení úlohy</a>.</p>") % (
                 util.config.ksi_web() + "/ulohy/" +
-                str(task.id) + "/reseni"
+                str(task.id) + "#reseni"
             )
 
         body += util.config.mail_sign()

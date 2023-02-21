@@ -20,6 +20,7 @@ from typing import Callable, List, Any, Tuple, TypedDict
 
 import util
 import model
+from util.task import max_points
 
 # Deploy muze byt jen jediny na cely server -> pouzivame lockfile.
 LOCKFILE = '/var/lock/ksi-task-deploy'
@@ -30,7 +31,7 @@ session = None
 eval_public = True
 
 
-def deploy(task_id: int, deployLock: LockFile, scoped: Callable) -> None:
+def deploy(task_id: int, year_id: int, deployLock: LockFile, scoped: Callable) -> None:
     """
     Tato funkce je spoustena v samostatnem vlakne.
     Je potreba vyuzit podpory vice vlaken v SQL alchemy:
@@ -52,6 +53,7 @@ def deploy(task_id: int, deployLock: LockFile, scoped: Callable) -> None:
         global session
         session = scoped()
         task = session.query(model.Task).get(task_id)
+        year = session.query(model.Year).get(year_id)
 
         global eval_public
         eval_public = True
@@ -89,9 +91,27 @@ def deploy(task_id: int, deployLock: LockFile, scoped: Callable) -> None:
             session.commit()
             return
 
+        # Save max points before for modifying the point pad
+        max_points_before: float = max_points(task.id)
+        log(f"Current task max points: {max_points_before}")
+
         # Parse task
         log("Parsing " + util.git.GIT_SEMINAR_PATH + task.git_path)
         process_task(task, util.git.GIT_SEMINAR_PATH + task.git_path)
+
+        # Compare the max points and edit the point pad accordingly
+        max_points_now: float = max_points(task.id)
+        max_points_diff = max_points_before - max_points_now
+        log(f"New task max points: {max_points_now} (before {max_points_before}, diff {max_points_diff})")
+
+        if max_points_diff == 0:
+            log("Point diff is zero, no change is necessary")
+        elif year.point_pad == 0:
+            log("The year's point pad is already zero, not modifying it")
+        else:
+            new_point_pad = min(0.0, year.point_pad + max_points_diff)
+            log(f"Setting the year's point pad to {new_point_pad}")
+            year.point_pad = new_point_pad
 
         # Update git entries in db
         if task.time_deadline > datetime.datetime.utcnow():

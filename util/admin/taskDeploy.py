@@ -94,6 +94,7 @@ def deploy(task_id: int, year_id: int, deployLock: LockFile, scoped: Callable) -
         # Save max points before for modifying the point pad
         max_points_before: float = max_points(task.id)
         log(f"Current task max points: {max_points_before}")
+        log(f"Current year point pad: {year.point_pad}")
 
         # Parse task
         log("Parsing " + util.git.GIT_SEMINAR_PATH + task.git_path)

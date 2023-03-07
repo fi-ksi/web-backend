@@ -78,7 +78,7 @@ class TaskDeploy(object):
                 deployLock.acquire(60)  # Timeout zamku je 1 minuta
                 deployThread = threading.Thread(
                     target=util.admin.taskDeploy.deploy,
-                    args=(task.id, deployLock, year, scoped_session(_session)),
+                    args=(task.id, deployLock, year.id, scoped_session(_session)),
                     kwargs={}
                 )
                 deployThread.start()

@@ -27,7 +27,7 @@ class TaskDeploy(object):
 
         try:
             user = req.context['user']
-            year = req.context['year']
+            year_id: int = req.context['year']
 
             # Kontrola opravneni
             if (not user.is_logged_in()) or (not user.is_org()):
@@ -78,7 +78,7 @@ class TaskDeploy(object):
                 deployLock.acquire(60)  # Timeout zamku je 1 minuta
                 deployThread = threading.Thread(
                     target=util.admin.taskDeploy.deploy,
-                    args=(task.id, year.id, deployLock, scoped_session(_session)),
+                    args=(task.id, year_id, deployLock, scoped_session(_session)),
                     kwargs={}
                 )
                 deployThread.start()

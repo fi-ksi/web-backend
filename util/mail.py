@@ -5,7 +5,7 @@ from email import charset as Charset
 import copy
 import threading
 import random
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Union
 
 import model
 import smtplib
@@ -80,7 +80,7 @@ def easteregg():
     return "<hr><p>PS: " + egg.body + "</p>"
 
 
-def _send(to, subject, text, params, bcc, cc, plaintext=None):
+def _send(to: Union[str, List[str]], subject, text, params, bcc, cc, plaintext=None):
     """Odeslani emailu."""
     sender = config.mail_sender()
 
@@ -94,7 +94,8 @@ def _send(to, subject, text, params, bcc, cc, plaintext=None):
         msg['Sender'] = config.get('return_path')
     if 'Return-Path' not in params:
         msg['Return-Path'] = config.get('return_path')
-    msg['To'] = (','.join(to)) if isinstance(to, (list)) else to
+    if 'To' not in params:
+        msg['To'] = (','.join(to)) if isinstance(to, list) else to
     if len(cc) > 0:
         msg['Cc'] = (','.join(cc)) if isinstance(cc, (list)) else cc
 
@@ -129,7 +130,7 @@ def _send(to, subject, text, params, bcc, cc, plaintext=None):
 
 
 def send(
-        to: str,
+        to: Union[str, List[str]],
         subject: str,
         text: str,
         unsubscribe=None,

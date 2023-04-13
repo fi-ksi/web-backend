@@ -21,7 +21,7 @@ class User(Base):
     first_name = Column(String(50), nullable=False)
     nick_name = Column(String(50))
     last_name = Column(String(50), nullable=False)
-    sex = Column(Enum('male', 'female'), nullable=False)
+    sex = Column(Enum('male', 'female', 'other'), nullable=False)
     password = Column(String(255), nullable=False)
     short_info = Column(Text, nullable=False)
     profile_picture = Column(String(255))

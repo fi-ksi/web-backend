@@ -221,7 +221,7 @@ class FeedbacksTask(object):
 
         util.mail.send(
             to=author_email,
-            subject=f"[KSI-WEB] Nový feedback k úloze {task.title}",
+            subject=f"[Naskoč-WEB] Nový feedback k úloze {task.title}",
             text=body,
             cc=recipients_copy,
         )

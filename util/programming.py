@@ -31,7 +31,7 @@ Specifikace \data v databazi modulu pro "programming":
 
 MODULE_LIB_PATH = 'data/module_lib/'
 EXEC_PATH = '/tmp/box/'
-MAX_CONCURRENT_EXEC = 6
+MAX_CONCURRENT_EXEC = 3
 BOX_ID_PREFIX: int = 2
 assert BOX_ID_PREFIX > 0
 STORE_PATH = 'data/exec/'

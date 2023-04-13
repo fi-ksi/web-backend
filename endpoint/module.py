@@ -201,13 +201,13 @@ class ModuleSubmit(object):
                     'message': ('Přesáhnut maximální počet souběžně běžících '
                                 'opravení, zkuste to za chvíli.')
                 }
-            except Exception as e:
-                if not isinstance(e, util.programming.EIsolateError):
-                    reporter += traceback.format_exc()
+            except Exception:
+                reporter += 'Zachycena chyba:\n'
+                reporter += traceback.format_exc()
                 result = {
                     'result': 'error',
-                    'message': ('Nastala chyba při vykonávání kódu, kontaktuj '
-                                'organizátora')
+                    'message': ('Nastala chyba při vykonávání kódu, zkus to prosím znovu později'
+                                ' a v případě přetrvávající chyby kontaktuj organizátora')
                 }
 
             evaluation.points = result['score'] if 'score' in result else 0

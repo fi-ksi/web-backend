@@ -167,8 +167,10 @@ def successful_participants(year_obj):
         filter(model.User.role == 'participant').\
         group_by(model.User).all()
 
-    max_points = util.task.sum_points(year_obj.id, bonus=False) + \
+    max_points = max(
+        util.task.sum_points(year_obj.id, bonus=False),
         year_obj.point_pad
+    )
 
     return [
         (user, points)
@@ -228,8 +230,10 @@ def to_json(user, year_obj, total_score=None, tasks_cnt=None, profile=None,
         if profile is None:
             profile = session.query(model.Profile).get(user.id)
         if max_points is None:
-            max_points = util.task.sum_points(year_obj.id, bonus=False)\
-                + year_obj.point_pad
+            max_points = max(
+                util.task.sum_points(year_obj.id, bonus=False),
+                year_obj.point_pad
+            )
 
         data['addr_country'] = profile.addr_country
         data['school_name'] = profile.school_name

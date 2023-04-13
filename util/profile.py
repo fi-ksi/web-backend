@@ -9,7 +9,16 @@ def fake_profile():
     return {'profile': {'id': 0, 'signed_in': False}}
 
 
-def to_json(user, profile, notify, year_obj, basic=False):
+def to_json(user, profile, notify, year_obj, basic=False, sensitive: bool = False):
+    """
+    :param user:
+    :param profile:
+    :param notify:
+    :param year_obj:
+    :param basic:
+    :param sensitive: it True, include sensitive information like user's address
+    :return:
+    """
     if basic:
         return {'profile': _basic_profile_to_json(user)}
     else:
@@ -39,7 +48,7 @@ def to_json(user, profile, notify, year_obj, basic=False):
             'profile': dict(
                 list(_basic_profile_to_json(user).items()) +
                 list(_full_profile_to_json(user, profile, notify, task_scores,
-                                           year_obj).items())
+                                           year_obj, sensitive=sensitive).items())
             ),
             'tasks': [
                 util.task.to_json(
@@ -76,17 +85,26 @@ def _basic_profile_to_json(user: model.User) -> dict:
     }
 
 
-def _full_profile_to_json(user, profile, notify, task_scores, year_obj):
+def _full_profile_to_json(user, profile, notify, task_scores, year_obj, sensitive: bool = False):
+    """
+
+    :param user:
+    :param profile:
+    :param notify:
+    :param task_scores:
+    :param year_obj:
+    :param sensitive: it True, include sensitive information like user's address
+    :return:
+    """
     points, cheat = util.user.sum_points(user.id, year_obj.id)
-    summary = util.task.sum_points(
-        year_obj.id, bonus=False) + year_obj.point_pad
+    summary = max(util.task.sum_points(
+        year_obj.id, bonus=False),
+        year_obj.point_pad
+    )
     successful = format(floor((float(points) / summary) *
                               1000) / 10, '.1f') if summary != 0 else 0
 
-    return {
-        'addr_street': profile.addr_street,
-        'addr_city': profile.addr_city,
-        'addr_zip': profile.addr_zip,
+    data = {
         'addr_country': profile.addr_country,
         'school_name': profile.school_name,
         'school_street': profile.school_street,
@@ -111,6 +129,14 @@ def _full_profile_to_json(user, profile, notify, task_scores, year_obj):
         'notify_events': notify.notify_events if notify else True,
         'cheat': cheat,
     }
+
+    if sensitive:
+        data.update({
+            'addr_street': profile.addr_street,
+            'addr_city': profile.addr_city,
+            'addr_zip': profile.addr_zip,
+        })
+    return data
 
 # \achievements ocekava seznam ID achievementu nebo None
 

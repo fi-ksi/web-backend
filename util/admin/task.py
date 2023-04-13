@@ -12,7 +12,8 @@ from db import session
 LOCKFILE = '/var/lock/ksi-task-new'
 
 
-def createGit(git_path, git_branch, author_id, title):
+def createGit(git_path: str, git_branch: str, author_id: int,
+              title: str) -> str:
     repo = git.Repo(util.git.GIT_SEMINAR_PATH)
     repo.git.checkout("master")
     repo.remotes.origin.pull()

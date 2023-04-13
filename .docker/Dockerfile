@@ -1,4 +1,4 @@
-FROM python:3.7-buster
+FROM python:3.9-buster
 ENV DIR_BE /opt/web-backend
 
 RUN mkdir $DIR_BE
@@ -16,10 +16,12 @@ RUN wget -O - https://deb.adamhlavacek.com/pub.gpg | apt-key add - \
     && mkdir /opt/etc \
     && echo 'SQL_ALCHEMY_URI = "sqlite:////var/ksi-be/db.sqlite"' > config.py
 
+ADD requirements.txt $DIR_BE/requirements.txt
+RUN bash -c 'cd $DIR_BE && source ksi-py3-venv/bin/activate && pip install --no-cache-dir -r requirements.txt'
+
 ADD . $DIR_BE/
 
-RUN bash -c 'cd $DIR_BE && source ksi-py3-venv/bin/activate && pip install --no-cache-dir -r requirements.txt' \
-    && bash -c 'cd $DIR_BE  && ./init-makedirs.sh' \
+RUN bash -c 'cd $DIR_BE  && ./init-makedirs.sh' \
     && bash -c 'cd $DIR_BE  && chmod +x .docker/entrypoint.sh' \
     && mkdir /var/ksi-be.ro \
     && mkdir /var/ksi-be \
@@ -31,6 +33,7 @@ RUN bash -c 'cd $DIR_BE && source ksi-py3-venv/bin/activate && pip install --no-
     && chmod 644 /usr/local/etc/isolate \
     && chmod u+s /usr/bin/isolate \
     && chown root:root /usr/local/etc/isolate \
+    && sed -e 's/DISABLE_CORS = False/DISABLE_CORS = True/' -i app.py \
     && sed -e 's/READ COMMITTED/SERIALIZABLE/' -i db.py \
     && sed -e 's/127.0.0.1/0.0.0.0/' -i gunicorn_cfg.py \
     && sed -e 's/CURRENT_TIMESTAMP + INTERVAL 1 SECOND/datetime("now", "+1 seconds")/' -i endpoint/post.py

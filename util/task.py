@@ -1,4 +1,6 @@
 import datetime
+from typing import Dict, List, Tuple, Optional, Any, TypedDict, Set
+
 from sqlalchemy import func, distinct, or_, and_, desc
 from sqlalchemy.dialects import mysql
 import os
@@ -15,14 +17,15 @@ class TaskStatus:
     DONE = 'done'
 
 
-def fully_submitted(user_id, year_id=None):
+def fully_submitted(user_id: Optional[int], year_id: Optional[int] = None)\
+        -> Dict[int, int]:
     """Vraci dvojici { task_id : module_cnt } pro vsechny plne odevzdane ulohy
     Plne odevzdany modul <=> (evaluation.ok) || (module.bonus)
     Moduly s maximem 0 bodu jsou bonusove a jsou vzdy fully_submitted
     (i pokud nebyly odevzdany).
     """
     if user_id is None:
-        return []
+        return {}
 
     q = session.query(model.Task.id, func.count(
         distinct(model.Module.id)).label('modules'))
@@ -56,7 +59,8 @@ def fully_submitted(user_id, year_id=None):
     }
 
 
-def any_submitted(user_id, year_id):
+def any_submitted(user_id: int, year_id: int)\
+        -> List[Tuple[model.Task, float, model.Wave, model.Prerequisite]]:
     """Vraci ntici ( model.Task, sum(body), model.Wave, model.Prerequisite )
     pro vsechny jakkoliv odevzdane ulohy.
     sum(body) je suma bodu za vsechny moduly v dane uloze.
@@ -84,7 +88,7 @@ def any_submitted(user_id, year_id):
         group_by(model.Task).all()
 
 
-def after_deadline():
+def after_deadline() -> Set[int]:
     return {
         int(task.id) for task in
         (session.query(model.Task).
@@ -93,17 +97,17 @@ def after_deadline():
     }
 
 
-def max_points(task_id, bonus=False):
+def max_points(task_id: int, bonus: bool = False) -> float:
     """Vraci maximalni pocet bodu za ulohu (bez bonusovych bodu)"""
     points = session.query(func.sum(model.Module.max_points).label('points'))
     if not bonus:
         points = points.filter(model.Module.bonus == False)
     points = points.filter(model.Module.task == task_id).first().points
 
-    return float(points) if points else 0
+    return float(points) if points else 0.0
 
 
-def max_points_dict(bonus=False):
+def max_points_dict(bonus: bool = False) -> Dict[int, float]:
     """Vraci {task_id: max_points}"""
     # Musime si davat pozor na to, ze uloha muze byt bez modulu
     # points_per_task musi vratit i ulohy bez modulu (v tom pripade vrati
@@ -128,7 +132,7 @@ def max_points_dict(bonus=False):
     }
 
 
-def _max_points_per_wave(bonus=False):
+def _max_points_per_wave(bonus: bool = False):
     """Interni funkce pro minimalizaci poctu radku"""
     # Nevadi nam, kdyz points_per_task nektere ulohy nevrati
     # (to budou ty, ktere nemaji modul).
@@ -147,7 +151,7 @@ def _max_points_per_wave(bonus=False):
         group_by(model.Wave)
 
 
-def max_points_wave_dict(bonus=False):
+def max_points_wave_dict(bonus: bool = False) -> Dict[int, Tuple[float, int]]:
     """Vraci slovnik s klicem id vlny a hodnotami (max_points, task_count)"""
     return {
         wave.id: (wave.points if wave.points else 0.0,
@@ -156,7 +160,7 @@ def max_points_wave_dict(bonus=False):
     }
 
 
-def max_points_year_dict(bonus=False):
+def max_points_year_dict(bonus: bool = False) -> Dict[int, Tuple[float, int]]:
     """Vraci slovnik s klicem year.id a hodnotami
     (year_max_points, year_tasks_count)
     """
@@ -177,7 +181,7 @@ def max_points_year_dict(bonus=False):
     }
 
 
-def points_per_module(task_id, user_id):
+def points_per_module(task_id: int, user_id: int):
     return session.query(model.Module,
                          func.max(model.Evaluation.points).label('points'),
                          model.Evaluation.evaluator.label('evaluator')).\
@@ -189,7 +193,7 @@ def points_per_module(task_id, user_id):
         group_by(model.Evaluation.module).all()
 
 
-def points(task_id, user_id):
+def points(task_id: int, user_id: int) -> Optional[float]:
     ppm = points_per_module(task_id, user_id)
 
     if len(ppm) == 0:
@@ -198,7 +202,7 @@ def points(task_id, user_id):
     return sum(module.points for module in ppm if module.points is not None)
 
 
-def sum_points(year_id, bonus):
+def sum_points(year_id: int, bonus: bool) -> float:
     """Vraci sumu bodu za vsechny moduly v danem rocniku
     Pokud je vyplneno \bonus, vraci i bonusove
     """
@@ -209,10 +213,10 @@ def sum_points(year_id, bonus):
     if not bonus:
         q = q.filter(model.Module.bonus == False)
     val = q.scalar()
-    return val if val is not None else 0
+    return val if val is not None else 0.0
 
 
-def corrected(user_id):
+def corrected(user_id: int) -> List[int]:
     """vraci seznam id vsech opravenych uloh daneho uzivatele
     tzn. u uloh, ktere jsou odevzdavany opakovane (automaticky vyhodnocovane)
     vraci ulohu, pokud resitel udelal submit alespon jednoho
@@ -226,14 +230,14 @@ def corrected(user_id):
             group_by(model.Task).all()]
 
 
-def comment_thread(task_id, user_id):
+def comment_thread(task_id: int, user_id: int) -> Optional[int]:
     query = session.query(model.SolutionComment).filter(
         model.SolutionComment.task == task_id,
         model.SolutionComment.user == user_id).first()
     return query.thread if query is not None else None
 
 
-def autocorrected_full(user_id):
+def autocorrected_full(user_id: int) -> List[int]:
     """Vraci seznam automaticky opravovanych uloh, ktere maji plny pocet bodu.
     Pokud uloha nema automaticky opravovane moduly, vrati ji taky.
     """
@@ -263,18 +267,23 @@ def autocorrected_full(user_id):
     ]
 
 
-def status(task, user, adeadline=None, fsubmitted=None, wave=None, corr=None,
-           acfull=None):
+def status(task: model.Task,
+           user: model.User,
+           adeadline: Optional[Set[int]] = None,
+           fsubmitted: Optional[Dict[int, int]] = None,
+           wave: Optional[model.Wave] = None,
+           corr: Optional[bool] = None,
+           acfull: Optional[bool] = None) -> str:
     """Argumenty None slouzi k tomu, aby se usetrily SQL pozadavky:
     pri hromadnem ziskavani stavu je mozne je vyplnit a pocet SQL dotazu bude
     mensi.
     Pokud jsou None, potrebne informace se zjisti z databaze.
     """
-    if not wave:
+    if wave is None:
         wave = session.query(model.Wave).get(task.wave)
 
     # Zjistime, ktere ulohy jsou po deadline
-    if not adeadline:
+    if adeadline is None:
         adeadline = after_deadline()
 
     # pokud neni prihlasen zadny uzivatel, otevreme jen ulohu bez prerekvizit
@@ -322,28 +331,53 @@ def status(task, user, adeadline=None, fsubmitted=None, wave=None, corr=None,
         else TaskStatus.LOCKED
 
 
-def solution_public(status, task, user):
+def solution_public(status: str, task: model.Task, user: model.User) -> bool:
     return (((task.time_deadline) and
              (status == TaskStatus.DONE or
               task.time_deadline < datetime.datetime.utcnow())) or
             user.role in ('org', 'admin', 'tester'))
 
 
-def time_published(task_id):
+def time_published(task_id: int) -> datetime.datetime:
     return session.query(model.Wave.time_published).\
         join(model.Task, model.Task.wave == model.Wave.id).\
         filter(model.Task.id == task_id).scalar()
 
 
-def to_json(task, prereq_obj, user=None, adeadline=None, fsubmitted=None,
-            wave=None, corr=None, acfull=None, task_max_points=None):
-    if not task_max_points:
+class TaskDict(TypedDict):
+    id: int
+    title: str
+    author: Optional[int]
+    co_author: Optional[int]
+    details: int
+    intro: str
+    max_score: float
+    time_published: str
+    time_deadline: Optional[str]
+    state: str
+    prerequisities: List[Any]
+    picture_base: str
+    picture_suffix: str
+    wave: int
+    feedbacks: int
+
+
+def to_json(task: model.Task, prereq_obj,
+            user: Optional[model.User] = None,
+            adeadline: Optional[Set[int]] = None,
+            fsubmitted: Optional[Dict[int, int]] = None,
+            wave: Optional[model.Wave] = None,
+            corr: Optional[bool] = None,
+            acfull: Optional[bool] = None,
+            task_max_points: Optional[float] = None) -> TaskDict:
+
+    if task_max_points is None:
         task_max_points = max_points(task.id)
     tstatus = status(task, user, adeadline, fsubmitted, wave, corr, acfull)
     pict_base = (task.picture_base if task.picture_base is not None
                  else "/taskContent/" + str(task.id) + "/icon/")
 
-    if not wave:
+    if wave is None:
         wave = session.query(model.Wave).get(task.wave)
 
     return {
@@ -367,8 +401,23 @@ def to_json(task, prereq_obj, user=None, adeadline=None, fsubmitted=None,
     }
 
 
-def details_to_json(task, user, status, achievements, best_scores,
-                    comment_thread=None):
+class Details(TypedDict):
+    id: int
+    body: str
+    thread: int
+    modules: List[int]
+    best_scores: List[int]
+    comment: Optional[int]
+    solution: Optional[str]
+    achievements: List[int]
+
+
+def details_to_json(task: model.Task,
+                    user: model.User,
+                    status: str,
+                    achievements: List[model.Achievement],
+                    best_scores: List[Any],
+                    comment_thread: Optional[int] = None) -> Details:
     return {
         'id': task.id,
         'body': task.body,
@@ -382,7 +431,7 @@ def details_to_json(task, user, status, achievements, best_scores,
     }
 
 
-def best_scores(task_id):
+def best_scores(task_id: int):
     per_modules = session.query(model.User.id.label('user_id'),
                                 func.max(model.Evaluation.points).
                                 label('points')).\
@@ -404,7 +453,13 @@ def best_scores(task_id):
         all()
 
 
-def best_score_to_json(best_score):
+class BestScore(TypedDict):
+    id: int
+    user: int
+    score: float
+
+
+def best_score_to_json(best_score) -> BestScore:
     return {
         'id': best_score.User.id,
         'user': best_score.User.id,
@@ -412,7 +467,23 @@ def best_score_to_json(best_score):
     }
 
 
-def admin_to_json(task, amax_points=None):
+class AdminJson(TypedDict):
+    id: int
+    title: str
+    wave: int
+    author: Optional[int]
+    co_author: Optional[int]
+    git_path: Optional[str]
+    git_branch: Optional[str]
+    git_commit: Optional[str]
+    deploy_date: Optional[datetime.datetime]
+    deploy_status: str
+    max_score: float
+    eval_comment: str
+
+
+def admin_to_json(task: model.Task, amax_points: Optional[float] = None)\
+        -> AdminJson:
     if not amax_points:
         amax_points = max_points(task.id)
 

@@ -1,6 +1,6 @@
-# Backend for KSI web
+# Backend for Naskoc web
 
-[https://ksi.fi.muni.cz](https://ksi.fi.muni.cz/)
+[https://naskoc.fi.muni.cz](https://naskoc.fi.muni.cz/)
 
 ## Running with docker
 

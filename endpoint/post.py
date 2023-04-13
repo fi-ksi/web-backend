@@ -12,6 +12,7 @@ from .thread import Thread
 from util import config
 
 MAX_POST_LEN = 8000
+TMP_ADMIN_URL = "https://naskoc_admin.iamroot.eu/"  # TODO remove after deploying new admin
 
 
 class Post(object):
@@ -246,14 +247,14 @@ class Posts(object):
                             user_class.first_name + ' ' + user_class.last_name +
                             ':</i></p>' + data['body'] + '<p><a href="' +
                             config.ksi_web() + '/ulohy/' + str(task_thread.id) +
-                            '/diskuse">Přejít do diskuze.</a> ' + '<a href="' +
-                            config.ksi_web() + '/admin/opravovani?participant_=' +
+                            '#diskuze">Přejít do diskuze.</a> ' + '<a href="' +
+                            TMP_ADMIN_URL + '/admin/opravovani?participant_=' +
                             str(user_class.id) + '&task_=' + str(task_thread.id) +
                             '">Přejít na opravení.</a>'
                         )
 
                         if len(prog_modules) > 0:
-                            body += (' <a href="' + config.ksi_web() +
+                            body += (' <a href="' + TMP_ADMIN_URL +
                                      '/admin/execs?user=' + str(user_class.id))
                             if len(prog_modules) == 1:
                                 body += '&module=' + str(prog_modules[0].id)
@@ -300,7 +301,7 @@ class Posts(object):
                                 correctors,
                                 '[Naskoc na FI] Nový komentář k tvé korektuře úlohy ' + task.title,
                                 '<p>Ahoj,<br/>k tvé <a href="' +
-                                config.ksi_web() + '/admin/opravovani?task_=' +
+                                TMP_ADMIN_URL + '/admin/opravovani?task_=' +
                                 str(task.id) + '&participant_='+str(user_class.id) +
                                 '">korektuře</a> úlohy <a href="' + config.ksi_web() +
                                 '/ulohy/' + str(task.id) + '">' + task.title +

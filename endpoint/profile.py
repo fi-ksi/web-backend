@@ -11,7 +11,7 @@ import multipart
 from db import session
 import model
 import util
-
+from util import logger
 
 UPLOAD_DIR = os.path.join('data', 'images', 'profile')
 ALLOWED_MIME_TYPES = {
@@ -43,6 +43,11 @@ class Profile(object):
                           model.User.id == model.UserNotify.user).\
                 add_entity(model.UserNotify).\
                 first()
+
+            if user.first_name != data['first_name'] or user.last_name != data['last_name']:
+                logger.get_log().warning(f"User #{user.id} has changed their name")
+            if profile.school_name != data['school_name']:
+                logger.get_log().warning(f"User #{user.id} has changed their school")
 
             user.first_name = data['first_name']
             user.nick_name = data['nick_name']
@@ -101,7 +106,8 @@ class Profile(object):
             notify = session.query(model.UserNotify).get(userinfo.id)
             req.context['result'] = util.profile.to_json(
                 userinfo.user, profile, notify, req.context['year_obj'],
-                basic=False
+                basic=False,
+                sensitive=True
             )
         except SQLAlchemyError:
             session.rollback()
@@ -174,7 +180,8 @@ class OrgProfile(object):
                 user,
                 profile,
                 notify,
-                req.context['year_obj']
+                req.context['year_obj'],
+                sensitive=userinfo.is_admin()
             )
         except SQLAlchemyError:
             session.rollback()

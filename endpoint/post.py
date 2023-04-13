@@ -12,7 +12,7 @@ from .thread import Thread
 from util import config
 
 MAX_POST_LEN = 8000
-TMP_ADMIN_URL = "https://ksi-admin.ahlava.cz"  # TODO remove after deploying new admin
+TMP_ADMIN_URL = "https://naskoc_admin.iamroot.eu/"  # TODO remove after deploying new admin
 
 
 class Post(object):

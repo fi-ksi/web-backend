@@ -145,7 +145,7 @@ class Corser(object):
         origin = request.get_header('Origin')
 
         if origin in ('http://localhost:4200',
-                      'https://ksi.fi.muni.cz',
+                      'https://naskoc.fi.muni.cz',
                       'https://kyzikos.fi.muni.cz'):
             response.set_header('Access-Control-Allow-Origin', origin)
 

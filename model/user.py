@@ -16,7 +16,8 @@ class User(Base):
 
     id = Column(Integer, primary_key=True)
     email = Column(String(50), nullable=False, unique=True)
-    github = Column(String(50))
+    github = Column(String(50), nullable=True)
+    discord = Column(String(50), nullable=True)
     phone = Column(String(15))
     first_name = Column(String(50), nullable=False)
     nick_name = Column(String(50))

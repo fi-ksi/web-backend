@@ -48,6 +48,8 @@ class Profile(object):
                 logger.get_log().warning(f"User #{user.id} has changed their name")
             if profile.school_name != data['school_name']:
                 logger.get_log().warning(f"User #{user.id} has changed their school")
+            if user.discord is not None and user.discord != data.get('discord'):
+                logger.get_log().warning(f"User #{user.id} has changed their Discord account")
 
             user.first_name = data['first_name']
             user.nick_name = data['nick_name']
@@ -56,6 +58,7 @@ class Profile(object):
             user.sex = data['gender']
             user.short_info = data['short_info']
             user.github = data['github']
+            user.discord = data.get('discord')
 
             profile.addr_street = data['addr_street']
             profile.addr_city = data['addr_city']

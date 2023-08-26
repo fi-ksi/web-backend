@@ -207,6 +207,7 @@ def to_json(user, year_obj, total_score=None, tasks_cnt=None, profile=None,
 
     if admin_data:
         data['email'] = user.email
+        data['discord'] = user.discord
 
     # skryty resitel je pro potreby frontendu normalni resitel
     if user.role == 'participant_hidden':

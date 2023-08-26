@@ -128,6 +128,7 @@ def _full_profile_to_json(user, profile, notify, task_scores, year_obj, sensitiv
         'notify_ksi': notify.notify_ksi if notify else True,
         'notify_events': notify.notify_events if notify else True,
         'cheat': cheat,
+        'discord': user.discord
     }
 
     if sensitive:

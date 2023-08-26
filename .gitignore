@@ -5,3 +5,4 @@ __pycache__
 data/
 config.py
 ksi-py3-venv
+.run/

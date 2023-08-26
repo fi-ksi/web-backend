@@ -3,7 +3,7 @@ cffi==1.14.3
 falcon==1.4.1
 gitdb==4.0.5
 gitdb2==4.0.2
-GitPython==3.1.30
+GitPython==3.1.32
 gunicorn==20.0.4
 humanfriendly==8.2
 lockfile==0.12.2
@@ -18,7 +18,7 @@ pyparsing==2.4.7
 python-magic==0.4.18
 python-mimeparse==1.6.0
 pytz==2020.1
-requests==2.28.1
+requests==2.31.0
 six==1.15.0
 smmap==3.0.4
 smmap2==2.0.5

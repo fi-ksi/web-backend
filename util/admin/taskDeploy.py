@@ -1,25 +1,26 @@
+import datetime
+import json
+import os
+import random
+import re
+import shutil
+import string
+import sys
+import time
+import traceback
+from typing import Callable, List, Optional
 from typing import Dict, Union
 
-from sqlalchemy import and_
-from lockfile import LockFile
-import json
-import pypandoc
-import re
-import os
-import shutil
-import git
-import sys
-import traceback
-import datetime
-import time
-import random
-import string
-import pyparsing as pp
 import dateutil.parser
-from typing import Callable, List, Any, Tuple, TypedDict
+import git
+import pypandoc
+import pyparsing as pp
+from lockfile import LockFile
+from sqlalchemy import and_, func
+from sqlalchemy.orm import Session
 
-import util
 import model
+import util
 from util.task import max_points
 
 # Deploy muze byt jen jediny na cely server -> pouzivame lockfile.
@@ -27,7 +28,7 @@ LOCKFILE = '/var/lock/ksi-task-deploy'
 LOGFILE = 'data/deploy.log'
 
 # Deploy je spousten v samostatnem vlakne.
-session = None
+session: Optional[Session] = None
 eval_public = True
 
 
@@ -236,12 +237,15 @@ def process_meta(task: model.Task, filename: str) -> None:
 
     # Parsovani prerekvizit
     if ('prerequisities' in data) and (data['prerequisities'] is not None):
+        if type(data['prerequisities']) is int:
+            # Sometimes, organizes assign ID as a number instead of a string
+            data['prerequisities'] = str(data['prerequisities'])
+
         if task.prerequisite is not None:
             prq = session.query(model.Prerequisite).get(task.prerequisite)
             if prq is None:
                 task.prerequisite = None
-
-        if task.prerequisite is None:
+        else:
             prq = model.Prerequisite(
                 type=model.PrerequisiteType.ATOMIC,
                 parent=None,
@@ -258,7 +262,7 @@ def process_meta(task: model.Task, filename: str) -> None:
         # Tady mame zaruceno, ze existuje prave jedna korenova prerekvizita
         try:
             parsed = parse_prereq_text(data['prerequisities'])
-            parse_prereq_logic(parsed[0], prq)
+            parse_prereq_logic(parsed[0], prq, task.wave_.year)
             session.commit()
         except BaseException:
             # TODO: pass meaningful error message to user
@@ -274,15 +278,16 @@ def parse_prereq_text(text: str):
     Seznam na danem zanoreni obsahuje bud teminal, nebo seznam tri prvku
     """
 
-    number = pp.Regex(r"\d+")
-    expr = pp.operatorPrecedence(number, [
+    # can be task id or its directory name
+    task_reference = pp.Regex(r"(\d+)|(uloha_\d+_\w+)")
+    expr = pp.operatorPrecedence(task_reference, [
         ("&&", 2, pp.opAssoc.LEFT, ),
         ("||", 2, pp.opAssoc.LEFT, ),
     ])
     return expr.parseString(text)
 
 
-def parse_prereq_logic(logic, prereq) -> None:
+def parse_prereq_logic(logic, prereq, year: int) -> None:
     """'logic' je vysledek z parsovani parse_prereq_text
     'prereq' je aktualne zpracovana prerekvizita (model.Prerequisite)
     """
@@ -293,7 +298,21 @@ def parse_prereq_logic(logic, prereq) -> None:
     if isinstance(logic, (str)):
         # ATOMIC
         prereq.type = model.PrerequisiteType.ATOMIC
-        prereq.task = int(logic)
+
+        try:
+            prereq_id = int(logic)
+        except ValueError:
+            log("Finding the task by its git path")
+            waves = session.query(model.Wave).\
+                filter(model.Wave.year == year).\
+                all()
+            wave_ids = [wave.id for wave in waves]
+
+            prereq_task = session.query(model.Task).\
+                filter(and_(model.Task.wave.in_(wave_ids), model.Task.git_path.like(f'%/{logic}'))).\
+                first()
+            prereq_id = prereq_task.id
+        prereq.task = prereq_id
 
         # Smazeme potencialni strom deti
         for child in prereq.children:
@@ -345,8 +364,8 @@ def parse_prereq_logic(logic, prereq) -> None:
             raise
 
         # Rekurzivne se zanorime
-        parse_prereq_logic(logic[0], children[0])
-        parse_prereq_logic(logic[2], children[1])
+        parse_prereq_logic(logic[0], children[0], year)
+        parse_prereq_logic(logic[2], children[1], year)
     else:
         log('ERROR: Unknown type of variable in prerequisite!')
 

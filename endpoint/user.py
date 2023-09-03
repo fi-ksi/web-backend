@@ -12,6 +12,7 @@ from db import session
 import model
 import util
 import auth
+from util import config
 
 
 class User(object):
@@ -78,6 +79,22 @@ class User(object):
             session.close()
 
         req.context['result'] = {}
+
+
+class DiscordInviteLink(object):
+
+    def on_get(self, req, resp, id):
+        userinfo = req.context['user']
+
+        if not userinfo.is_logged_in():
+            resp.status = falcon.HTTP_401
+            return
+
+        if not userinfo.user.discord:
+            req.context['result'] = None
+            return
+
+        req.context['result'] = config.discord_invite_link()
 
 
 class Users(object):

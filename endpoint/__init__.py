@@ -4,7 +4,7 @@ from endpoint.post import Post, Posts
 from endpoint.task import Task, Tasks, TaskDetails
 from endpoint.module import Module, ModuleSubmit, ModuleSubmittedFile
 from endpoint.thread import Thread, Threads, ThreadDetails
-from endpoint.user import User, Users, ChangePassword, ForgottenPassword
+from endpoint.user import User, Users, ChangePassword, ForgottenPassword, DiscordInviteLink
 from endpoint.registration import Registration
 from endpoint.profile import Profile, PictureUploader, OrgProfile, BasicProfile
 from endpoint.image import Image

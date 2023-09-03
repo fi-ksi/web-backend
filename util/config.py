@@ -31,6 +31,10 @@ def mail_sign() -> Optional[str]:
 
 
 def ksi_web() -> Optional[str]:
+    """
+    Get the root URL of the frontend website
+    :return: root URL of the frontend website
+    """
     return get("web_url")
 
 
@@ -72,3 +76,21 @@ def seminar_repo() -> Optional[str]:
 
 def feedback() -> List[str]:
     return [r for r, in session.query(model.FeedbackRecipient.email).all()]
+
+
+def discord_username_change_webhook() -> Optional[str]:
+    """
+    Get the webhook URL for Discord that should be called whenever a user changes their Discord username
+
+    :return webhook URL for Discord that should be called whenever a user changes their Discord username
+    """
+    return get("webhook_discord_username_change")
+
+
+def discord_invite_link() -> Optional[str]:
+    """
+    Get the invite link to the Discord server
+
+    :return the invite link to the Discord server
+    """
+    return get("discord_invite_link")

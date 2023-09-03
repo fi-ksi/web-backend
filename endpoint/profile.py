@@ -8,10 +8,12 @@ from PIL import Image
 from sqlalchemy.exc import SQLAlchemyError
 import multipart
 
+import requests
+
 from db import session
 import model
 import util
-from util import logger
+from util import logger, config
 
 UPLOAD_DIR = os.path.join('data', 'images', 'profile')
 ALLOWED_MIME_TYPES = {
@@ -48,7 +50,18 @@ class Profile(object):
                 logger.get_log().warning(f"User #{user.id} has changed their name")
             if profile.school_name != data['school_name']:
                 logger.get_log().warning(f"User #{user.id} has changed their school")
-            if user.discord is not None and user.discord != data.get('discord'):
+
+            if user.discord is None and data.get('discord'):
+                # Call endpoint for receiving information about new users
+                webhook_url = config.discord_username_change_webhook()
+                if webhook_url:
+                    requests.post(webhook_url, json={
+                        'content': f'[{user.first_name}]({config.ksi_web()}/profil/{user.id}) '
+                                   f'má nastaveno Discord jméno na `{data.get("discord")}`',
+                        'flags': 1 << 2
+                    })
+            elif user.discord is not None and user.discord != data.get('discord'):
+                # Log warning about changed Discord username
                 logger.get_log().warning(f"User #{user.id} has changed their Discord account")
 
             user.first_name = data['first_name']

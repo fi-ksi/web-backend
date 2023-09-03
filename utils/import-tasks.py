@@ -16,6 +16,7 @@ from pathlib import Path
 from subprocess import check_output
 from typing import Set, NamedTuple, Dict
 from os import environ
+from util_login import KSILogin
 
 
 class MockKSITask(NamedTuple):
@@ -158,14 +159,23 @@ def extrack_task_paths_all(repo: Path, filter_year: str) -> Dict[str, str]:
     return data
 
 def main() -> int:
-    backend = (environ['BACKEND'], environ['TOKEN'])
+    backend_url = environ['BACKEND']
+
+    if 'TOKEN' not in environ:
+        login = KSILogin(backend_url)
+        if not login.login(environ['USER'], environ.get('PASSWORD')):
+            print('ERROR: Login failed')
+            return 1
+        environ['TOKEN'] = login.token
+
+    backend = (backend_url, environ['TOKEN'])
     repo = Path(environ['REPO'])
     tasks_all = extrack_task_paths_all(repo, environ['YEAR'])
 
     paths_known = fetch_known_paths(*backend)
 
     paths_new = tasks_all.keys() - paths_known
-    print(f'Found {len(paths_new)} new tasks:')
+    print(f'Found {len(paths_new)} new tasks ({len(paths_known)} remote & {len(tasks_all)} local in total):')
     print('\n'.join(paths_new))
     print()
     assert input('OK? y/n ').strip().lower() == 'y', "Ok, bye"

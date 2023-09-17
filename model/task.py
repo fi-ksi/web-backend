@@ -22,6 +22,9 @@ class Task(Base):
     author = Column(Integer, ForeignKey(User.id), nullable=True)
     co_author = Column(Integer, ForeignKey(User.id), nullable=True)
     wave = Column(Integer, ForeignKey(Wave.id), nullable=False)
+
+    wave_ = relationship('Wave')
+
     prerequisite = Column(Integer, ForeignKey('prerequisities.id',
                                               ondelete='SET NULL'),
                           nullable=True)

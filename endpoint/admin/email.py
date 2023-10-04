@@ -5,6 +5,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from db import session
 import model
 import util
+from util import logger
 
 
 class Email(object):
@@ -146,6 +147,8 @@ class Email(object):
                     )
                 ) for user in tos.values()
             ]
+
+            logger.get_log().warning(f"User #{user.id} has sent an email")
 
             try:
                 util.mail.send_multiple(

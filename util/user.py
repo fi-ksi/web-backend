@@ -175,7 +175,7 @@ def successful_participants(year_obj):
     return [
         (user, points)
         for user, points, cheat in results
-        if points >= 0.6*max_points and not cheat
+        if points >= 0.9*max_points and not cheat
     ]
 
 

@@ -226,7 +226,7 @@ class PictureUploader(object):
             lower = width + upper
 
         img = img.crop((left, upper, right, lower))
-        img.thumbnail(THUMB_SIZE, Image.ANTIALIAS)
+        img.thumbnail(THUMB_SIZE, Image.LANCZOS)
         img.save(dest)
 
     def on_post(self, req, resp):

@@ -3,8 +3,8 @@ import math
 import random
 import time
 from pathlib import Path
-from typing import Optional, List
-from threading import Thread
+from typing import Optional, List, Tuple, Dict, Callable
+from multiprocessing import Process, Value
 
 from humanfriendly import parse_timespan, parse_size
 import json
@@ -16,6 +16,7 @@ from sqlalchemy import desc
 
 from db import session
 import model
+from util import logger
 
 """
 Specifikace \data v databazi modulu pro "programming":
@@ -38,6 +39,9 @@ assert BOX_ID_PREFIX > 0
 STORE_PATH = 'data/exec/'
 SOURCE_FILE = 'source'
 RESULT_FILE = 'eval.out'
+
+# Hard timeout after which the subprocess will be terminated
+HARD_QUOTA_TIMEOUT = 3600
 
 # Default quotas for sandbox.
 QUOTA_MEM = "50M"
@@ -213,6 +217,9 @@ def evaluate(task, module, user_id, code, eval_id, reporter: Reporter):
     finally:
         cleanup_exec_environment(box_id)
 
+    if res['cheat']:
+        logger.get_log().warning(f"[CHEAT] {user_id} tried to cheat with evaluation {eval_id} (module {module.id})")
+
     res = {
         'result': 'ok' if res['code'] == 0 and check_res['success'] else 'nok',
         'stdout': res['stdout'],
@@ -324,7 +331,7 @@ def store_exec(box_id, user_id, module_id, source):
     if os.path.isdir(dst_path):
         shutil.rmtree(dst_path)
 
-    IGNORE = ["tmp", "root", "etc", "__pycache__", "*.pyc"]
+    IGNORE = ["tmp", "root", "etc", "__pycache__", "*.pyc", 'hidden_solution.txt']
     # FIXME: can fail sometimes when previously launched in near past
     shutil.copytree(src_path, dst_path, ignore=shutil.ignore_patterns(*IGNORE))
 
@@ -376,8 +383,12 @@ def run(module, user_id, code, exec_id, reporter):
     finally:
         cleanup_exec_environment(box_id)
 
+    if res['cheat']:
+        logger.get_log().warning(f"[CHEAT] {user_id} tried to cheat with execution {exec_id}")
+
     return {
         'stdout': res['stdout'],
+        'cheat': res['cheat'],
         'result': 'ok',
     }
 
@@ -413,6 +424,9 @@ def _run(prog_info, code, box_id, reporter: Reporter, user_id, run_type = 'exec'
     reporter += "Making files read-only-once\n"
     interpreter = _box_make_read_only_once(sandbox_dir=Path(sandbox_root))
 
+    reporter += "Adding honeypot\n"
+    check_cheating = _box_add_honeypot(sandbox_dir=Path(sandbox_root))
+
     reporter += "Executing code\n"
     (return_code, output_path, secret_path, stderr_path) = _exec(
         sandbox_root, box_id, "/box/run", os.path.abspath(prog_info['stdin']),
@@ -420,6 +434,10 @@ def _run(prog_info, code, box_id, reporter: Reporter, user_id, run_type = 'exec'
     )
     reporter += "Execution done\n"
     reporter += f"Files in box: {[str(x) for x in Path(sandbox_root).rglob('*') if x.is_file()]}\n"
+
+    cheating_detected = check_cheating()
+    if cheating_detected:
+        reporter += "Honeypot was triggered\n"
 
     if return_code == 0:
         with open(output_path, 'r') as f:
@@ -437,6 +455,7 @@ def _run(prog_info, code, box_id, reporter: Reporter, user_id, run_type = 'exec'
     return {
         'stdout': output,
         'code': return_code,
+        'cheat': cheating_detected
     }
 
 
@@ -478,6 +497,46 @@ def _merge(wd, merge_script, code, code_merged, reporter, user_id, run_type):
     # Add executable flag to merged code
     st = os.stat(code_merged)
     os.chmod(code_merged, st.st_mode | stat.S_IEXEC)
+
+
+def _box_add_honeypot(sandbox_dir: Path) -> Callable[[], bool]:
+    """
+    Creates a honeypot file that checks for participants trying to escape the box environment
+
+    :param sandbox_dir: the root box directory
+    :return: function that returns bool value indicating if the honeypot was triggered
+    """
+    test_content_dir = sandbox_dir.joinpath('box')
+    file_honeypot = test_content_dir.joinpath('hidden_solution.txt')
+
+    cheating_detected = Value("b", False)
+
+    if file_honeypot.exists():
+        raise FileExistsError("Honeypot file already exists!")
+
+    os.mkfifo(file_honeypot)
+    def job_trigger_honeypot():
+        msg = 'Tento pokus o podvadeni byl nahlasen organizatorum seminare'
+
+        with file_honeypot.open('w') as f:
+            f.write(msg[0])
+            cheating_detected.value = True
+            f.write(msg[1:])
+
+    process = Process(target=job_trigger_honeypot)
+    process.start()
+
+    def get_cheating_value() -> bool:
+        if process.is_alive():
+            process.terminate()
+        try:
+            file_honeypot.unlink(missing_ok=True)
+        except PermissionError:
+            pass
+
+        return cheating_detected.value
+
+    return get_cheating_value
 
 
 def _box_make_read_only_once(sandbox_dir: Path) -> Optional[List[str]]:
@@ -592,10 +651,9 @@ def _exec(sandbox_dir, box_id, filename, stdin_path, reporter: Reporter, limits,
 
     with open(stdin_path, 'r') as stdin, open(stdout_path, 'w') as stdout,\
             open(stderr_path, 'w') as stderr:
-        start_time = datetime.datetime.now()
         p = subprocess.Popen(cmd, stdin=stdin, stdout=stdout,
                              stderr=stderr, cwd=sandbox_dir)
-    p.wait()
+    p.wait(timeout=HARD_QUOTA_TIMEOUT)
 
     reporter += "Return code: %d\n" % (p.returncode)
     if p.returncode != 0:

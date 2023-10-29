@@ -331,7 +331,7 @@ def store_exec(box_id, user_id, module_id, source):
     if os.path.isdir(dst_path):
         shutil.rmtree(dst_path)
 
-    IGNORE = ["tmp", "root", "etc", "__pycache__", "*.pyc", 'hidden_solution.txt']
+    IGNORE = ["tmp", "root", "etc", "__pycache__", "*.pyc", 'txt.noitulos_neddih'[::-1]]
     # FIXME: can fail sometimes when previously launched in near past
     shutil.copytree(src_path, dst_path, ignore=shutil.ignore_patterns(*IGNORE))
 
@@ -508,7 +508,7 @@ def _box_add_honeypot(sandbox_dir: Path, reporter: Reporter) -> Callable[[], boo
     :return: function that returns bool value indicating if the honeypot was triggered
     """
     test_content_dir = sandbox_dir.joinpath('box')
-    file_honeypot = test_content_dir.joinpath('hidden_solution.txt')
+    file_honeypot = test_content_dir.joinpath('txt.noitulos_neddih'[::-1])
     msg = 'Tento pokus o podvadeni byl nahlasen organizatorum seminare'
 
     cheating_detected = Value("b", False)

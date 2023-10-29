@@ -566,6 +566,13 @@ def _box_add_honeypot(sandbox_dir: Path, reporter: Reporter) -> Callable[[], boo
     return get_cheating_value
 
 
+def _arm_python_file_self_destruct(file: Path) -> None:
+    with file.open('r') as f:
+        content = f.read()
+    with file.open('w') as f:
+        f.write('from os import unlink\nunlink(__file__)\n' + content)
+
+
 def _box_make_read_only_once(sandbox_dir: Path) -> Optional[List[str]]:
     """
     Makes the run script read-only once by making them self-delete upon execution
@@ -584,18 +591,21 @@ def _box_make_read_only_once(sandbox_dir: Path) -> Optional[List[str]]:
             interpreter = first_line[2:].strip().split(' ')
 
     if 'python' in interpreter[-1]:
-        self_delete_code = 'from os import unlink\nunlink(__file__)\n'
+        _arm_python_file_self_destruct(file_exec_test)
         interpreter += ['--', '-B']  # prevent .pyc file creation
     elif 'sh' in interpreter[-1]:
-        self_delete_code = 'rm "$0"\n'
+        with file_exec_test.open('r') as f:
+            content = f.read()
+        with file_exec_test.open('w') as f:
+            f.write('rm "$0"\n')
+            f.write(content)
     else:
         raise ValueError(f"Unknown interpreter {interpreter}")
 
-    with file_exec_test.open('r') as f:
-        content = f.read()
-    with file_exec_test.open('w') as f:
-        f.write(self_delete_code)
-        f.write(content)
+    for file_py in test_content_dir.rglob('*.py'):
+        if file_py.name.startswith('participant') or file_py.name.endswith('_shared.py'):
+            continue
+        _arm_python_file_self_destruct(file_py)
 
     return interpreter
 

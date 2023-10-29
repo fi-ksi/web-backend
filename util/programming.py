@@ -3,7 +3,8 @@ import math
 import random
 import time
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
+from threading import Thread
 
 from humanfriendly import parse_timespan, parse_size
 import json
@@ -37,6 +38,9 @@ assert BOX_ID_PREFIX > 0
 STORE_PATH = 'data/exec/'
 SOURCE_FILE = 'source'
 RESULT_FILE = 'eval.out'
+
+# Once-files are kept in local memory
+MAX_ONCE_FILE_SIZE = 10 * 1024**2 # 10MiB
 
 # Default quotas for sandbox.
 QUOTA_MEM = "50M"
@@ -323,7 +327,7 @@ def store_exec(box_id, user_id, module_id, source):
     if os.path.isdir(dst_path):
         shutil.rmtree(dst_path)
 
-    IGNORE = ["tmp", "root", "etc", "__pycache__", "*.pyc"]
+    IGNORE = ["tmp", "root", "etc", "__pycache__", "*.pyc", "run"]
     # FIXME: can fail sometimes when previously launched in near past
     shutil.copytree(src_path, dst_path, ignore=shutil.ignore_patterns(*IGNORE))
 
@@ -398,18 +402,28 @@ def _run(prog_info, code, box_id, reporter: Reporter, user_id, run_type = 'exec'
     with open(raw_code, "w") as f:
         f.write(code)
 
+    reporter += f"Files in box: {[str(x) for x in Path(sandbox_root).rglob('*') if x.is_file()]}\n"
+
+    reporter += "Merging code\n"
     # Merge participant`s code
     _merge(sandbox_root, prog_info['merge_script'], raw_code, merged_code,
            reporter, user_id, run_type)
 
     limits = prog_info["limits"] if "limits" in prog_info else {}
 
+    reporter += f"Files in box: {[str(x) for x in Path(sandbox_root).rglob('*') if x.is_file()]}\n"
+
+    reporter += "Making files read-only-once\n"
+    interpreter = _box_make_read_only_once(sandbox_dir=Path(sandbox_root))
+
+    reporter += "Executing code\n"
     (return_code, output_path, secret_path, stderr_path) = _exec(
         sandbox_root, box_id, "/box/run", os.path.abspath(prog_info['stdin']),
-        reporter, limits
+        reporter, limits, interpreter
     )
+    reporter += "Execution done\n"
+    reporter += f"Files in box: {[str(x) for x in Path(sandbox_root).rglob('*') if x.is_file()]}\n"
 
-    trigger_data = None
     if return_code == 0:
         with open(output_path, 'r') as f:
             output = f.read(OUTPUT_MAX_LEN)
@@ -469,7 +483,52 @@ def _merge(wd, merge_script, code, code_merged, reporter, user_id, run_type):
     os.chmod(code_merged, st.st_mode | stat.S_IEXEC)
 
 
-def _exec(sandbox_dir, box_id, filename, stdin_path, reporter: Reporter, limits):
+def _file_allow_read_only_once(file: Path):
+    file_stats = file.stat()
+
+    if file_stats.st_size > MAX_ONCE_FILE_SIZE:
+        raise MemoryError(f"Cannot make '{file}' read only once -- {file_stats.st_size} "
+                          f"is more than {MAX_ONCE_FILE_SIZE} size")
+
+    if not file.is_file():
+        raise ValueError(f"{file} is not a file")
+
+    with file.open('rb') as reader:
+        content = reader.read()
+    file.unlink()
+    os.mkfifo(file)
+    file.chmod(file_stats.st_mode)
+
+    def job_write_content():
+        with file.open('wb') as writer:
+            writer.write(content)
+        file.unlink()
+
+    Thread(target=job_write_content, daemon=True).start()
+
+
+def _box_make_read_only_once(sandbox_dir: Path) -> Optional[List[str]]:
+    """
+    Make all possible files read-only once by transforming them into pipe
+    Returns root shebang interpreter if applicable
+    :param sandbox_dir: the root box directory
+    :return: interpreter with which to run the run file
+    """
+    test_content_dir = sandbox_dir.joinpath('box')
+    file_exec_test = test_content_dir.joinpath('run')
+
+    interpreter: Optional[List[str]] = None
+
+    with open(file_exec_test, 'r') as f:
+        first_line = f.readline()
+        if first_line.startswith("#!"):
+            interpreter = first_line[2:].strip().split(' ')
+
+    _file_allow_read_only_once(file_exec_test)
+    return interpreter
+
+
+def _exec(sandbox_dir, box_id, filename, stdin_path, reporter: Reporter, limits, interpreter: Optional[List[str]]):
     """Execute single file inside a sandbox."""
 
     stdout_path = os.path.join(sandbox_dir, "stdout")
@@ -522,7 +581,13 @@ def _exec(sandbox_dir, box_id, filename, stdin_path, reporter: Reporter, limits)
     cmd += [
         "-c/box",
         "--run",
-        filename,
+    ]
+
+    if interpreter:
+        cmd += interpreter
+
+    cmd += [
+        filename
     ]
 
     # Mock /etc/passwd

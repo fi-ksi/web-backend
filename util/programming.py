@@ -324,7 +324,7 @@ def store_exec(box_id, user_id, module_id, source):
     if os.path.isdir(dst_path):
         shutil.rmtree(dst_path)
 
-    IGNORE = ["tmp", "root", "etc", "__pycache__", "*.pyc", "run"]
+    IGNORE = ["tmp", "root", "etc", "__pycache__", "*.pyc"]
     # FIXME: can fail sometimes when previously launched in near past
     shutil.copytree(src_path, dst_path, ignore=shutil.ignore_patterns(*IGNORE))
 
@@ -482,7 +482,7 @@ def _merge(wd, merge_script, code, code_merged, reporter, user_id, run_type):
 
 def _box_make_read_only_once(sandbox_dir: Path) -> Optional[List[str]]:
     """
-    Make all possible files read-only once by transforming them into pipe
+    Makes the run script read-only once by making them self-delete upon execution
     Returns root shebang interpreter if applicable
     :param sandbox_dir: the root box directory
     :return: interpreter with which to run the run file
@@ -499,6 +499,7 @@ def _box_make_read_only_once(sandbox_dir: Path) -> Optional[List[str]]:
 
     if 'python' in interpreter[-1]:
         self_delete_code = 'from os import unlink\nunlink(__file__)\n'
+        interpreter += ['--', '-B']  # prevent .pyc file creation
     elif 'sh' in interpreter[-1]:
         self_delete_code = 'rm "$0"\n'
     else:

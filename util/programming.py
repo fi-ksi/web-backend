@@ -425,7 +425,7 @@ def _run(prog_info, code, box_id, reporter: Reporter, user_id, run_type = 'exec'
     interpreter = _box_make_read_only_once(sandbox_dir=Path(sandbox_root))
 
     reporter += "Adding honeypot\n"
-    check_cheating = _box_add_honeypot(sandbox_dir=Path(sandbox_root))
+    check_cheating = _box_add_honeypot(sandbox_dir=Path(sandbox_root), reporter=reporter)
 
     reporter += "Executing code\n"
     (return_code, output_path, secret_path, stderr_path) = _exec(
@@ -499,36 +499,63 @@ def _merge(wd, merge_script, code, code_merged, reporter, user_id, run_type):
     os.chmod(code_merged, st.st_mode | stat.S_IEXEC)
 
 
-def _box_add_honeypot(sandbox_dir: Path) -> Callable[[], bool]:
+def _box_add_honeypot(sandbox_dir: Path, reporter: Reporter) -> Callable[[], bool]:
     """
     Creates a honeypot file that checks for participants trying to escape the box environment
 
     :param sandbox_dir: the root box directory
+    :param reporter: execution reporter
     :return: function that returns bool value indicating if the honeypot was triggered
     """
     test_content_dir = sandbox_dir.joinpath('box')
     file_honeypot = test_content_dir.joinpath('hidden_solution.txt')
+    msg = 'Tento pokus o podvadeni byl nahlasen organizatorum seminare'
 
     cheating_detected = Value("b", False)
 
     if file_honeypot.exists():
         raise FileExistsError("Honeypot file already exists!")
 
-    os.mkfifo(file_honeypot)
-    def job_trigger_honeypot():
-        msg = 'Tento pokus o podvadeni byl nahlasen organizatorum seminare'
+    # Test if filesystem has access time enabled
+    # If the atime is enabled, we can use regular file to detect reading of a file
+    # Otherwise, we need to use a named pipe
+    file_honeypot.touch()
+    access_time_before = file_honeypot.stat().st_atime_ns
+    time.sleep(0.01)
+    file_honeypot.touch()
+    access_time = file_honeypot.stat().st_atime_ns
 
+    access_time_supported = access_time != access_time_before
+    del access_time_before
+
+    if access_time_supported:
+        # Filesystem has enabled access time
+        # We can check if the file was opened using this time
+        reporter += "Honeypot uses classic file\n"
         with file_honeypot.open('w') as f:
-            f.write(msg[0])
-            cheating_detected.value = True
-            f.write(msg[1:])
+            f.write(msg)
+        access_time = file_honeypot.stat().st_atime_ns
+    else:
+        # Filesystem does not enable access time
+        # Use blocking named pipe to check if the value was accessed
+        reporter += "Honeypot uses pipe\n"
+        file_honeypot.unlink()
+        os.mkfifo(file_honeypot)
+        def job_trigger_honeypot():
+            with file_honeypot.open('w') as pipe:
+                pipe.write(msg[0])
+                cheating_detected.value = True
+                pipe.write(msg[1:])
 
-    process = Process(target=job_trigger_honeypot)
-    process.start()
+        process = Process(target=job_trigger_honeypot)
+        process.start()
 
     def get_cheating_value() -> bool:
-        if process.is_alive():
+        if access_time_supported:
+            cheating_detected.value = file_honeypot.stat().st_atime_ns != access_time
+        elif process.is_alive():
             process.terminate()
+
         try:
             file_honeypot.unlink(missing_ok=True)
         except PermissionError:

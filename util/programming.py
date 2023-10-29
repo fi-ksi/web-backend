@@ -39,9 +39,6 @@ STORE_PATH = 'data/exec/'
 SOURCE_FILE = 'source'
 RESULT_FILE = 'eval.out'
 
-# Once-files are kept in local memory
-MAX_ONCE_FILE_SIZE = 10 * 1024**2 # 10MiB
-
 # Default quotas for sandbox.
 QUOTA_MEM = "50M"
 QUOTA_WALL_TIME = "5s"
@@ -483,30 +480,6 @@ def _merge(wd, merge_script, code, code_merged, reporter, user_id, run_type):
     os.chmod(code_merged, st.st_mode | stat.S_IEXEC)
 
 
-def _file_allow_read_only_once(file: Path):
-    file_stats = file.stat()
-
-    if file_stats.st_size > MAX_ONCE_FILE_SIZE:
-        raise MemoryError(f"Cannot make '{file}' read only once -- {file_stats.st_size} "
-                          f"is more than {MAX_ONCE_FILE_SIZE} size")
-
-    if not file.is_file():
-        raise ValueError(f"{file} is not a file")
-
-    with file.open('rb') as reader:
-        content = reader.read()
-    file.unlink()
-    os.mkfifo(file)
-    file.chmod(file_stats.st_mode)
-
-    def job_write_content():
-        with file.open('wb') as writer:
-            writer.write(content)
-        file.unlink()
-
-    Thread(target=job_write_content, daemon=True).start()
-
-
 def _box_make_read_only_once(sandbox_dir: Path) -> Optional[List[str]]:
     """
     Make all possible files read-only once by transforming them into pipe
@@ -519,12 +492,24 @@ def _box_make_read_only_once(sandbox_dir: Path) -> Optional[List[str]]:
 
     interpreter: Optional[List[str]] = None
 
-    with open(file_exec_test, 'r') as f:
+    with file_exec_test.open('r') as f:
         first_line = f.readline()
         if first_line.startswith("#!"):
             interpreter = first_line[2:].strip().split(' ')
 
-    _file_allow_read_only_once(file_exec_test)
+    if 'python' in interpreter[-1]:
+        self_delete_code = 'from os import unlink\nunlink(__file__)\n'
+    elif 'sh' in interpreter[-1]:
+        self_delete_code = 'rm "$0"\n'
+    else:
+        raise ValueError(f"Unknown interpreter {interpreter}")
+
+    with file_exec_test.open('r') as f:
+        content = f.read()
+    with file_exec_test.open('w') as f:
+        f.write(self_delete_code)
+        f.write(content)
+
     return interpreter
 
 

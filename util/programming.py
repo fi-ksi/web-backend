@@ -547,18 +547,16 @@ def _box_add_honeypot(sandbox_dir: Path, reporter: Reporter) -> Callable[[], Tup
         honey_init.acquire()
         
         def job_trigger_honeypot():
-            try:
-                with file_honeypot.open('w') as pipe:
-                    honey_init.release()
-                    pipe.write(msg[0])
-                    cheating_detected.value = True
-                    pipe.write(msg[1:])
-            finally:
-                honey_init.release()
+            honey_init.release()
+            with file_honeypot.open('w') as pipe:
+                pipe.write(msg[0])
+                cheating_detected.value = True
+                pipe.write(msg[1:])
 
         process = Process(target=job_trigger_honeypot)
         process.start()
         honey_init.acquire()  # wait for the honeypot to start
+        time.sleep(0.01)
 
     def get_cheating_value() -> Tuple[bool, str]:
         message = ""

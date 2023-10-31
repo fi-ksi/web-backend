@@ -4,7 +4,7 @@ import random
 import time
 from pathlib import Path
 from typing import Optional, List, Tuple, Dict, Callable
-from multiprocessing import Process, Value
+from multiprocessing import Process, Value, Lock
 
 from humanfriendly import parse_timespan, parse_size
 import json

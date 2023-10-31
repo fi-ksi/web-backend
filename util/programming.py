@@ -435,7 +435,8 @@ def _run(prog_info, code, box_id, reporter: Reporter, user_id, run_type = 'exec'
     reporter += "Execution done\n"
     reporter += f"Files in box: {[str(x) for x in Path(sandbox_root).rglob('*') if x.is_file()]}\n"
 
-    cheating_detected = check_cheating()
+    cheating_detected, message = check_cheating()
+    reporter += message
     if cheating_detected:
         reporter += "Honeypot was triggered\n"
 
@@ -499,7 +500,7 @@ def _merge(wd, merge_script, code, code_merged, reporter, user_id, run_type):
     os.chmod(code_merged, st.st_mode | stat.S_IEXEC)
 
 
-def _box_add_honeypot(sandbox_dir: Path, reporter: Reporter) -> Callable[[], bool]:
+def _box_add_honeypot(sandbox_dir: Path, reporter: Reporter) -> Callable[[], Tuple[bool, str]]:
     """
     Creates a honeypot file that checks for participants trying to escape the box environment
 
@@ -525,7 +526,7 @@ def _box_add_honeypot(sandbox_dir: Path, reporter: Reporter) -> Callable[[], boo
     file_honeypot.touch()
     access_time = file_honeypot.stat().st_atime_ns
 
-    access_time_supported = access_time != access_time_before
+    access_time_supported = access_time != access_time_before and False  # for some reason does not work on prod
     del access_time_before
 
     if access_time_supported:
@@ -535,6 +536,7 @@ def _box_add_honeypot(sandbox_dir: Path, reporter: Reporter) -> Callable[[], boo
         with file_honeypot.open('w') as f:
             f.write(msg)
         access_time = file_honeypot.stat().st_atime_ns
+        time.sleep(0.01)
     else:
         # Filesystem does not enable access time
         # Use blocking named pipe to check if the value was accessed
@@ -550,18 +552,27 @@ def _box_add_honeypot(sandbox_dir: Path, reporter: Reporter) -> Callable[[], boo
         process = Process(target=job_trigger_honeypot)
         process.start()
 
-    def get_cheating_value() -> bool:
-        if access_time_supported:
-            cheating_detected.value = file_honeypot.stat().st_atime_ns != access_time
+    def get_cheating_value() -> Tuple[bool, str]:
+        message = ""
+        if cheating_detected.value:
+            message = "Honeypot check: the cheating was already triggered\n"
+        elif access_time_supported:
+            acess_time_now = file_honeypot.stat().st_atime_ns
+            message = f"Honeypot check: {access_time=} {acess_time_now=} cheat={acess_time_now!=access_time}\n"
+            cheating_detected.value = acess_time_now != access_time
         elif process.is_alive():
+            message = "Honeypot check: the file was not read fully cheat={cheating_detected.value}\n"
             process.terminate()
+        else:
+            cheating_detected.value = True
+            message = "Honeypot check: the file was read fully cheat=True\n"
 
         try:
             file_honeypot.unlink(missing_ok=True)
         except PermissionError:
             pass
 
-        return cheating_detected.value
+        return cheating_detected.value, message
 
     return get_cheating_value
 

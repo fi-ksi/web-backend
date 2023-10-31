@@ -543,14 +543,22 @@ def _box_add_honeypot(sandbox_dir: Path, reporter: Reporter) -> Callable[[], Tup
         reporter += "Honeypot uses pipe\n"
         file_honeypot.unlink()
         os.mkfifo(file_honeypot)
+        honey_init = Lock()
+        honey_init.acquire()
+        
         def job_trigger_honeypot():
-            with file_honeypot.open('w') as pipe:
-                pipe.write(msg[0])
-                cheating_detected.value = True
-                pipe.write(msg[1:])
+            try:
+                with file_honeypot.open('w') as pipe:
+                    honey_init.release()
+                    pipe.write(msg[0])
+                    cheating_detected.value = True
+                    pipe.write(msg[1:])
+            finally:
+                honey_init.release()
 
         process = Process(target=job_trigger_honeypot)
         process.start()
+        honey_init.acquire()  # wait for the honeypot to start
 
     def get_cheating_value() -> Tuple[bool, str]:
         message = ""
@@ -561,7 +569,7 @@ def _box_add_honeypot(sandbox_dir: Path, reporter: Reporter) -> Callable[[], Tup
             message = f"Honeypot check: {access_time=} {acess_time_now=} cheat={acess_time_now!=access_time}\n"
             cheating_detected.value = acess_time_now != access_time
         elif process.is_alive():
-            message = "Honeypot check: the file was not read fully cheat={cheating_detected.value}\n"
+            message = f"Honeypot check: the file was not read fully cheat={cheating_detected.value}\n"
             process.terminate()
         else:
             cheating_detected.value = True

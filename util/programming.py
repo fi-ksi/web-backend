@@ -509,8 +509,9 @@ def _box_add_honeypot(sandbox_dir: Path, reporter: Reporter) -> Callable[[], Tup
     :return: function that returns bool value indicating if the honeypot was triggered
     """
     test_content_dir = sandbox_dir.joinpath('box')
+    # keep strings obfuscated so that participants can't use simple patter search for found value
     file_honeypot = test_content_dir.joinpath('txt.noitulos_neddih'[::-1])
-    msg = 'Tento pokus o podvadeni byl nahlasen organizatorum seminare'
+    msg = 'eranimes murotazinagro nesalhan lyb inedavdop o sukop otneT'[::-1]
 
     cheating_detected = Value("b", False)
 
@@ -544,10 +545,10 @@ def _box_add_honeypot(sandbox_dir: Path, reporter: Reporter) -> Callable[[], Tup
         file_honeypot.unlink()
         os.mkfifo(file_honeypot)
         honey_init = Lock()
-        # honey_init.acquire()
-        
+        honey_init.acquire()
+
         def job_trigger_honeypot():
-            # honey_init.release()
+            honey_init.release()
             with file_honeypot.open('w') as pipe:
                 pipe.write(msg[0])
                 cheating_detected.value = True
@@ -555,7 +556,7 @@ def _box_add_honeypot(sandbox_dir: Path, reporter: Reporter) -> Callable[[], Tup
 
         process = Process(target=job_trigger_honeypot)
         process.start()
-        # honey_init.acquire()  # wait for the honeypot to start
+        honey_init.acquire()  # wait for the honeypot to start
         time.sleep(0.01)
 
     def get_cheating_value() -> Tuple[bool, str]:

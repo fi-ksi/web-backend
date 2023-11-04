@@ -526,7 +526,7 @@ def _box_add_honeypot(sandbox_dir: Path, reporter: Reporter) -> Callable[[], Tup
     file_honeypot.touch()
     access_time = file_honeypot.stat().st_atime_ns
 
-    access_time_supported = access_time != access_time_before and False  # for some reason does not work on prod
+    access_time_supported = access_time != access_time_before
     del access_time_before
 
     if access_time_supported:
@@ -559,13 +559,14 @@ def _box_add_honeypot(sandbox_dir: Path, reporter: Reporter) -> Callable[[], Tup
         time.sleep(0.01)
 
     def get_cheating_value() -> Tuple[bool, str]:
-        message = ""
         if cheating_detected.value:
             message = "Honeypot check: the cheating was already triggered\n"
         elif access_time_supported:
-            acess_time_now = file_honeypot.stat().st_atime_ns
-            message = f"Honeypot check: {access_time=} {acess_time_now=} cheat={acess_time_now!=access_time}\n"
-            cheating_detected.value = acess_time_now != access_time
+            time.sleep(0.01)
+            access_time_now = file_honeypot.stat().st_atime_ns
+            access_time_diff = access_time_now - access_time
+            cheating_detected.value = access_time_diff != 0
+            message = f"Honeypot check: cheat={cheating_detected.value} {access_time_diff=}\n"
         elif process.is_alive():
             message = f"Honeypot check: the file was not read fully cheat={cheating_detected.value}\n"
             process.terminate()
@@ -578,7 +579,7 @@ def _box_add_honeypot(sandbox_dir: Path, reporter: Reporter) -> Callable[[], Tup
         except PermissionError:
             pass
 
-        return cheating_detected.value, message
+        return bool(cheating_detected.value), message
 
     return get_cheating_value
 

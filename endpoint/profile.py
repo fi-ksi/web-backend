@@ -4,6 +4,7 @@ import magic
 import tempfile
 import os
 from sqlalchemy import func
+from difflib import SequenceMatcher
 from PIL import Image
 from sqlalchemy.exc import SQLAlchemyError
 import multipart
@@ -46,10 +47,12 @@ class Profile(object):
                 add_entity(model.UserNotify).\
                 first()
 
-            if user.first_name != data['first_name'] or user.last_name != data['last_name']:
-                logger.get_log().warning(f"User #{user.id} has changed their name")
+            name_before = f"{user.first_name} {user.last_name}"
+            name_now = f"{data['first_name']} {data['last_name']}"
+            if name_before != name_now:
+                logger.get_log().warning(f"User #{user.id} has changed their name ({100 - round(100 * SequenceMatcher(None, name_before, name_now).ratio())} % change)")
             if profile.school_name != data['school_name']:
-                logger.get_log().warning(f"User #{user.id} has changed their school")
+                logger.get_log().warning(f"User #{user.id} has changed their school ({100 - round(100 * SequenceMatcher(None, profile.school_name, data['school_name']).ratio())} % change)")
 
             if user.discord is None and data.get('discord'):
                 # Call endpoint for receiving information about new users

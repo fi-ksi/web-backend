@@ -120,15 +120,23 @@ def log(req, resp):
     except KeyError:
         ip = req.env['REMOTE_ADDR']
 
-    print('[%s] [%s] [%s] [%s] %s' %
-          (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), ip, req.method,
-           resp.status, req.relative_uri))
+    user = req.context.get("user")
+    user_id = user.id if user else '_'
+
+    print(f'[{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}] '
+          f'[INFO] [HTTP] '
+          f'[{ip}] '
+          f'[{req.method}] '
+          f'[{resp.status.split()[0]}] '
+          f'[{user_id}] '
+          f'{req.relative_uri}')
     sys.stdout.flush()
 
 
 class Logger(object):
-
     def process_request(self, req, resp):
+        pass
+    def process_response(self, req, resp, resource, req_succeeded):
         log(req, resp)
 
 
@@ -136,7 +144,7 @@ def log_sink(req, resp):
     resp.status = falcon.HTTP_404
 
     # Uncomment this to log sink
-    # log(req, resp)
+    log(req, resp)
 
 
 class Corser(object):
@@ -186,7 +194,7 @@ def error_handler(ex, req, resp, params):
 
 # Add Logger() to middleware for logging
 api = falcon.API(middleware=[JSONTranslator(), Authorizer(), Year_fill(),
-                 Corser(), AddCORS()])
+                 Corser(), AddCORS(), Logger()])
 api.add_error_handler(Exception, handler=error_handler)
 api.req_options.auto_parse_form_urlencoded = True
 

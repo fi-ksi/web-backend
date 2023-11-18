@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 bind='127.0.0.1:3030'
-workers=4
-timeout=60
+workers=8
+timeout=130
 capture_output=True
 
 def pre_request(worker, req):

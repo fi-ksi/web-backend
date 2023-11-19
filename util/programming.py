@@ -17,6 +17,7 @@ from sqlalchemy import desc
 from db import session
 import model
 from util import logger
+from util.logger import audit_log
 
 """
 Specifikace \data v databazi modulu pro "programming":
@@ -218,7 +219,15 @@ def evaluate(task, module, user_id, code, eval_id, reporter: Reporter):
         cleanup_exec_environment(box_id)
 
     if res['cheat']:
-        logger.get_log().warning(f"[CHEAT] {user_id} tried to cheat with evaluation {eval_id} (module {module.id})")
+        audit_log(
+            scope="CHEAT",
+            user_id=user_id,
+            message=f"{user_id} tried to cheat with evaluation {eval_id} (module {module.id})",
+            message_meta={
+                'eval': eval_id,
+                'module': module.id
+            }
+        )
 
     res = {
         'result': 'ok' if res['code'] == 0 and check_res['success'] else 'nok',
@@ -384,7 +393,15 @@ def run(module, user_id, code, exec_id, reporter):
         cleanup_exec_environment(box_id)
 
     if res['cheat']:
-        logger.get_log().warning(f"[CHEAT] {user_id} tried to cheat with execution {exec_id}")
+        audit_log(
+            scope="CHEAT",
+            user_id=user_id,
+            message=f"{user_id} tried to cheat with execution {exec_id}",
+            message_meta={
+                'exec': exec_id,
+                'module': module.id
+            }
+        )
 
     return {
         'stdout': res['stdout'],

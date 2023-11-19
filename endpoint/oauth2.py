@@ -6,6 +6,7 @@ import auth
 import model
 import util
 from util import logger
+from util.logger import audit_log
 
 
 class Error:
@@ -28,17 +29,25 @@ class Authorize(object):
                 if not challenge.enabled:
                     req.context['result'] = {'error': Error.ACCOUNT_DISABLED}
                     resp.status = falcon.HTTP_400
-                    logger.get_log().warning(f"User tried to login into a disabled account #{challenge.id}")
+                    audit_log(
+                        scope="AUTH",
+                        user_id=challenge.id,
+                        message=f"Log-in to disabled account {challenge.id}"
+                    )
                     return
 
                 if auth.check_password(password, challenge.password):
                     req.context['result'] = auth.OAuth2Token(challenge.id).data
                 else:
-                    logger.get_log().warning(f"User tried to login with an incorrect password to account #{challenge.id}")
+                    audit_log(
+                        scope="AUTH",
+                        user_id=challenge.id,
+                        message=f"Incorrect password for user {challenge.id}"
+                    )
                     req.context['result'] = {'error': Error.UNAUTHORIZED_CLIENT}
                     resp.status = falcon.HTTP_400
             else:
-                logger.get_log().warning(f"User tried to login to an non-existing account or did not specify username or password")
+                logger.get_log().debug(f"User tried to login to an non-existing account or did not specify username or password")
                 req.context['result'] = {'error': Error.UNAUTHORIZED_CLIENT}
                 resp.status = falcon.HTTP_400
         except SQLAlchemyError:

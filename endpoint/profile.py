@@ -15,6 +15,7 @@ from db import session
 import model
 import util
 from util import logger, config
+from util.logger import audit_log
 
 UPLOAD_DIR = os.path.join('data', 'images', 'profile')
 ALLOWED_MIME_TYPES = {
@@ -50,11 +51,31 @@ class Profile(object):
             name_before = f"{user.first_name} {user.last_name}"
             name_now = f"{data['first_name']} {data['last_name']}"
             if name_before != name_now:
-                logger.get_log().warning(f"User #{user.id} has changed their name ({100 - round(100 * SequenceMatcher(None, name_before, name_now).ratio())} % change)")
-            if profile.school_name != data['school_name']:
-                logger.get_log().warning(f"User #{user.id} has changed their school ({100 - round(100 * SequenceMatcher(None, profile.school_name, data['school_name']).ratio())} % change)")
+                audit_log(
+                    user_id=user.id,
+                    scope="PROFILE",
+                    message=f"User #{user.id} has changed their name ({100 - round(100 * SequenceMatcher(None, name_before, name_now).ratio())} % change)",
+                    message_meta={
+                        'before': name_before,
+                        'now': name_now
+                    }
+                )
+            school_before = profile.school_name
+            school_now = data['school_name']
+            if school_before != school_now:
+                audit_log(
+                    user_id=user.id,
+                    scope="PROFILE",
+                    message=f"User #{user.id} has changed their school ({100 - round(100 * SequenceMatcher(None, profile.school_name, data['school_name']).ratio())} % change)",
+                    message_meta={
+                        'before': school_before,
+                        'now': school_now
+                    }
+                )
 
-            if user.discord is None and data.get('discord'):
+            discord_before = user.discord
+            discord_now = data.get('discord')
+            if discord_before is None and discord_now:
                 # Call endpoint for receiving information about new users
                 webhook_url = config.discord_username_change_webhook()
                 if webhook_url:
@@ -63,9 +84,16 @@ class Profile(object):
                                    f'má nastaveno Discord jméno na `{data.get("discord")}`',
                         'flags': 1 << 2
                     })
-            elif user.discord is not None and user.discord != data.get('discord'):
-                # Log warning about changed Discord username
-                logger.get_log().warning(f"User #{user.id} has changed their Discord account")
+            elif discord_before is not None and discord_before != discord_now:
+                audit_log(
+                    user_id=user.id,
+                    scope="PROFILE",
+                    message=f"User #{user.id} has changed their Discord account",
+                    message_meta={
+                        'before': discord_before,
+                        'now': discord_now
+                    }
+                )
 
             user.first_name = data['first_name']
             user.nick_name = data['nick_name']

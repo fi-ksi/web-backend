@@ -32,7 +32,7 @@ class Authorize(object):
                     audit_log(
                         scope="AUTH",
                         user_id=challenge.id,
-                        message=f"Log-in to disabled account {challenge.id}"
+                        message=f"Log-in to disabled account"
                     )
                     return
 
@@ -42,7 +42,7 @@ class Authorize(object):
                     audit_log(
                         scope="AUTH",
                         user_id=challenge.id,
-                        message=f"Incorrect password for user {challenge.id}"
+                        message=f"Incorrect password"
                     )
                     req.context['result'] = {'error': Error.UNAUTHORIZED_CLIENT}
                     resp.status = falcon.HTTP_400

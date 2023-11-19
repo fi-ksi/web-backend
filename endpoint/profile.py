@@ -54,7 +54,7 @@ class Profile(object):
                 audit_log(
                     user_id=user.id,
                     scope="PROFILE",
-                    message=f"User #{user.id} has changed their name ({100 - round(100 * SequenceMatcher(None, name_before, name_now).ratio())} % change)",
+                    message=f"Changed their name ({100 - round(100 * SequenceMatcher(None, name_before, name_now).ratio())} % change)",
                     message_meta={
                         'before': name_before,
                         'now': name_now
@@ -66,7 +66,7 @@ class Profile(object):
                 audit_log(
                     user_id=user.id,
                     scope="PROFILE",
-                    message=f"User #{user.id} has changed their school ({100 - round(100 * SequenceMatcher(None, profile.school_name, data['school_name']).ratio())} % change)",
+                    message=f"Changed their school ({100 - round(100 * SequenceMatcher(None, profile.school_name, data['school_name']).ratio())} % change)",
                     message_meta={
                         'before': school_before,
                         'now': school_now
@@ -88,7 +88,7 @@ class Profile(object):
                 audit_log(
                     user_id=user.id,
                     scope="PROFILE",
-                    message=f"User #{user.id} has changed their Discord account",
+                    message=f"Changed their Discord account",
                     message_meta={
                         'before': discord_before,
                         'now': discord_now

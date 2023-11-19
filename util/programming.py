@@ -222,7 +222,7 @@ def evaluate(task, module, user_id, code, eval_id, reporter: Reporter):
         audit_log(
             scope="CHEAT",
             user_id=user_id,
-            message=f"{user_id} tried to cheat with evaluation {eval_id} (module {module.id})",
+            message=f"Tried to cheat with evaluation {eval_id} (module {module.id})",
             message_meta={
                 'eval': eval_id,
                 'module': module.id
@@ -396,7 +396,7 @@ def run(module, user_id, code, exec_id, reporter):
         audit_log(
             scope="CHEAT",
             user_id=user_id,
-            message=f"{user_id} tried to cheat with execution {exec_id}",
+            message=f"Tried to cheat with execution {exec_id}",
             message_meta={
                 'exec': exec_id,
                 'module': module.id

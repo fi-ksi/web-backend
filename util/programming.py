@@ -189,9 +189,9 @@ def evaluate(task, module, user_id, code, eval_id, reporter: Reporter):
         }
 
     check_res = {}
+    isolate_err = False
     try:
         try:
-            isolate_err = False
             res = _run(prog_info, code, box_id, reporter, user_id,
                        run_type='eval')
 
@@ -336,13 +336,14 @@ def store_exec(box_id, user_id, module_id, source):
     src_path = os.path.abspath(os.path.join(EXEC_PATH, box_id))
     dst_path = code_execution_dir(user_id, module_id)
 
-    # FIXME: can fail sometimes on dir not empty
     if os.path.isdir(dst_path):
         shutil.rmtree(dst_path)
 
-    IGNORE = ["tmp", "root", "etc", "__pycache__", "*.pyc", 'txt.noitulos_neddih'[::-1]]
-    # FIXME: can fail sometimes when previously launched in near past
-    shutil.copytree(src_path, dst_path, ignore=shutil.ignore_patterns(*IGNORE))
+    shutil.copytree(
+        src_path,
+        dst_path,
+        ignore=shutil.ignore_patterns(*["tmp", "root", "etc", "__pycache__", "*.pyc", 'txt.noitulos_neddih'[::-1]])
+    )
 
     # Write evaluation id so we can recognize it in the future
     with open(os.path.join(dst_path, SOURCE_FILE), 'w') as s:
@@ -421,6 +422,7 @@ def _run(prog_info, code, box_id, reporter: Reporter, user_id, run_type = 'exec'
     sandbox_root = os.path.join(EXEC_PATH, box_id)
     raw_code = os.path.join(sandbox_root, 'raw')
     merged_code = os.path.join(sandbox_root, 'box', 'run')
+    merged_code_backup = os.path.join(sandbox_root, '.run.backup')
 
     # Save participant`s 'raw' code
     reporter += "Saving raw code into %s...\n" % (raw_code)
@@ -438,6 +440,9 @@ def _run(prog_info, code, box_id, reporter: Reporter, user_id, run_type = 'exec'
 
     reporter += f"Files in box: {[str(x) for x in Path(sandbox_root).rglob('*') if x.is_file()]}\n"
 
+    reporter += "Backing-up run file\n"
+    shutil.copy(merged_code, merged_code_backup)
+
     reporter += "Making files read-only-once\n"
     interpreter = _box_make_read_only_once(sandbox_dir=Path(sandbox_root))
 
@@ -451,6 +456,13 @@ def _run(prog_info, code, box_id, reporter: Reporter, user_id, run_type = 'exec'
     )
     reporter += "Execution done\n"
     reporter += f"Files in box: {[str(x) for x in Path(sandbox_root).rglob('*') if x.is_file()]}\n"
+
+    if not os.path.exists(merged_code):
+        reporter += "Restoring run file from backup\n"
+        shutil.move(merged_code_backup, merged_code)
+    else:
+        reporter += "Deleting backup run file\n"
+        os.unlink(merged_code_backup)
 
     cheating_detected, message = check_cheating()
     reporter += message

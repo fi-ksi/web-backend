@@ -44,6 +44,13 @@ class Email(object):
 
             data = json.loads(req.stream.read().decode('utf-8'))['e-mail']
 
+            logger.audit_log(
+                scope="MAIL",
+                user_id=user.id,
+                message="Sent an email",
+                message_meta=dict(data)
+            )
+
             # Filtrovani uzivatelu
             if ('Successful' in data) and (data['Successful']):
                 tos = {}
@@ -147,8 +154,6 @@ class Email(object):
                     )
                 ) for user in tos.values()
             ]
-
-            logger.get_log().warning(f"User #{user.id} has sent an email")
 
             try:
                 util.mail.send_multiple(

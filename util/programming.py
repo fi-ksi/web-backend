@@ -1,9 +1,8 @@
-import datetime
-import math
 import random
 import time
 from pathlib import Path
-from typing import Optional, List, Tuple, Dict, Callable
+from secrets import token_hex
+from typing import Optional, List, Tuple, Callable
 from multiprocessing import Process, Value, Lock
 
 from humanfriendly import parse_timespan, parse_size
@@ -16,7 +15,6 @@ from sqlalchemy import desc
 
 from db import session
 import model
-from util import logger
 from util.logger import audit_log
 
 """
@@ -32,6 +30,7 @@ Specifikace \data v databazi modulu pro "programming":
         }
 """
 
+DEFAULT_META_TAG = '#KSI_META_OUTPUT_0a859a#'
 MODULE_LIB_PATH = 'data/module_lib/'
 EXEC_PATH = '/tmp/box/'
 MAX_CONCURRENT_EXEC = 6
@@ -444,7 +443,11 @@ def _run(prog_info, code, box_id, reporter: Reporter, user_id, run_type = 'exec'
     shutil.copy(merged_code, merged_code_backup)
 
     reporter += "Making files read-only-once\n"
-    interpreter = _box_make_read_only_once(sandbox_dir=Path(sandbox_root))
+    interpreter, meta_tag = _box_make_read_only_once(sandbox_dir=Path(sandbox_root))
+    meta_tag = meta_tag or DEFAULT_META_TAG
+    assert type(meta_tag) is str
+
+    reporter += f"Adjusting meta tag to {meta_tag}\n"
 
     reporter += "Adding honeypot\n"
     check_cheating = _box_add_honeypot(sandbox_dir=Path(sandbox_root), reporter=reporter)
@@ -452,7 +455,7 @@ def _run(prog_info, code, box_id, reporter: Reporter, user_id, run_type = 'exec'
     reporter += "Executing code\n"
     (return_code, output_path, secret_path, stderr_path) = _exec(
         sandbox_root, box_id, "/box/run", os.path.abspath(prog_info['stdin']),
-        reporter, limits, interpreter
+        reporter, limits, interpreter, meta_tag
     )
     reporter += "Execution done\n"
     reporter += f"Files in box: {[str(x) for x in Path(sandbox_root).rglob('*') if x.is_file()]}\n"
@@ -621,12 +624,28 @@ def _arm_python_file_self_destruct(file: Path) -> None:
         f.write('from os import unlink\nunlink(__file__)\n' + content)
 
 
-def _box_make_read_only_once(sandbox_dir: Path) -> Optional[List[str]]:
+def _randomize_meta_tag(file: Path) -> Optional[str]:
+    with file.open('r') as f:
+        content = f.read()
+
+    if DEFAULT_META_TAG not in content:
+        return None
+
+    meta_tag = f'#KSI_META_OUTPUT_{token_hex(32)}#'
+    content = content.replace(DEFAULT_META_TAG, meta_tag)
+
+    with file.open('w') as f:
+        f.write(content)
+
+    return meta_tag
+
+
+def _box_make_read_only_once(sandbox_dir: Path) -> Tuple[List[str], Optional[str]]:
     """
     Makes the run script read-only once by making them self-delete upon execution
     Returns root shebang interpreter if applicable
     :param sandbox_dir: the root box directory
-    :return: interpreter with which to run the run file
+    :return: interpreter with which to run the run file, meta tag to use
     """
     test_content_dir = sandbox_dir.joinpath('box')
     file_exec_test = test_content_dir.joinpath('run')
@@ -637,6 +656,11 @@ def _box_make_read_only_once(sandbox_dir: Path) -> Optional[List[str]]:
         first_line = f.readline()
         if first_line.startswith("#!"):
             interpreter = first_line[2:].strip().split(' ')
+
+    if interpreter is None:
+        raise ValueError("Missing inside script")
+
+    meta_tag = _randomize_meta_tag(file_exec_test)
 
     if 'python' in interpreter[-1]:
         _arm_python_file_self_destruct(file_exec_test)
@@ -655,10 +679,10 @@ def _box_make_read_only_once(sandbox_dir: Path) -> Optional[List[str]]:
             continue
         _arm_python_file_self_destruct(file_py)
 
-    return interpreter
+    return interpreter, meta_tag
 
 
-def _exec(sandbox_dir, box_id, filename, stdin_path, reporter: Reporter, limits, interpreter: Optional[List[str]]):
+def _exec(sandbox_dir, box_id, filename, stdin_path, reporter: Reporter, limits, interpreter: Optional[List[str]], meta_tag: str):
     """Execute single file inside a sandbox."""
 
     stdout_path = os.path.join(sandbox_dir, "stdout")
@@ -780,9 +804,9 @@ def _exec(sandbox_dir, box_id, filename, stdin_path, reporter: Reporter, limits,
                     if not line:
                         break
 
-                    if '#KSI_META_OUTPUT_0a859a#' in line:
+                    if meta_tag in line:
                         ksi_meta_found = True
-                    elif ksi_meta_found or line.strip().startswith('#KSI_'):
+                    elif ksi_meta_found:
                         secret_out.write(line)
                     else:
                         stdout_out.write(line)

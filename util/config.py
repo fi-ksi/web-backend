@@ -6,7 +6,7 @@ from sqlalchemy import func
 from db import session
 import model
 
-MAX_UPLOAD_FILE_SIZE = 20 * 10**6
+MAX_UPLOAD_FILE_SIZE = 25 * 1024**2  # set to slightly larger than on FE as to prevent MB vs MiB mismatches
 MAX_UPLOAD_FILE_COUNT = 20
 
 

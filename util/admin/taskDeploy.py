@@ -132,7 +132,7 @@ def deploy(task_id: int, year_id: int, deployLock: LockFile, scoped: Callable) -
         else:
             new_point_pad = max(0.0, year.point_pad + max_points_diff)
             log(f"Setting the year's point pad to {new_point_pad}", syslog=True, task=task_id)
-            year.point_pad = new_point_pad
+            # year.point_pad = new_point_pad  # TODO disabled as it conflicts that the point pad is the maximum of the points
 
         # Update git entries in db
         if task.time_deadline > datetime.datetime.utcnow():

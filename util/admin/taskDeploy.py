@@ -113,8 +113,8 @@ def deploy(task_id: int, year_id: int, deployLock: LockFile, scoped: Callable) -
 
         # Save max points before for modifying the point pad
         max_points_before: float = max_points(task.id)
-        log(f"Current task max points: {max_points_before}", syslog=True, task=task_id)
-        log(f"Current year point pad: {year.point_pad}", syslog=True, task=task_id)
+        log(f"Current task max points: {max_points_before}", task=task_id)
+        log(f"Current year point pad: {year.point_pad}", task=task_id)
 
         # Parse task
         log("Parsing " + util.git.GIT_SEMINAR_PATH + task.git_path)
@@ -123,15 +123,15 @@ def deploy(task_id: int, year_id: int, deployLock: LockFile, scoped: Callable) -
         # Compare the max points and edit the point pad accordingly
         max_points_now: float = max_points(task.id)
         max_points_diff = max_points_before - max_points_now
-        log(f"New task max points: {max_points_now} (before {max_points_before}, diff {max_points_diff})", syslog=True, task=task_id)
+        log(f"New task max points: {max_points_now} (before {max_points_before}, diff {max_points_diff})", task=task_id)
 
         if max_points_diff == 0.0:
-            log("Point diff is zero, no change is necessary", syslog=True, task=task_id)
+            log("Point diff is zero, no change is necessary", task=task_id)
         elif year.point_pad == 0.0:
-            log("The year's point pad is already zero, not modifying it", syslog=True, task=task_id)
+            log("The year's point pad is already zero, not modifying it", task=task_id)
         else:
             new_point_pad = max(0.0, year.point_pad + max_points_diff)
-            log(f"Setting the year's point pad to {new_point_pad}", syslog=True, task=task_id)
+            log(f"Setting the year's point pad to {new_point_pad}", task=task_id)
             # year.point_pad = new_point_pad  # TODO disabled as it conflicts that the point pad is the maximum of the points
 
         # Update git entries in db
@@ -154,7 +154,7 @@ def deploy(task_id: int, year_id: int, deployLock: LockFile, scoped: Callable) -
         session.commit()
     except Exception as e:
         exc_type, exc_obj, exc_tb = sys.exc_info()
-        log("Exception: " + traceback.format_exc(), syslog=True, task=task_id)
+        log("Exception: " + traceback.format_exc(), task=task_id)
         session.rollback()
         try:
             task.deploy_status = 'error'

@@ -26,7 +26,7 @@ def check_password(plain_text_password: str, hashed_password: str) -> bool:
 class OAuth2Token(object):
     def __init__(self, client_id: model.User):
         self.value = _generate_token()
-        self.expire = datetime.datetime.utcnow() + datetime.timedelta(minutes=1)
+        self.expire = datetime.datetime.utcnow() + datetime.timedelta(hours=1)
         self.kind = 'Bearer'
         self.refresh = _generate_token()
 

@@ -13,6 +13,7 @@ import model
 import util
 import auth
 from util import config
+from util.logger import audit_log
 
 
 class User(object):
@@ -368,8 +369,17 @@ class ForgottenPassword(object):
             random.SystemRandom().
             choice(string.ascii_uppercase + string.digits +
                    string.ascii_lowercase)
-            for _ in range(8))
+            for _ in range(16))
 
+        audit_log(
+            scope="AUTH",
+            user_id=user.id,
+            message=f"Password reset",
+            message_meta={
+                'role': user.role,
+                'ip': req.context['source_ip']
+            }
+        )
         user.password = auth.get_hashed_password(new_password)
 
         try:

@@ -41,7 +41,7 @@ class Authorize(object):
                     return
 
                 if auth.check_password(password, challenge.password):
-                    req.context['result'] = auth.OAuth2Token(challenge.id).data
+                    req.context['result'] = auth.OAuth2Token(challenge).data
                 else:
                     audit_log(
                         scope="AUTH",
@@ -71,7 +71,8 @@ class Authorize(object):
 
             if token:
                 session.delete(token)
-                req.context['result'] = auth.OAuth2Token(token.user).data
+                user = session.query(model.User).get(token.user)
+                req.context['result'] = auth.OAuth2Token(user).data
             else:
                 req.context['result'] = {'error': Error.UNAUTHORIZED_CLIENT}
                 resp.status = falcon.HTTP_400

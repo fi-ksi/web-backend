@@ -1,8 +1,5 @@
-from typing import Union
-
 import bcrypt
-import random
-import string
+import secrets
 
 from db import session
 import model
@@ -12,10 +9,7 @@ TOKEN_LENGTH = 40
 
 
 def _generate_token():
-    return ''.join([
-        random.choice(string.ascii_letters + string.digits)
-        for x in range(TOKEN_LENGTH)
-    ])
+    return secrets.token_urlsafe(TOKEN_LENGTH)
 
 
 def get_hashed_password(plain_text_password: str) -> str:
@@ -30,9 +24,9 @@ def check_password(plain_text_password: str, hashed_password: str) -> bool:
 
 
 class OAuth2Token(object):
-    def __init__(self, client_id):
+    def __init__(self, client_id: model.User):
         self.value = _generate_token()
-        self.expire = datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+        self.expire = datetime.datetime.utcnow() + datetime.timedelta(minutes=1)
         self.kind = 'Bearer'
         self.refresh = _generate_token()
 
@@ -40,9 +34,10 @@ class OAuth2Token(object):
         token.access_token = self.value
         token.expire = self.expire
         token.refresh_token = self.refresh
-        token.user = client_id
+        token.user = client_id.id
 
         try:
+            client_id.last_logged_in = datetime.datetime.utcnow()
             session.add(token)
             session.commit()
         except:

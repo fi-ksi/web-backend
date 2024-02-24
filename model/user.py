@@ -33,5 +33,6 @@ class User(Base):
     registered = Column(TIMESTAMP, nullable=False,
                         default=datetime.datetime.utcnow,
                         server_default=text('CURRENT_TIMESTAMP'))
+    last_logged_in = Column(TIMESTAMP, nullable=True)
 
     tasks = relationship("Task", primaryjoin='User.id == Task.author')

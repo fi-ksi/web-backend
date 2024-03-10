@@ -112,7 +112,7 @@ class Post(object):
                 return
             
             if (not user.is_org() and post.author != user.id):
-                resp.status = falcon.HTTP_400
+                resp.status = falcon.HTTP_403
                 return
 
             session.delete(post)

@@ -51,7 +51,6 @@ class Post(object):
                 self.on_get(req, resp, id)
                 return
 
-            post.author = data['author']
             post.body = data['body']
 
             session.commit()

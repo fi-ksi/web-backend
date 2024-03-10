@@ -22,7 +22,7 @@ class Post(object):
         try:
             user = req.context['user']
 
-            if (not user.is_logged_in()) or (not user.is_org()):
+            if (not user.is_logged_in()):
                 # Toto tady musi byt -- jinak nefunguje frontend.
                 self.on_get(req, resp, id)
                 return
@@ -44,6 +44,11 @@ class Post(object):
             post = session.query(model.Post).get(id)
             if post is None:
                 resp.status = falcon.HTTP_404
+                return
+            
+            if (not user.is_org() and post.author != user.id):
+                # Toto tady musi byt -- jinak nefunguje frontend.
+                self.on_get(req, resp, id)
                 return
 
             post.author = data['author']
@@ -98,13 +103,17 @@ class Post(object):
         try:
             user = req.context['user']
 
-            if (not user.is_logged_in()) or (not user.is_org()):
+            if (not user.is_logged_in()):
                 resp.status = falcon.HTTP_400
                 return
 
             post = session.query(model.Post).get(id)
             if post is None:
                 resp.status = falcon.HTTP_404
+                return
+            
+            if (not user.is_org() and post.author != user.id):
+                resp.status = falcon.HTTP_400
                 return
 
             session.delete(post)

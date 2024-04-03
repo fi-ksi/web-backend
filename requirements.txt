@@ -10,7 +10,7 @@ lockfile==0.12.2
 multipart==0.2.2
 mysqlclient==2.0.1
 olefile==0.46
-Pillow==10.2.0
+Pillow==10.3.0
 py-dateutil==2.2
 pycparser==2.20
 pypandoc==1.5

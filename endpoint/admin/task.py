@@ -241,6 +241,8 @@ class Tasks(object):
                 req.context['result'] = {'errors': 'Po zverejneni vlny nelze vytvaret nove ulohy'}
                 return
 
+            github_pull_id = None
+
             # Vytvoreni adresare v repu je option:
             if ('git_create' in data) and (data['git_create']):
                 # Kontrola zamku
@@ -253,7 +255,7 @@ class Tasks(object):
                 newLock.acquire(60)  # Timeout zamku je 1 minuta
 
                 try:
-                    git_commit = util.admin.task.createGit(
+                    git_commit, github_pull_id = util.admin.task.createGit(
                         data['git_path'], data['git_branch'],
                         int(data['author']), data['title'])
                 finally:
@@ -279,6 +281,7 @@ class Tasks(object):
                 git_path=data['git_path'],
                 git_branch=data['git_branch'],
                 git_commit=git_commit,
+                git_pull_id=github_pull_id,
                 thread=taskThread.id
             )
 

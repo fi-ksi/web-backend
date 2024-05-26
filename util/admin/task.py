@@ -13,7 +13,15 @@ LOCKFILE = '/var/lock/ksi-task-new'
 
 
 def createGit(git_path: str, git_branch: str, author_id: int,
-              title: str) -> str:
+              title: str) -> (str, Optional[int]):
+    """
+    Vytvori novou ulohu v repozitari a vytvori pull request na GitHubu, pokud je nastaveny token.
+    :param git_path: Celá cesta k nové úloze v repozitáři
+    :param git_branch: Jméno nové větve
+    :param author_id: ID autora úlohy
+    :param title: Název úlohy
+    :return: SHA commitu a ID pull requestu
+    """
     repo = git.Repo(util.git.GIT_SEMINAR_PATH)
     repo.git.checkout("master")
     repo.remotes.origin.pull()
@@ -52,17 +60,20 @@ def createGit(git_path: str, git_branch: str, author_id: int,
     # Pull request
     seminar_repo = util.config.seminar_repo()
     github_token = util.config.github_token()
+    github_api_org_url = util.config.github_api_org_url()
 
-    if None not in (seminar_repo, github_token):
+    pull_id = None
+
+    if None not in (seminar_repo, github_token, github_api_org_url):
         # PR su per-service, teda treba urobit POST request na GitHub API
-        url_root = "https://api.github.com/repos/fi-ksi/" + util.config.seminar_repo()
+        url_root = github_api_org_url + seminar_repo
 
         headers = {
             "Accept": "application/vnd.github+json",
             "Authorization": "token " + util.config.github_token()
         }
 
-        pull_id = requests.post(
+        pull_id = int(requests.post(
             url_root + "/pulls",
             headers=headers,
             data=json.dumps({
@@ -70,7 +81,7 @@ def createGit(git_path: str, git_branch: str, author_id: int,
                 "head": git_branch,
                 "base": "master"
             })
-        ).json()['number']
+        ).json()['number'])
 
         author: Optional[model.User] = session.query(model.User).\
             filter(model.User.id == int(author_id)).\
@@ -85,4 +96,4 @@ def createGit(git_path: str, git_branch: str, author_id: int,
                 })
             )
 
-    return repo.head.commit.hexsha
+    return repo.head.commit.hexsha, pull_id

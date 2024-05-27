@@ -109,7 +109,7 @@ def main() -> int:
         line_parts_with_count = []
         for distinct_part in set(line_parts):
             line_parts_with_count.append(f"{line_parts.count(distinct_part) if not distinct_part.startswith('G') else ''}{distinct_part}")
-        print(f"{user}: {'; '.join(line_parts_with_count)}")
+        print(f"{user} - {'; '.join(line_parts_with_count)}")
 
     if unknown_testers or unmatched_tasks:
         print('WARNING: SOME ENTRIES COULD NOT BE MATCHED')

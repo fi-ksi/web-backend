@@ -108,7 +108,6 @@ def fetch_testers(task: model.Task) -> Tuple[List[model.User], List[str]]:
     pull_id = task.git_pull_id
 
     if None in (seminar_repo, github_token, github_api_org_url, pull_id):
-        util.logger.get_log().warning(f"Atask {task.id} with testers requested, but some value missing {seminar_repo=} github_token={'set' if github_token is not None else 'MISSING'} {github_api_org_url=} {pull_id=}")
         return [], []
 
     url_root = github_api_org_url + seminar_repo
@@ -173,6 +172,6 @@ def admin_to_json(task: model.Task, amax_points: Optional[float] = None, do_fetc
         'deploy_status': task.deploy_status,
         'max_score': float(format(amax_points, '.1f')),
         'eval_comment': task.eval_comment,
-        'testers': testers,
+        'testers': [t.id for t in testers],
         'additional_testers': additional_testers
     }

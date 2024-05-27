@@ -40,7 +40,7 @@ class Task(object):
                 resp.status = falcon.HTTP_404
                 return
 
-            req.context['result'] = {'atask': util.task.admin_to_json(task, do_fetch_testers=fetch_testers)}
+            req.context['result'] = {'atask': util.admin.task.admin_to_json(task, do_fetch_testers=fetch_testers)}
         except SQLAlchemyError:
             session.rollback()
             raise
@@ -187,7 +187,7 @@ class Tasks(object):
 
             req.context['result'] = {
                 'atasks': [
-                    util.task.admin_to_json(task.Task,
+                    util.admin.task.admin_to_json(task.Task,
                                             max_points[task.Task.id])
                     for task in tasks
                 ]
@@ -289,7 +289,7 @@ class Tasks(object):
             session.add(task)
             session.commit()
 
-            req.context['result'] = {'atask': util.task.admin_to_json(task)}
+            req.context['result'] = {'atask': util.admin.task.admin_to_json(task)}
         except SQLAlchemyError:
             session.rollback()
             raise

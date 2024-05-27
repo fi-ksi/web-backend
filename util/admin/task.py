@@ -1,7 +1,7 @@
 import shutil
 import json
 from datetime import datetime
-from typing import Optional, List, Tuple, TypedDict
+from typing import Optional, List, Tuple, TypedDict, Set
 
 import git
 import requests
@@ -118,11 +118,15 @@ def fetch_testers(task: model.Task) -> Tuple[List[model.User], List[str]]:
         "Authorization": "token " + github_token
     }
 
-    response = requests.get(url_root + f"/issues/{pull_id}", headers=headers)
+    response = requests.get(url_root + f"/pulls/{pull_id}", headers=headers)
     response.raise_for_status()
     pull_data = response.json()
+    reviewer_usernames: Set[str] = {reviewer['login'] for reviewer in pull_data.get('requested_reviewers', [])}
 
-    reviewer_usernames: List[str] = [reviewer['login'] for reviewer in pull_data.get('requested_reviewers', [])]
+    response = requests.get(url_root + f"/pulls/{pull_id}/reviews", headers=headers)
+    response.raise_for_status()
+    reviewer_usernames.update({review['user']['login'] for review in response.json()})
+
     users: List[model.User] = session.query(model.User).filter(model.User.github.in_(reviewer_usernames)).all()
     reviewers_unknown = [reviewer for reviewer in reviewer_usernames if reviewer not in {user.github for user in users}]
     return users, reviewers_unknown

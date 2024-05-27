@@ -14,6 +14,7 @@ class Task(object):
     def on_get(self, req, resp, id):
         try:
             user = req.context['user']
+            fetch_testers = req.get_param_as_bool('fetch_testers')
             task = session.query(model.Task).get(id)
 
             # task_admin mohou ziskat jen orgove
@@ -39,7 +40,7 @@ class Task(object):
                 resp.status = falcon.HTTP_404
                 return
 
-            req.context['result'] = {'atask': util.task.admin_to_json(task)}
+            req.context['result'] = {'atask': util.task.admin_to_json(task, do_fetch_testers=fetch_testers)}
         except SQLAlchemyError:
             session.rollback()
             raise

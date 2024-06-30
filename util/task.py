@@ -2,8 +2,6 @@ import datetime
 from typing import Dict, List, Tuple, Optional, Any, TypedDict, Set
 
 from sqlalchemy import func, distinct, or_, and_, desc
-from sqlalchemy.dialects import mysql
-import os
 
 from db import session
 import model
@@ -464,41 +462,4 @@ def best_score_to_json(best_score) -> BestScore:
         'id': best_score.User.id,
         'user': best_score.User.id,
         'score': float(format(best_score.sum, '.1f'))
-    }
-
-
-class AdminJson(TypedDict):
-    id: int
-    title: str
-    wave: int
-    author: Optional[int]
-    co_author: Optional[int]
-    git_path: Optional[str]
-    git_branch: Optional[str]
-    git_commit: Optional[str]
-    deploy_date: Optional[datetime.datetime]
-    deploy_status: str
-    max_score: float
-    eval_comment: str
-
-
-def admin_to_json(task: model.Task, amax_points: Optional[float] = None)\
-        -> AdminJson:
-    if not amax_points:
-        amax_points = max_points(task.id)
-
-    return {
-        'id': task.id,
-        'title': task.title,
-        'wave': task.wave,
-        'author': task.author,
-        'co_author': task.co_author,
-        'git_path': task.git_path,
-        'git_branch': task.git_branch,
-        'git_commit': task.git_commit,
-        'deploy_date':
-            task.deploy_date.isoformat() if task.deploy_date else None,
-        'deploy_status': task.deploy_status,
-        'max_score': float(format(amax_points, '.1f')),
-        'eval_comment': task.eval_comment,
     }

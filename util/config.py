@@ -74,6 +74,13 @@ def seminar_repo() -> Optional[str]:
     return get("seminar_repo")
 
 
+def github_api_org_url() -> Optional[str]:
+    """
+    Get the name of the seminar repository that contains tasks
+    """
+    return get("github_api_org_url")
+
+
 def feedback() -> List[str]:
     return [r for r, in session.query(model.FeedbackRecipient.email).all()]
 

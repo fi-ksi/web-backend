@@ -1,6 +1,7 @@
 import shutil
 import json
-from typing import Optional
+from datetime import datetime
+from typing import Optional, List, Tuple, TypedDict, Set
 
 import git
 import requests
@@ -8,12 +9,21 @@ import requests
 import model
 import util
 from db import session
+from util.task import max_points
 
 LOCKFILE = '/var/lock/ksi-task-new'
 
 
 def createGit(git_path: str, git_branch: str, author_id: int,
-              title: str) -> str:
+              title: str) -> (str, Optional[int]):
+    """
+    Vytvori novou ulohu v repozitari a vytvori pull request na GitHubu, pokud je nastaveny token.
+    :param git_path: Celá cesta k nové úloze v repozitáři
+    :param git_branch: Jméno nové větve
+    :param author_id: ID autora úlohy
+    :param title: Název úlohy
+    :return: SHA commitu a ID pull requestu
+    """
     repo = git.Repo(util.git.GIT_SEMINAR_PATH)
     repo.git.checkout("master")
     repo.remotes.origin.pull()
@@ -52,17 +62,20 @@ def createGit(git_path: str, git_branch: str, author_id: int,
     # Pull request
     seminar_repo = util.config.seminar_repo()
     github_token = util.config.github_token()
+    github_api_org_url = util.config.github_api_org_url()
 
-    if None not in (seminar_repo, github_token):
+    pull_id = None
+
+    if None not in (seminar_repo, github_token, github_api_org_url):
         # PR su per-service, teda treba urobit POST request na GitHub API
-        url_root = "https://api.github.com/repos/fi-ksi/" + util.config.seminar_repo()
+        url_root = github_api_org_url + seminar_repo
 
         headers = {
             "Accept": "application/vnd.github+json",
-            "Authorization": "token " + util.config.github_token()
+            "Authorization": "token " + github_token
         }
 
-        pull_id = requests.post(
+        pull_id = int(requests.post(
             url_root + "/pulls",
             headers=headers,
             data=json.dumps({
@@ -70,7 +83,7 @@ def createGit(git_path: str, git_branch: str, author_id: int,
                 "head": git_branch,
                 "base": "master"
             })
-        ).json()['number']
+        ).json()['number'])
 
         author: Optional[model.User] = session.query(model.User).\
             filter(model.User.id == int(author_id)).\
@@ -85,4 +98,80 @@ def createGit(git_path: str, git_branch: str, author_id: int,
                 })
             )
 
-    return repo.head.commit.hexsha
+    return repo.head.commit.hexsha, pull_id
+
+
+def fetch_testers(task: model.Task) -> Tuple[List[model.User], List[str]]:
+    seminar_repo = util.config.seminar_repo()
+    github_token = util.config.github_token()
+    github_api_org_url = util.config.github_api_org_url()
+    pull_id = task.git_pull_id
+
+    if None in (seminar_repo, github_token, github_api_org_url, pull_id):
+        return [], []
+
+    url_root = github_api_org_url + seminar_repo
+
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "Authorization": "token " + github_token
+    }
+
+    response = requests.get(url_root + f"/pulls/{pull_id}", headers=headers)
+    response.raise_for_status()
+    pull_data = response.json()
+    reviewer_usernames: Set[str] = {reviewer['login'] for reviewer in pull_data.get('requested_reviewers', [])}
+
+    response = requests.get(url_root + f"/pulls/{pull_id}/reviews", headers=headers)
+    response.raise_for_status()
+    reviewer_usernames.update({review['user']['login'] for review in response.json()})
+
+    users: List[model.User] = session.query(model.User).filter(model.User.github.in_(reviewer_usernames)).all()
+    reviewers_unknown = [reviewer for reviewer in reviewer_usernames if reviewer not in {user.github for user in users}]
+    return users, reviewers_unknown
+
+class AdminJson(TypedDict):
+    id: int
+    title: str
+    wave: int
+    author: Optional[int]
+    co_author: Optional[int]
+    testers: List[int]
+    git_path: Optional[str]
+    git_branch: Optional[str]
+    git_commit: Optional[str]
+    deploy_date: Optional[datetime]
+    deploy_status: str
+    max_score: float
+    eval_comment: str
+
+
+def admin_to_json(task: model.Task, amax_points: Optional[float] = None, do_fetch_testers: bool = True)\
+        -> AdminJson:
+    if not amax_points:
+        amax_points = max_points(task.id)
+
+    testers = []
+    additional_testers = []
+
+    if do_fetch_testers:
+        testers, additional_testers = fetch_testers(task)
+
+    return {
+        'id': task.id,
+        'title': task.title,
+        'wave': task.wave,
+        'author': task.author,
+        'co_author': task.co_author,
+        'git_path': task.git_path,
+        'git_branch': task.git_branch,
+        'git_commit': task.git_commit,
+        'git_pull_id': task.git_pull_id,
+        'deploy_date':
+            task.deploy_date.isoformat() if task.deploy_date else None,
+        'deploy_status': task.deploy_status,
+        'max_score': float(format(amax_points, '.1f')),
+        'eval_comment': task.eval_comment,
+        'testers': [t.id for t in testers],
+        'additional_testers': additional_testers
+    }

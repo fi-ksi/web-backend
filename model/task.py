@@ -48,6 +48,7 @@ class Task(Base):
     git_path = Column(String(255), nullable=True)
     git_branch = Column(String(255), nullable=True)
     git_commit = Column(String(255), nullable=True)
+    git_pull_id = Column(Integer, nullable=True)
     deploy_date = Column(DateTime, nullable=True, default=None)
     deploy_status = Column(
         Enum('default', 'deploying', 'done', 'error', 'diff'),

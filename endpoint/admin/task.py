@@ -14,6 +14,7 @@ class Task(object):
     def on_get(self, req, resp, id):
         try:
             user = req.context['user']
+            fetch_testers = req.get_param_as_bool('fetch_testers')
             task = session.query(model.Task).get(id)
 
             # task_admin mohou ziskat jen orgove
@@ -39,7 +40,7 @@ class Task(object):
                 resp.status = falcon.HTTP_404
                 return
 
-            req.context['result'] = {'atask': util.task.admin_to_json(task)}
+            req.context['result'] = {'atask': util.admin.task.admin_to_json(task, do_fetch_testers=fetch_testers)}
         except SQLAlchemyError:
             session.rollback()
             raise
@@ -186,7 +187,7 @@ class Tasks(object):
 
             req.context['result'] = {
                 'atasks': [
-                    util.task.admin_to_json(task.Task,
+                    util.admin.task.admin_to_json(task.Task,
                                             max_points[task.Task.id])
                     for task in tasks
                 ]
@@ -241,6 +242,8 @@ class Tasks(object):
                 req.context['result'] = {'errors': 'Po zverejneni vlny nelze vytvaret nove ulohy'}
                 return
 
+            github_pull_id = None
+
             # Vytvoreni adresare v repu je option:
             if ('git_create' in data) and (data['git_create']):
                 # Kontrola zamku
@@ -253,7 +256,7 @@ class Tasks(object):
                 newLock.acquire(60)  # Timeout zamku je 1 minuta
 
                 try:
-                    git_commit = util.admin.task.createGit(
+                    git_commit, github_pull_id = util.admin.task.createGit(
                         data['git_path'], data['git_branch'],
                         int(data['author']), data['title'])
                 finally:
@@ -279,13 +282,14 @@ class Tasks(object):
                 git_path=data['git_path'],
                 git_branch=data['git_branch'],
                 git_commit=git_commit,
+                git_pull_id=github_pull_id,
                 thread=taskThread.id
             )
 
             session.add(task)
             session.commit()
 
-            req.context['result'] = {'atask': util.task.admin_to_json(task)}
+            req.context['result'] = {'atask': util.admin.task.admin_to_json(task)}
         except SQLAlchemyError:
             session.rollback()
             raise

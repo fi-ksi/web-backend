@@ -46,7 +46,7 @@ class UserExport(object):
                 profile.school_zip + ";" +\
                 profile.school_country + ";" +\
                 str(profile.school_finish) + ";" +\
-                profile.tshirt_size + \
+                profile.tshirt_size + ";" + \
                 str(user.id) + '\n'
 
         return res

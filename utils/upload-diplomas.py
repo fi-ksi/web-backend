@@ -5,6 +5,8 @@ Parses seminar repository and asks if it should create all found tasks that are 
 Requires following environment variables:
 - DIPLOMAS - path to the directory with signed diploma PDFs
 - YEAR_ID - id of the year to get users from
+
+Optinal environment variables are:
 - BACKEND - backend URL including https
 - TOKEN - your login token (can be extracted from frontend)
 """
@@ -81,7 +83,7 @@ def upload_diploma(user_id: int, diploma: Path, backend_url: str, token: str, ye
         res.read()
 
 def main() -> int:
-    backend_url = environ['BACKEND']
+    backend_url = environ.get('BACKEND', 'https://rest.ksi.fi.muni.cz')
     year_id = int(environ['YEAR_ID'])
 
     if 'TOKEN' not in environ:

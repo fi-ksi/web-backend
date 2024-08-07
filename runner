@@ -71,7 +71,7 @@ def main():
         ]
     }
 
-    config = Config("ksi-backend", options, CONFIG, log)
+    config = Config("naskoc-backend", options, CONFIG, log)
 
     log.debug("Calling .%s() on %s", action, config.basename())
     getattr(config, action)()

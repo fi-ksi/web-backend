@@ -156,13 +156,6 @@ def log_sink(req, resp):
 class Corser(object):
 
     def process_response(self, request, response, resource):
-        origin = request.get_header('Origin')
-
-        if origin in ('http://localhost:4200',
-                      'https://ksi.fi.muni.cz',
-                      'https://kyzikos.fi.muni.cz'):
-            response.set_header('Access-Control-Allow-Origin', origin)
-
         response.set_header('Access-Control-Allow-Headers',
                             'authorization,content-type,year')
         response.set_header('Access-Control-Allow-Methods',

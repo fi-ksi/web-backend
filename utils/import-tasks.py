@@ -4,11 +4,9 @@
 Parses seminar repository and asks if it should create all found tasks that are not currently found on backend.
 Requires following environment variables:
 - REPO - path to the seminar repository
-- YEAR - the year/directory name inside seminar repository
-- BACKEND - backend URL including https
-- TOKEN - your login token (can be extracted from frontend)
 """
 
+import datetime
 import re
 import json
 from urllib import request
@@ -26,7 +24,8 @@ class MockKSITask(NamedTuple):
     git_path: str
     git_branch: str
 
-def task_path_to_task(repo: Path, branch: str, task_path: str, waves: Dict[int, int]) -> MockKSITask:
+
+def task_path_to_task(repo: Path, branch: str, task_path: str, waves: Dict[str, int]) -> MockKSITask:
     """
     Creates mock task that can be sent to the backend endpoint
     :param repo: path to the seminar repository
@@ -46,16 +45,16 @@ def task_path_to_task(repo: Path, branch: str, task_path: str, waves: Dict[int, 
     )
 
 
-def extract_task_wave_and_number(task_path: str) -> (int, str):
+def extract_task_wave_and_number(task_path: str) -> (str, str):
     """
     Extracts task name and wave number from the path root
     :param task_path: path inside git
     :return: task wave index and task name
     """
-    re_task_meta = re.compile(r'^\d+/vlna(\d+)/uloha_\d+_(.+)$')
+    re_task_meta = re.compile(r'^\d+/vlna([^/]+)/uloha_\d+_(.+)$')
     match = re_task_meta.match(task_path)
     assert match is not None, f"Invalid task root ({task_path})"
-    wave_number = int(match.group(1))
+    wave_number = match.group(1)
     task_name = match.group(2).replace('_', ' ').capitalize()
     return wave_number, task_name
 
@@ -127,7 +126,7 @@ def extract_task_paths(repo: Path, branch: str) -> Set[str]:
     :param branch: branch name to extract from
     :return: string paths to the root directories of all tasks inside given branch
     """
-    re_task_path = re.compile(r'^(\d+/vlna\d+/uloha_\d+_.+?)/')
+    re_task_path = re.compile(r'^(\d+/vlna[^/]+/uloha_\d+_.+?)/')
     paths = set()
     for line in check_output(['git', 'ls-tree', '-r', '--name-only', f'origin/{branch}'], text=True, cwd=repo).split('\n'):
         match = re_task_path.match(line)
@@ -154,23 +153,22 @@ def extrack_task_paths_all(repo: Path, filter_year: str) -> Dict[str, str]:
         for path in extract_task_paths(repo, branch):
             if not path.startswith(filter_year):
                 continue
+            if not (repo / path / 'task.json').exists():
+                continue
             data[path] = branch
 
     return data
 
+
 def main() -> int:
-    backend_url = environ['BACKEND']
-
-    if 'TOKEN' not in environ:
-        login = KSILogin(backend_url)
-        if not login.login(environ['USER'], environ.get('PASSWORD')):
-            print('ERROR: Login failed')
-            return 1
-        environ['TOKEN'] = login.token
-
-    backend = (backend_url, environ['TOKEN'])
     repo = Path(environ['REPO'])
-    tasks_all = extrack_task_paths_all(repo, environ['YEAR'])
+    year = environ.get('YEAR', str((datetime.date.today() - datetime.timedelta(days=6*30)).year))
+    print(f"Will import tasks from {repo} ({year})")
+
+    login = KSILogin.login_auto()
+    backend = (login.backend_url, login.token)
+    print(f"Logged in to {backend[0]}")
+    tasks_all = extrack_task_paths_all(repo, year)
 
     paths_known = fetch_known_paths(*backend)
 
@@ -182,9 +180,10 @@ def main() -> int:
 
     wave_map_name_id = fetch_known_waves(*backend)
 
-    wave_mapping: Dict[int, int] = {}
+    wave_mapping: Dict[str, int] = {}
 
-    for task_path, task_branch in tasks_all.items():
+    for task_path in sorted(tasks_all.keys()):
+        task_branch = tasks_all[task_path]
         if task_path not in paths_new:
             continue
 

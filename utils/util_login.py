@@ -79,7 +79,6 @@ class KSILogin:
             key, value = line.split('=', 1)
             environ[key] = value
 
-
     @classmethod
     def login_auto(cls) -> "KSILogin":
         if environ.get('KSI_DISABLE_PASSWORD_STORE') is None:

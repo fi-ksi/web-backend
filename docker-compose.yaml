@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  ksi-be:
+    build:
+      context: .
+      dockerfile: .docker/Dockerfile
+    image: esoadamo/ksi-be
+    ports:
+      - "3030:3030"
+    volumes:
+      - ./.docker/data/db:/opt/database
+      - ./.docker/data/data:/opt/data
+      - ./.docker/data/seminar.git:/opt/seminar.git
+    container_name: ksi-be
+    devices:
+      - /dev/fuse:/dev/fuse
+    cap_add:
+      - SYS_ADMIN
+    privileged: true
+    security_opt:
+      - apparmor:unconfined
+    entrypoint: ["/bin/bash", "./.docker/entrypoint.sh"]
+  ksi-fe-dev:
+    container_name: ksi-fe-dev
+    image: esoadamo/ksi-fe-local
+    ports:
+      - "8080:80"

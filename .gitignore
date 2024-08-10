@@ -7,3 +7,4 @@ config.py
 ksi-py3-venv
 .run/
 */.vscode
+.docker/data

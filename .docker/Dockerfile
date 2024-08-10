@@ -9,7 +9,7 @@ EXPOSE 3030
 RUN wget -O - https://deb.adamhlavacek.com/pub.gpg | apt-key add - \
     && echo "deb https://deb.adamhlavacek.com ./" >> /etc/apt/sources.list \
     && apt-get update \
-    && apt-get install -y pandoc acl sudo isolate bindfs libpython3.7 libcap2 \
+    && apt-get install -y pandoc acl sudo curl isolate bindfs libpython3.7 libcap2 sqlite3 \
     && sudo apt-get clean \
     && pip3 install virtualenv --no-cache-dir \
     && virtualenv -p python3 ksi-py3-venv \
@@ -25,10 +25,7 @@ RUN bash -c 'cd $DIR_BE  && ./init-makedirs.sh' \
     && bash -c 'cd $DIR_BE  && chmod +x .docker/entrypoint.sh' \
     && mkdir /var/ksi-be.ro \
     && mkdir /var/ksi-be \
-    && mkdir /var/ksi-seminar \
-    && mkdir /var/ksi-module-lib \
-    && mkdir "$DIR_BE/data/module_lib" \
-    && chmod 755 "$DIR_BE/data/module_lib" \
+    && mkdir /var/ksi-seminar.git \
     && mv "$DIR_BE/.docker/config_isolate" /usr/local/etc/isolate \
     && chmod 644 /usr/local/etc/isolate \
     && chmod u+s /usr/bin/isolate \
@@ -38,7 +35,8 @@ RUN bash -c 'cd $DIR_BE  && ./init-makedirs.sh' \
     && sed -e 's/127.0.0.1/0.0.0.0/' -i gunicorn_cfg.py \
     && sed -e 's/CURRENT_TIMESTAMP + INTERVAL 1 SECOND/datetime("now", "+1 seconds")/' -i endpoint/post.py
 
-RUN useradd -Mr ksi
+RUN useradd -mru 999 ksi
 
+HEALTHCHECK --start-period=180s CMD curl --silent --fail http://127.0.0.1:3030/years || exit 1
 ENTRYPOINT ["/bin/bash"]
 CMD ["./.docker/entrypoint.sh"]

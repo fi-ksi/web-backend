@@ -37,6 +37,6 @@ RUN bash -c 'cd $DIR_BE  && ./init-makedirs.sh' \
 
 RUN useradd -mru 999 ksi
 
-HEALTHCHECK --start-period=180s CMD curl --silent --fail http://127.0.0.1:3030/years || exit 1
+HEALTHCHECK --interval=300s --start-period=180s CMD curl --silent --fail http://127.0.0.1:3030/years || exit 1
 ENTRYPOINT ["/bin/bash"]
 CMD ["./.docker/entrypoint.sh"]

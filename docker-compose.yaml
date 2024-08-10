@@ -21,8 +21,13 @@ services:
     security_opt:
       - apparmor:unconfined
     entrypoint: ["/bin/bash", "./.docker/entrypoint.sh"]
-  ksi-fe-dev:
-    container_name: ksi-fe-dev
-    image: esoadamo/ksi-fe-local
+#  ksi-fe-dev:
+#    container_name: ksi-fe-local
+#    image: esoadamo/ksi-fe-local
+#    ports:
+#      - "4200:80"
+  ksi-fe-old-dev:
+    container_name: ksi-fe-old-dev
+    image: esoadamo/ksi-fe-old-local
     ports:
       - "8080:80"

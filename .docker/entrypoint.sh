@@ -5,9 +5,9 @@ cd "$(realpath "$(dirname "$0")")/.." || { echo "ERR: Cannot cd to script dir"; 
 DIR_BE="/opt/web-backend"
 
 bindfs /etc /opt/etc || { echo "ERR: Bind mount for isolate"; exit 1; }
-bindfs /opt/data "$DIR_BE/data" -u ksi -g ksi -o nonempty || { echo "ERR: Bind mount for data"; exit 1; }
-bindfs /opt/database /var/ksi-be/ -u ksi -g ksi || { echo "ERR: Bind mount for database dir"; exit 1; }
-bindfs /opt/seminar.git /var/ksi-seminar.git/ -u ksi -g ksi || { echo "ERR: Bind mount for database dir"; exit 1; }
+bindfs /opt/data "$DIR_BE/data" -u ksi -g ksi -o nonempty --create-for-user=1000 || { echo "ERR: Bind mount for data"; exit 1; }
+bindfs /opt/database /var/ksi-be/ -u ksi -g ksi --create-for-user=1000 || { echo "ERR: Bind mount for database dir"; exit 1; }
+bindfs /opt/seminar.git /var/ksi-seminar.git/ -u ksi -g ksi --create-for-user=1000 || { echo "ERR: Bind mount for database dir"; exit 1; }
 
 bash init-makedirs.sh || { echo "ERR: Cannot create directories"; exit 1; }
 

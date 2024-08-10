@@ -1,24 +1,43 @@
-# Backend for Naskoc web
+# Backend for Online Seminar of Informatics
 
-[https://naskoc.fi.muni.cz](https://naskoc.fi.muni.cz/)
+[ksi.fi.muni.cz](https://ksi.fi.muni.cz/)
 
 ## Running with docker
 
-The backend can be run inside a docker container for testing purposes.
-To build and start backend with database to be stored in your `~/ksi-be` execute `./.docker/build.sh --run ~/ksi-db ~/ksi-data`. 
-Already built docker images can be started by running `./.docker/start.sh ~/ksi-db ~/ksi-data` or `docker start -i ksi-be` if it was started at least one time before.
+The backend can be run inside a docker container for testing purposes. To build the image, run:
 
-Though most of the API works out-of-the box, it is possible that you will run into 
-unexpected errors. If so, please create Issue with report and reproduction steps.
+```bash
+docker-compose up --build
+```
 
-## Software needed
+This will build the image and start the container, together with development versions of the frontend.
+- backend will be running at [http://localhost:3030](http://localhost:3030)
+- frontend will be running at [http://localhost:4200](http://localhost:4200)
+- old frontend will be running at [http://localhost:8080](http://localhost:8080)
+
+The master account is `admin@localsite` with password `change-me`.
+
+The backend is created together with a sample [seminar repository](https://github.com/fi-ksi/seminar-template).
+To use the repository, you must clone it locally after starting the container:
+
+```bash
+git clone .docker/data/seminar.git seminar-dev
+```
+
+The backend will automatically push and pull from the repository in the container, you can work with your own clone.
+
+## Running manually
+
+Running manually is discouraged, as it requires a lot of setup. If you still want to run the backend manually, follow the instructions below.
+
+### Software needed
 
  * Python 3.7+
  * virtualenv
  * packages from `requirements.txt`
  * [isolate](https://github.com/ioi/isolate)
 
-## Installation
+### Installation
 
  1. Clone this repository.
  2. Run `init-makedirs.sh`.
@@ -42,7 +61,7 @@ unexpected errors. If so, please create Issue with report and reproduction steps
  10. Optional: ensure the server will be started after system boots up
      (run `./runner start`).
 
-## Server control
+### Server control
 
  * To start server run: `./runner start`.
  * To stop server run: `./runner stop`.

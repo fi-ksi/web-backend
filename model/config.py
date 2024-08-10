@@ -11,4 +11,4 @@ class Config(Base):
     }
 
     key = Column(String(100), primary_key=True, nullable=False)
-    value = Column(String(200), nullable=False)
+    value = Column(String(200), nullable=True)

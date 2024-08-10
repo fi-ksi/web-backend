@@ -23,4 +23,18 @@ INSERT INTO "modules" ("id","task","type","name","description","max_points","aut
 }');
 INSERT INTO "active_orgs" ("org","year") VALUES (1,1);
 INSERT INTO "users_notify" ("user","auth_token","notify_eval","notify_response","notify_ksi","notify_events") VALUES (1,'a4bcf1a180d5cd5a3e1a6d04df757537652f5448',1,1,1,1);
+INSERT INTO `config` (`key`, `value`) VALUES
+('backend_url', 'http://localhost:3030'),
+('discord_invite_link', NULL),
+('github_api_org_url', NULL),
+('github_token', NULL),
+('ksi_conf', 'all-organizers-group@localhost'),
+('mail_sender', NULL),
+('mail_sign', 'Good luck!'),
+('monitoring_dashboard_url', NULL),
+('return_path', 'mail-error@localhost'),
+('seminar_repo', 'seminar'),
+('successful_participant_trophy_id', NULL),
+('webhook_discord_username_change', NULL),
+('web_url', 'http://localhost:8080');
 COMMIT;

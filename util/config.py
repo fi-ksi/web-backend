@@ -19,7 +19,7 @@ def get(key: str, default: Optional[str] = None) -> Optional[str]:
     :return: value in database if the key exists, default otherwise
     """
     prop = session.query(model.Config).get(key)
-    return prop.value if prop is not None else default
+    return prop.value if prop is not None and prop.value is not None else default
 
 
 def ksi_conf() -> Optional[str]:

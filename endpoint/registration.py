@@ -108,12 +108,10 @@ class Registration(object):
         try:
             util.mail.send(
                 user.email,
-                '[Naskoc na FI] Potvrzení registrace do Naskoč na FI',
-                'Ahoj!<br/>Vítáme tě v Naskoč na FI, '
-                'semináři pro nastupující studenty Fakulty informatiky Masarykovy '
-                'univerzity. Nyní můžeš začít řešit naplno. Stačí se přihlásit'
-                ' na https://naskoc.fi.muni.cz/ pomocí e-mailu a zvoleného hesla. '
-                'Přejeme ti hodně úspěchů při řešení semináře!<br/><br/>Organizátoři Naskoč na FI'
+                f'{util.config.mail_subject_prefix()} Potvrzení registrace do {util.config.seminar_name()}',
+                f'Ahoj!<br/>{util.config.mail_registration_welcome()} Nyní můžeš začít řešit naplno. '
+                f'Stačí se přihlásit na {util.config.ksi_web()} pomocí e-mailu a zvoleného hesla. '
+                'Přejeme ti hodně úspěchů při řešení semináře!'
             )
         except SQLAlchemyError:
             exc_type, exc_value, exc_traceback = sys.exc_info()

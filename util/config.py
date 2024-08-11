@@ -6,7 +6,7 @@ from sqlalchemy import func
 from db import session
 import model
 
-MAX_UPLOAD_FILE_SIZE = 25 * 1024**2  # set to slightly larger than on FE as to prevent MB vs MiB mismatches
+MAX_UPLOAD_FILE_SIZE = 25 * 1024 ** 2  # set to slightly larger than on FE as to prevent MB vs MiB mismatches
 MAX_UPLOAD_FILE_COUNT = 20
 
 
@@ -22,12 +22,14 @@ def get(key: str, default: Optional[str] = None) -> Optional[str]:
     return prop.value if prop is not None and prop.value is not None else default
 
 
-def ksi_conf() -> Optional[str]:
+def ksi_conf() -> str:
     """
-    Get the email address of the conference (== all emails will be sent from this address)
+    Get the email address of the conference (== all emails will CC to this address)
     :return: email address of the conference
     """
-    return get("ksi_conf")
+    val = get("ksi_conf")
+    assert val is not None, "ksi_conf is not set in the config table"
+    return val
 
 
 def mail_sign() -> Optional[str]:
@@ -38,17 +40,28 @@ def mail_sign() -> Optional[str]:
     return get("mail_sign")
 
 
-def ksi_web() -> Optional[str]:
+def ksi_web() -> str:
     """
     Get the root URL of the frontend website
     :return: root URL of the frontend website
     """
-    return get("web_url")
+    return get("web_url", "https://ksi.fi.muni.cz/")
+
+
+def ksi_web_admin() -> str:
+    """
+    Get the URL of the admin interface
+    :return: URL of the admin interface
+    """
+    return get("web_url_admin", "https://ksi.fi.muni.cz/admin")
 
 
 def mail_sender() -> Optional[str]:
     """
     Get the default mail sender
+    If None, mails will never bee sent, but instead saved locally
+
+    :return: default mail sender
     """
     return get("mail_sender")
 
@@ -62,12 +75,12 @@ def successful_participant_trophy_id() -> Optional[int]:
     return int(text) if text is not None else None
 
 
-def backend_url() -> Optional[str]:
+def backend_url() -> str:
     """
     Get the URL of the backend
     :return: URL of the backend
     """
-    return get("backend_url")
+    return get("backend_url", "https://rest.ksi.fi.muni.cz")
 
 
 def monitoring_dashboard_url() -> Optional[str]:
@@ -143,3 +156,31 @@ def unsuccessful_tries_per_day() -> int:
     :return: the number of unsuccessful tries per day
     """
     return int(get("unsuccessful_tries_per_day", "20"))
+
+
+def mail_subject_prefix() -> str:
+    """
+    Get the prefix of the email subjects
+
+    :return: the prefix of the email subjects
+    """
+    return get("mail_subject_prefix", "[KSI]")
+
+
+def seminar_name() -> str:
+    """
+    Get the name of the seminar
+
+    :return: the name of the seminar
+    """
+    return get("seminar_name", "Korespondenční seminář z informatiky")
+
+
+def mail_registration_welcome() -> str:
+    """
+    Get the email template for the registration welcome email
+
+    :return: the email template for the registration welcome email
+    """
+    return get("mail_registration_welcome",
+               "Korespondenčním semináři z informatiky Fakulty informatiky Masarykovy univerzity.")

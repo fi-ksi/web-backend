@@ -12,7 +12,7 @@ class FeedbackEmail(object):
             return
 
         if 'email' not in data:
-            data['email'] = "ksi@fi.muni.cz"
+            data['email'] = util.config.ksi_conf()
 
         util.mail.send_feedback(data['body'].encode('utf-8'), data['email'])
 

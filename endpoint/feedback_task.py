@@ -219,9 +219,10 @@ class FeedbacksTask(object):
 
         author_email, recipients_copy = self._get_feedback_email_recipients(task)
 
+
         util.mail.send(
             to=author_email,
-            subject=f"[Naskoč-WEB] Nový feedback k úloze {task.title}",
+            subject=f"{util.config.mail_subject_prefix()} Nový feedback k úloze {task.title}",
             text=body,
             cc=recipients_copy,
         )

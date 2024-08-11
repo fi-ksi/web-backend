@@ -30,11 +30,15 @@ INSERT INTO `config` (`key`, `value`) VALUES
 ('github_token', NULL),
 ('ksi_conf', 'all-organizers-group@localhost'),
 ('mail_sender', NULL),
-('mail_sign', 'Good luck!'),
+('mail_sign', 'Good luck!<br>Testing Seminar of Informatics'),
 ('monitoring_dashboard_url', NULL),
 ('return_path', 'mail-error@localhost'),
 ('seminar_repo', 'seminar'),
 ('successful_participant_trophy_id', NULL),
 ('webhook_discord_username_change', NULL),
+('web_url_admin', NULL),
+('mail_subject_prefix', '[TEST SEMINAR]'),
+('seminar_name', 'Testing Seminar of Informatics'),
+('mail_registration_welcome', 'testing seminar of informatics.'),
 ('web_url', 'http://localhost:8080');
 COMMIT;

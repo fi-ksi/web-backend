@@ -28,17 +28,5 @@ class CSP(object):
             resp.status = falcon.HTTP_200
             return
 
-        text = "<p>" + util.config.ksi_web() + \
-            "<br><pre>" + json.dumps(data, indent=4, ensure_ascii=False) + "</pre></p>" + \
-            util.mail.easteregg()
-
-        try:
-            #util.mail.send("me@apophis.cz", "[Naskoc na FI] CSP report", text, )
-            pass
-        except:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            traceback.print_exception(exc_type, exc_value, exc_traceback,
-                                      file=sys.stderr)
-
         req.context['result'] = {}
         resp.status = falcon.HTTP_200

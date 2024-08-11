@@ -171,7 +171,7 @@ def send_multiple(recipients, subject, text, params={}, bcc=[]):
     plaintext = pypandoc.convert(text, 'markdown', format='html')
 
     bcc_params = copy.deepcopy(params)
-    bcc_params['To'] = 'ksi-resitele@fi.muni.cz'
+    bcc_params['To'] = config.ksi_conf()
     bcc.append(config.ksi_conf())
     for b in bcc:
         bcc_params['Cc'] = b
@@ -184,7 +184,7 @@ def send_multiple(recipients, subject, text, params={}, bcc=[]):
 def send_feedback(text, addr_from):
     addr_reply = addr_from if len(addr_from) > 0 else None
     params = {'Reply-To': addr_reply}
-    send(config.feedback(), '[Naskoc na FI] Zpetna vazba', '<p>' +
+    send(config.feedback(), f'{util.config.mail_subject_prefix()} Zpetna vazba', '<p>' +
          text.decode('utf-8') + '</p>' + easteregg(), params=params)
 
 

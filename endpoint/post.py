@@ -12,7 +12,6 @@ from .thread import Thread
 from util import config
 
 MAX_POST_LEN = 8000
-TMP_ADMIN_URL = "https://naskoc_admin.iamroot.eu/"  # TODO remove after deploying new admin
 
 
 class Post(object):
@@ -256,13 +255,13 @@ class Posts(object):
                             ':</i></p>' + data['body'] + '<p><a href="' +
                             config.ksi_web() + '/ulohy/' + str(task_thread.id) +
                             '#diskuze">Přejít do diskuze.</a> ' + '<a href="' +
-                            TMP_ADMIN_URL + '/admin/opravovani?participant_=' +
+                            util.config.ksi_web_admin() + '/admin/opravovani?participant_=' +
                             str(user_class.id) + '&task_=' + str(task_thread.id) +
                             '">Přejít na opravení.</a>'
                         )
 
                         if len(prog_modules) > 0:
-                            body += (' <a href="' + TMP_ADMIN_URL +
+                            body += (' <a href="' + util.config.ksi_web_admin() +
                                      '/admin/execs?user=' + str(user_class.id))
                             if len(prog_modules) == 1:
                                 body += '&module=' + str(prog_modules[0].id)
@@ -274,7 +273,7 @@ class Posts(object):
 
                         util.mail.send(
                             recipients,
-                            '[Naskoc na FI] Nový příspěvek k úloze ' + task_thread.title,
+                            f'{util.config.mail_subject_prefix()} Nový příspěvek k úloze ' + task_thread.title,
                             body,
                             cc=wave_garant_email
                         )
@@ -307,9 +306,9 @@ class Posts(object):
                         try:
                             util.mail.send(
                                 correctors,
-                                '[Naskoc na FI] Nový komentář k tvé korektuře úlohy ' + task.title,
+                                f'{util.config.mail_subject_prefix()} Nový komentář k tvé korektuře úlohy ' + task.title,
                                 '<p>Ahoj,<br/>k tvé <a href="' +
-                                TMP_ADMIN_URL + '/admin/opravovani?task_=' +
+                                util.config.ksi_web_admin() + '/admin/opravovani?task_=' +
                                 str(task.id) + '&participant_='+str(user_class.id) +
                                 '">korektuře</a> úlohy <a href="' + config.ksi_web() +
                                 '/ulohy/' + str(task.id) + '">' + task.title +
@@ -325,12 +324,12 @@ class Posts(object):
                                                       exc_traceback,
                                                       file=sys.stderr)
                 else:
-                    # Obecna diskuze -> email na ksi@fi.muni.cz
+                    # Obecna diskuze -> email na vsechny
                     try:
                         sent_emails.add(config.ksi_conf())
                         util.mail.send(
                             config.ksi_conf(),
-                            '[Naskoc na FI] Nový příspěvek v obecné diskuzi',
+                            f'{util.config.mail_subject_prefix()} Nový příspěvek v obecné diskuzi',
                             '<p>Ahoj,<br/>do obecné diskuze na <a href="' +
                             config.ksi_web() + '/">' + config.ksi_web() +
                             '</a> byl přidán nový příspěvek:</p><p><i>' +
@@ -377,7 +376,7 @@ class Posts(object):
 
                         util.mail.send(
                             parent_user.email,
-                            ('[Naskoc na FI] Nový příspěvek v diskuzi %s' %
+                            (f'{util.config.mail_subject_prefix()} Nový příspěvek v diskuzi %s' %
                              (thread.title)),
                             body,
                             unsubscribe=util.mail.Unsubscribe(

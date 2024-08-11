@@ -392,9 +392,9 @@ class ForgottenPassword(object):
         try:
             util.mail.send(
                 user.email,
-                '[Naskoc na FI] Nové heslo',
+                f'{util.config.mail_subject_prefix()} Nové heslo',
                 'Ahoj,<br/>na základě tvé žádosti ti bylo vygenerováno nové '
-                'heslo: %s<br/><br/>Naskoč na FI' % new_password
+                f'heslo: {new_password}<br/><br/>{util.config.seminar_name()}'
             )
         except SQLAlchemyError:
             exc_type, exc_value, exc_traceback = sys.exc_info()

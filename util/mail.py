@@ -61,7 +61,7 @@ class sendThread(threading.Thread):
                 queueLock.release()
 
                 try:
-                    s = smtplib.SMTP('relay.fi.muni.cz')
+                    s = smtplib.SMTP(util.config.smtp_server())
                     s.sendmail(data.frm, data.to, data.msg)
                 except Exception as e:
                     print(str(e))
@@ -209,7 +209,7 @@ class Unsubscribe:
     def text(self):
         return (
             '<hr><p style="font-size: 70%%;">Pokud nechceš dostávat tyto notifikace, '
-            'změň si nastavení na <a href="%s">webu Naskoč na FI</a> nebo klikni na '
+            'změň si nastavení na <a href="%s">webu</a> nebo klikni na '
             '<a href="%s">odhlásit se</a>.</p>' % (
                 self.ksi_web,
                 self.link(),
@@ -241,11 +241,11 @@ class FakeUnsubscribe:
         return (
             '<hr><p style="font-size: 70%;">Na tomto místě je přímý odkaz na '
             'odhlášení odběru, který vypadá takto:<br>Pokud nechceš dostávat tyto '
-            'notifikace, změň si nastavení na <a href="">webu Naskoč na FI</a> nebo '
+            'notifikace, změň si nastavení na <a href="">webu</a> nebo '
             'klikni na <a href="">odhlásit se</a>.</p>'
         )
 
     def plaintext(self):
         return (
-            '\n\nTady je plaintextová verze unsubscribe, ale tu snad nikdo nečte...'
+            '\n\nTady je plaintextová verze unsubscribe pouze pro orgy, ale tu snad nikdo nečte...'
         )

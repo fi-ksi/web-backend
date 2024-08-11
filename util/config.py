@@ -23,10 +23,18 @@ def get(key: str, default: Optional[str] = None) -> Optional[str]:
 
 
 def ksi_conf() -> Optional[str]:
+    """
+    Get the email address of the conference (== all emails will be sent from this address)
+    :return: email address of the conference
+    """
     return get("ksi_conf")
 
 
 def mail_sign() -> Optional[str]:
+    """
+    Get the email signature
+    :return: email signature
+    """
     return get("mail_sign")
 
 
@@ -46,15 +54,27 @@ def mail_sender() -> Optional[str]:
 
 
 def successful_participant_trophy_id() -> Optional[int]:
+    """
+    Get the ID of the trophy that is awarded to successful participants
+    :return:  ID of the trophy that is awarded to successful participants
+    """
     text = get('successful_participant_trophy_id')
     return int(text) if text is not None else None
 
 
 def backend_url() -> Optional[str]:
+    """
+    Get the URL of the backend
+    :return: URL of the backend
+    """
     return get("backend_url")
 
 
 def monitoring_dashboard_url() -> Optional[str]:
+    """
+    Get the URL of the monitoring dashboard
+    :return: URL of the monitoring dashboard
+    """
     return get("monitoring_dashboard_url")
 
 
@@ -82,6 +102,10 @@ def github_api_org_url() -> Optional[str]:
 
 
 def feedback() -> List[str]:
+    """
+    Get the list of email addresses that should receive feedback
+    :return: list of email addresses that should receive feedback
+    """
     return [r for r, in session.query(model.FeedbackRecipient.email).all()]
 
 
@@ -89,7 +113,7 @@ def discord_username_change_webhook() -> Optional[str]:
     """
     Get the webhook URL for Discord that should be called whenever a user changes their Discord username
 
-    :return webhook URL for Discord that should be called whenever a user changes their Discord username
+    :return: webhook URL for Discord that should be called whenever a user changes their Discord username
     """
     return get("webhook_discord_username_change")
 
@@ -98,6 +122,24 @@ def discord_invite_link() -> Optional[str]:
     """
     Get the invite link to the Discord server
 
-    :return the invite link to the Discord server
+    :return: the invite link to the Discord server
     """
     return get("discord_invite_link")
+
+
+def smtp_server() -> str:
+    """
+    Get the SMTP server address
+
+    :return: the SMTP server address
+    """
+    return get("smtp_server", "relay.fi.muni.cz")
+
+
+def unsuccessful_tries_per_day() -> int:
+    """
+    Get the number of unsuccessful tries per day per each module per user
+
+    :return: the number of unsuccessful tries per day
+    """
+    return int(get("unsuccessful_tries_per_day", "20"))

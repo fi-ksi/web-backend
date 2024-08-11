@@ -8,3 +8,4 @@ ksi-py3-venv
 .run/
 */.vscode
 .docker/data
+gunicorn_cfg.py

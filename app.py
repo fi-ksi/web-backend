@@ -264,7 +264,7 @@ api.add_route('/diplomas/{user}/{year}/show', endpoint.DiplomaDownload())
 
 """
 task-content endpoint contains: (defined in endpoint/content.py, see also
-./gunicorn_cfg.py)
+./gunicorn_cfg.py.example)
  * /taskContent/{id}/zadani/{file_path}
  * /taskContent/{id}/reseni/{file_path}
  * /taskContent/[id]/icon/{file_name}

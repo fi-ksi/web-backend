@@ -1,5 +1,4 @@
 #!/bin/bash
-set -x
 cd "$(realpath "$(dirname "$0")")/.." || { echo "ERR: Cannot cd to script dir"; exit 1; }
 
 DIR_BE="/opt/web-backend"
@@ -10,6 +9,12 @@ bindfs /opt/database /var/ksi-be/ -u ksi -g ksi --create-for-user=1000 || { echo
 bindfs /opt/seminar.git /var/ksi-seminar.git/ -u ksi -g ksi --create-for-user=1000 || { echo "ERR: Bind mount for database dir"; exit 1; }
 
 bash init-makedirs.sh || { echo "ERR: Cannot create directories"; exit 1; }
+
+# Copy sample config if not exists
+if [ ! -f "$DIR_BE/gunicorn_cfg.py" ]; then
+  echo "[*] Copying sample gunicorn config..."
+  cp "$DIR_BE/gunicorn_cfg.py.example" "$DIR_BE/gunicorn_cfg.py" || { echo "ERR: Cannot copy gunicorn config"; exit 1; }
+fi
 
 # Setup git name and email if not yet set
 if [ -z "$(git config --global user.name)" ]; then

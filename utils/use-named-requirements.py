@@ -3,11 +3,6 @@
 """
 Replaces all ID-based prerequisities with their name-based alternatives by resolving their IDs againts the backend
 
-Requires following environment variables:
-- YEAR - the year/directory name inside seminar repository
-- BACKEND - backend URL including https
-- TOKEN - your login token (can be extracted from frontend)
-
 The first argument may be path to the task.json file or to a directory in which the task.json is supposed to be recursivelly searched
 """
 
@@ -66,15 +61,9 @@ def replace_requiements(file_task_meta: Path, backend_url: str, token: str) -> N
 
 
 def main() -> int:
-    backend_url = environ['BACKEND']
-    if 'TOKEN' not in environ:
-        login = KSILogin(backend_url)
-        if not login.login(environ['USER'], environ.get('PASSWORD')):
-            print('ERROR: Login failed')
-            return 1
-        environ['TOKEN'] = login.token
+    login = KSILogin.login_auto()
 
-    backend = (backend_url, environ['TOKEN'])
+    backend = (login.backend_url, login.token)
 
     source = Path(argv[1])
     if source.is_file():

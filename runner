@@ -18,6 +18,8 @@ def main():
         default='/var/run/gunicorn')
     parser.add_option('--log-dir', dest='log_dir',
         default='/var/log/gunicorn')
+    parser.add_option('--server-name', dest='server_name',
+        default='ksi-backend')
 
     parser.add_option('-v', '--verbosity', type='int', dest='verbosity',
         default=2, help='Verbosity level; 0=minimal output, 1=normal output' \
@@ -71,7 +73,7 @@ def main():
         ]
     }
 
-    config = Config("ksi-backend", options, CONFIG, log)
+    config = Config(options.server_name, options, CONFIG, log)
 
     log.debug("Calling .%s() on %s", action, config.basename())
     getattr(config, action)()

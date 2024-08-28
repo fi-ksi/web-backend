@@ -150,6 +150,7 @@ def extrack_task_paths_all(repo: Path, filter_year: str) -> Dict[str, str]:
         if not branch.startswith('remotes/origin/'):
             continue
         branch = branch.removeprefix('remotes/origin/')
+        branch = branch.split(' -> ', 1)[0]  # fix for lines like remotes/origin/HEAD -> origin/master
         for path in extract_task_paths(repo, branch):
             if not path.startswith(filter_year):
                 continue

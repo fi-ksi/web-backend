@@ -292,6 +292,7 @@ api.add_route('/admin/execs', endpoint.admin.Execs())
 api.add_route('/admin/execs/{id}', endpoint.admin.Exec())
 api.add_route('/admin/monitoring-dashboard', endpoint.admin.MonitoringDashboard())
 api.add_route('/admin/diploma/{id}/grant', endpoint.admin.DiplomaGrant())
+api.add_route('/admin/instanceConfig', endpoint.admin.InstanceConfig())
 
 api.add_route('/unsubscribe/{id}', endpoint.Unsubscribe())
 

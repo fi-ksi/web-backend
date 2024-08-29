@@ -1,13 +1,16 @@
 import os
-from typing import Optional, List
-
-from sqlalchemy import func
+from typing import Optional, List, Dict, TypedDict
 
 from db import session
 import model
 
 MAX_UPLOAD_FILE_SIZE = 25 * 1024 ** 2  # set to slightly larger than on FE as to prevent MB vs MiB mismatches
 MAX_UPLOAD_FILE_COUNT = 20
+
+
+class ConfigRecord(TypedDict):
+    key: str
+    value: str
 
 
 def get(key: str, default: Optional[str] = None) -> Optional[str]:
@@ -20,6 +23,29 @@ def get(key: str, default: Optional[str] = None) -> Optional[str]:
     """
     prop = session.query(model.Config).get(key)
     return prop.value if prop is not None and prop.value is not None else default
+
+
+def set_config(key: str, value: str):
+    """
+    Set a property in the config table in database
+    :param key: key to set value for
+    :param value: value to set
+    """
+    prop = session.query(model.Config).get(key)
+    if prop is None:
+        prop = model.Config(key=key, value=value)
+        session.add(prop)
+    else:
+        prop.value = value
+    session.commit()
+
+
+def get_all() -> Dict[str, ConfigRecord]:
+    """
+    Get all properties from the config table in database
+    :return: dictionary of all properties
+    """
+    return {prop.key: {'key': prop.key, 'value': prop.value} for prop in session.query(model.Config).all()}
 
 
 def ksi_conf() -> str:

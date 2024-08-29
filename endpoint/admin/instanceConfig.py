@@ -6,6 +6,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 import util.config
 from db import session
+from util.logger import audit_log
 
 
 class InstanceConfig:
@@ -33,6 +34,12 @@ class InstanceConfig:
                 }
                 return
 
+            audit_log(
+                scope="CONFIG",
+                user_id=userinfo.id,
+                message=f"Changed instance config {key}",
+                message_meta={"key": key, "value": value}
+            )
             util.config.set_config(key, value)
             req.context['result'] = {}
         except SQLAlchemyError:
@@ -53,7 +60,7 @@ class InstanceConfig:
                 }
                 return
 
-            req.context['result'] = {'config': list(util.config.get_all().values())}
+            req.context['result'] = {'config': list(util.config.get_all(include_secret=False).values())}
         except SQLAlchemyError:
             session.rollback()
             raise

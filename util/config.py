@@ -40,12 +40,13 @@ def set_config(key: str, value: str):
     session.commit()
 
 
-def get_all() -> Dict[str, ConfigRecord]:
+def get_all(include_secret: bool = True) -> Dict[str, ConfigRecord]:
     """
     Get all properties from the config table in database
+    :param include_secret: whether to include secret properties
     :return: dictionary of all properties
     """
-    return {prop.key: {'key': prop.key, 'value': prop.value} for prop in session.query(model.Config).all()}
+    return {prop.key: {'key': prop.key, 'value': prop.value} for prop in session.query(model.Config).all() if not prop.secret or include_secret}
 
 
 def ksi_conf() -> str:

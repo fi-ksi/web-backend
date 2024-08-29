@@ -23,22 +23,22 @@ INSERT INTO "modules" ("id","task","type","name","description","max_points","aut
 }');
 INSERT INTO "active_orgs" ("org","year") VALUES (1,1);
 INSERT INTO "users_notify" ("user","auth_token","notify_eval","notify_response","notify_ksi","notify_events") VALUES (1,'a4bcf1a180d5cd5a3e1a6d04df757537652f5448',1,1,1,1);
-INSERT INTO `config` (`key`, `value`) VALUES
-('backend_url', 'http://localhost:3030'),
-('discord_invite_link', NULL),
-('github_api_org_url', NULL),
-('github_token', NULL),
-('ksi_conf', 'all-organizers-group@localhost'),
-('mail_sender', NULL),
-('mail_sign', 'Good luck!<br>Testing Seminar of Informatics'),
-('monitoring_dashboard_url', NULL),
-('return_path', 'mail-error@localhost'),
-('seminar_repo', 'seminar'),
-('successful_participant_trophy_id', NULL),
-('webhook_discord_username_change', NULL),
-('web_url_admin', NULL),
-('mail_subject_prefix', '[TEST SEMINAR]'),
-('seminar_name', 'Testing Seminar of Informatics'),
-('mail_registration_welcome', 'testing seminar of informatics.'),
-('web_url', 'http://localhost:8080');
+INSERT INTO `config` (`key`, `value`, `secret`) VALUES
+('backend_url', 'http://localhost:3030', 0),
+('discord_invite_link', NULL, 0),
+('github_api_org_url', NULL, 0),
+('github_token', NULL, 1),
+('ksi_conf', 'all-organizers-group@localhost', 0),
+('mail_sender', NULL, 0),
+('mail_sign', 'Good luck!<br>Testing Seminar of Informatics', 0),
+('monitoring_dashboard_url', NULL, 0),
+('return_path', 'mail-error@localhost', 0),
+('seminar_repo', 'seminar', 0),
+('successful_participant_trophy_id', NULL, 0),
+('webhook_discord_username_change', NULL, 0),
+('web_url_admin', NULL, 0),
+('mail_subject_prefix', '[TEST SEMINAR]', 0),
+('seminar_name', 'Testing Seminar of Informatics', 0),
+('mail_registration_welcome', 'testing seminar of informatics.', 0),
+('web_url', 'http://localhost:8080', 0);
 COMMIT;

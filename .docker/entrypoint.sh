@@ -6,7 +6,6 @@ DIR_BE="/opt/web-backend"
 bindfs /etc /opt/etc || { echo "ERR: Bind mount for isolate"; exit 1; }
 bindfs /opt/data "$DIR_BE/data" -u ksi -g ksi -o nonempty --create-for-user=1000 || { echo "ERR: Bind mount for data"; exit 1; }
 bindfs /opt/database /var/ksi-be/ -u ksi -g ksi --create-for-user=1000 || { echo "ERR: Bind mount for database dir"; exit 1; }
-bindfs /opt/seminar.git /var/ksi-seminar.git/ -u ksi -g ksi --create-for-user=1000 || { echo "ERR: Bind mount for database dir"; exit 1; }
 
 bash init-makedirs.sh || { echo "ERR: Cannot create directories"; exit 1; }
 
@@ -37,18 +36,27 @@ fi
 # Create seminar repo if not exists
 if [ ! -d "$DIR_BE/data/seminar" ] || [ ! "$(ls -A "$DIR_BE/data/seminar")" ]; then
   echo "[*] Setting up seminar repo for the first time..."
-  sudo -Hu ksi git clone https://github.com/esoadamo/seminar-template.git "$DIR_BE/data/seminar" &&
-  rm -rf "$DIR_BE/data/seminar/.git" &&
-  sudo -Hu ksi git config --global init.defaultBranch master &&
-  sudo -Hu ksi git init --bare "/var/ksi-seminar.git/" &&
-  pushd "$DIR_BE/data/seminar" &&
-  sudo -Hu ksi git init . &&
-  sudo -Hu ksi git remote add origin "/var/ksi-seminar.git/" &&
-  sudo -Hu ksi git add . &&
-  sudo -Hu ksi git status &&
-  sudo -Hu ksi git commit -m "Initial commit" &&
-  sudo -Hu ksi git push -u origin master &&
-  popd || { echo "ERR: Prepare first seminar"; rm -rf "$DIR_BE/data/seminar"; exit 1; }
+
+  if [ "$SEMINAR_GIT_URL" ]; then
+    echo "[*] Cloning seminar repo as SEMINAR_GIT_URL is set ...." &&
+    sudo -Hu ksi git clone https://github.com/esoadamo/seminar-template.git "$DIR_BE/data/seminar" ||
+    { echo "ERR: Prepare first seminar"; rm -rf "$DIR_BE/data/seminar"; exit 1; }
+  else
+    bindfs /opt/seminar.git /var/ksi-seminar.git/ -u ksi -g ksi --create-for-user=1000 || { echo "ERR: Bind mount for seminar dir"; exit 1; }
+    echo "[*] Creating new seminar repo as SEMINAR_GIT_URL is NOT set ...." &&
+    sudo -Hu ksi git clone https://github.com/esoadamo/seminar-template.git "$DIR_BE/data/seminar" &&
+    rm -rf "$DIR_BE/data/seminar/.git" &&
+    sudo -Hu ksi git config --global init.defaultBranch master &&
+    sudo -Hu ksi git init --bare "/var/ksi-seminar.git/" &&
+    pushd "$DIR_BE/data/seminar" &&
+    sudo -Hu ksi git init . &&
+    sudo -Hu ksi git remote add origin "/var/ksi-seminar.git/" &&
+    sudo -Hu ksi git add . &&
+    sudo -Hu ksi git status &&
+    sudo -Hu ksi git commit -m "Initial commit" &&
+    sudo -Hu ksi git push -u origin master &&
+    popd || { echo "ERR: Prepare first seminar"; rm -rf "$DIR_BE/data/seminar"; exit 1; }
+  fi
 fi
 
 # create database if not exists

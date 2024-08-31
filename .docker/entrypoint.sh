@@ -39,7 +39,8 @@ if [ ! -d "$DIR_BE/data/seminar" ] || [ ! "$(ls -A "$DIR_BE/data/seminar")" ]; t
 
   if [ "$SEMINAR_GIT_URL" ]; then
     echo "[*] Cloning seminar repo as SEMINAR_GIT_URL is set ...." &&
-    sudo -Hu ksi git clone https://github.com/esoadamo/seminar-template.git "$DIR_BE/data/seminar" ||
+    sudo -Hu ksi git clone "$SEMINAR_GIT_URL" "$DIR_BE/data/seminar" &&
+    export SEMINAR_GIT_URL="<MASKED>" ||  # prevent leaking the URL
     { echo "ERR: Prepare first seminar"; rm -rf "$DIR_BE/data/seminar"; exit 1; }
   else
     bindfs /opt/seminar.git /var/ksi-seminar.git/ -u ksi -g ksi --create-for-user=1000 || { echo "ERR: Bind mount for seminar dir"; exit 1; }

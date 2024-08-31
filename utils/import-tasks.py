@@ -9,6 +9,7 @@ Requires following environment variables:
 import datetime
 import re
 import json
+from time import sleep
 from urllib import request
 from pathlib import Path
 from subprocess import check_output
@@ -201,6 +202,7 @@ def main() -> int:
         task = task_path_to_task(repo, task_branch, task_path, wave_mapping)
         print(f'- creating {task_name} ({wave_number})')
         assert create_task(task, *backend), f"could not create task {task}"
+        sleep(0.5)
 
     print('All done')
     return 0

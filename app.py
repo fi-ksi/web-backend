@@ -146,6 +146,12 @@ class Logger(object):
         log(req, resp)
 
 
+class RemoveTrailingSlashMiddleware:
+    def process_request(self, req, resp):
+        if req.path != '/' and req.path.endswith('/'):
+            raise falcon.HTTPMovedPermanently(req.path.rstrip('/'))
+
+
 def log_sink(req, resp):
     resp.status = falcon.HTTP_404
 
@@ -192,7 +198,7 @@ def error_handler(ex, req, resp, params):
 
 
 # Add Logger() to middleware for logging
-api = falcon.API(middleware=[SourceAddressFill(), JSONTranslator(), Authorizer(), Year_fill(),
+api = falcon.API(middleware=[SourceAddressFill(), RemoveTrailingSlashMiddleware(), JSONTranslator(), Authorizer(), Year_fill(),
                  Corser(), AddCORS(), Logger()])
 api.add_error_handler(Exception, handler=error_handler)
 api.req_options.auto_parse_form_urlencoded = True
@@ -241,7 +247,7 @@ api.add_route('/users/{id}/discord', endpoint.DiscordInviteLink())
 api.add_route('/profile/picture', endpoint.PictureUploader())
 api.add_route('/profile/{id}', endpoint.OrgProfile())
 api.add_route('/profile/', endpoint.Profile())
-api.add_route('/basicProfile/', endpoint.BasicProfile())
+api.add_route('/basicProfile', endpoint.BasicProfile())
 api.add_route('/images/{context}/{id}', endpoint.Image())
 api.add_route('/content', endpoint.Content())
 api.add_route('/taskContent/{id}', endpoint.TaskContent())
@@ -277,10 +283,10 @@ api.add_route('/admin/correctionsInfos', endpoint.admin.CorrectionsInfo())
 api.add_route('/admin/correctionsInfos/{id}', endpoint.admin.CorrectionInfo())
 api.add_route('/admin/correctionsEmail/{id}', endpoint.admin.CorrectionsEmail())
 api.add_route('/admin/corrections/{id}/publish', endpoint.admin.CorrectionsPublish())
-api.add_route('/admin/subm/eval/{eval_id}/', endpoint.admin.SubmFilesEval())
-api.add_route('/admin/subm/task/{task_id}/', endpoint.admin.SubmFilesTask())
+api.add_route('/admin/subm/eval/{eval_id}', endpoint.admin.SubmFilesEval())
+api.add_route('/admin/subm/task/{task_id}', endpoint.admin.SubmFilesTask())
 api.add_route('/admin/e-mail/', endpoint.admin.Email())
-api.add_route('/admin/atasks/', endpoint.admin.Tasks())
+api.add_route('/admin/atasks', endpoint.admin.Tasks())
 api.add_route('/admin/atasks/{id}', endpoint.admin.Task())
 api.add_route('/admin/atasks/{id}/deploy', endpoint.admin.TaskDeploy())
 api.add_route('/admin/atasks/{id}/merge', endpoint.admin.TaskMerge())

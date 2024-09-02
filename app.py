@@ -29,7 +29,7 @@ class JSONTranslator(object):
     def process_request(self, req, resp):
         return
 
-    def process_response(self, req, resp, endpoint):
+    def process_response(self, req, resp, *_):
         if 'result' not in req.context:
             return
 
@@ -142,7 +142,7 @@ def log(req, resp):
 class Logger(object):
     def process_request(self, req, resp):
         pass
-    def process_response(self, req, resp, resource, req_succeeded):
+    def process_response(self, req, resp, *_):
         log(req, resp)
 
 
@@ -155,7 +155,7 @@ def log_sink(req, resp):
 
 class Corser(object):
 
-    def process_response(self, request, response, resource):
+    def process_response(self, request, response, *_):
         response.set_header('Access-Control-Allow-Headers',
                             'authorization,content-type,year')
         response.set_header('Access-Control-Allow-Methods',

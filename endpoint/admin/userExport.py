@@ -178,7 +178,7 @@ class UserExport(object):
             )
             resp.content_type = "text/csv"
             resp.body = inMemoryOutputFile.getvalue()
-            resp.stream_len = len(resp.body)
+            resp.content_length = len(resp.body)
 
             inMemoryOutputFile.close()
         except SQLAlchemyError:

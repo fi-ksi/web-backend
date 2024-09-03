@@ -42,8 +42,7 @@ class Content(object):
             return
 
         resp.content_type = magic.Magic(mime=True).from_file(filePath)
-        resp.stream_len = os.path.getsize(filePath)
-        resp.stream = open(filePath, 'rb')
+        resp.set_stream(open(filePath, 'rb'), os.path.getsize(filePath))
 
     def on_post(self, req, resp):
         user = req.context['user']
@@ -149,5 +148,4 @@ class TaskContent(object):
             return
 
         resp.content_type = magic.Magic(mime=True).from_file(filePath)
-        resp.stream_len = os.path.getsize(filePath)
-        resp.stream = open(filePath, 'rb')
+        resp.set_stream(open(filePath, 'rb'), os.path.getsize(filePath))

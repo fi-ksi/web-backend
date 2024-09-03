@@ -74,5 +74,4 @@ class Image(object):
             return
 
         resp.content_type = magic.Magic(mime=True).from_file(image)
-        resp.stream_len = os.path.getsize(image)
-        resp.stream = open(image, 'rb')
+        resp.stream = open(image, 'rb', os.path.getsize(image))

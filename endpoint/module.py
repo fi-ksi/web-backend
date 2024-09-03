@@ -383,9 +383,8 @@ class ModuleSubmittedFile(object):
                     resp.status = falcon.HTTP_404
                     return
 
-                resp.content_type = magic.Magic(mime=True).from_file(path)
-                resp.stream_len = os.path.getsize(path)
-                resp.stream = open(path, 'rb')
+                resp.content_type = magic.Magic(mime=True).from_file(path) 
+                resp.set_stream(open(path, 'rb'), os.path.getsize(path))
         except SQLAlchemyError:
             session.rollback()
             raise

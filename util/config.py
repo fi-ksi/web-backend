@@ -1,7 +1,8 @@
-import os
+from time import time
 from typing import Optional, List, Dict, TypedDict
 
 from db import session
+from logger import get_log
 import model
 
 MAX_UPLOAD_FILE_SIZE = 25 * 1024 ** 2  # set to slightly larger than on FE as to prevent MB vs MiB mismatches
@@ -11,6 +12,38 @@ MAX_UPLOAD_FILE_COUNT = 20
 class ConfigRecord(TypedDict):
     key: str
     value: str
+    
+    
+class ConfigCache:
+    __instance: Optional["ConfigCache"] = None
+    
+    def __init__(self) -> None:
+        self.__cache: Dict[str, ConfigRecord] = {}
+        self.__cache_time = 0
+        self.cache_ttl = 300
+        self.__fetch_cache()
+        
+    def __fetch_cache(self):
+        self.__cache = get_all(include_secret=True)
+        self.__cache_time = time()
+
+    @property
+    def cache(self) -> Dict[str, ConfigRecord]:
+        if time() - self.__cache_time > self.cache_ttl:
+            try:
+                self.__fetch_cache()
+            except Exception as e:
+                get_log().error(e)
+        return self.__cache
+
+    def get(self, key: str, default: Optional[str] = None) -> Optional[str]:
+        return self.cache.get(key, default)
+    
+    @classmethod
+    def instance(cls) -> "ConfigCache":
+        if cls.__instance is None:
+            cls.__instance = ConfigCache()
+        return cls.__instance
 
 
 def get(key: str, default: Optional[str] = None) -> Optional[str]:
@@ -21,8 +54,7 @@ def get(key: str, default: Optional[str] = None) -> Optional[str]:
     :param default: default value in case the key does not exist
     :return: value in database if the key exists, default otherwise
     """
-    prop = session.query(model.Config).get(key)
-    return prop.value if prop is not None and prop.value is not None else default
+    return ConfigCache.instance.get(key, default).value
 
 
 def set_config(key: str, value: str):
@@ -38,6 +70,7 @@ def set_config(key: str, value: str):
     else:
         prop.value = value
     session.commit()
+    ConfigCache.instance.cache[key].value = value
 
 
 def get_all(include_secret: bool = True) -> Dict[str, ConfigRecord]:

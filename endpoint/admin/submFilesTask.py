@@ -67,7 +67,7 @@ class SubmFilesTask(object):
             )
             resp.content_type = "application/zip"
             resp.body = inMemoryOutputFile.getvalue()
-            resp.stream_len = len(resp.body)
+            resp.content_length = len(resp.body)
 
             inMemoryOutputFile.close()
         except SQLAlchemyError:

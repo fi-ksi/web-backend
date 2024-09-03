@@ -44,5 +44,4 @@ class DiplomaDownload:
 
         path = get_diploma_path(year_id, user_id)
         resp.content_type = magic.Magic(mime=True).from_file(f"{path}")
-        resp.stream_len = os.path.getsize(path)
-        resp.stream = open(path, 'rb')
+        resp.set_stream(open(path, 'rb'), os.path.getsize(path))

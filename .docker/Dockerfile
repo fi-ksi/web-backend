@@ -1,4 +1,4 @@
-FROM python:3.9-bullseye
+FROM python:3.12-bookworm
 ENV DIR_BE /opt/web-backend
 
 RUN mkdir $DIR_BE

@@ -3,9 +3,16 @@ cd "$(realpath "$(dirname "$0")")/.." || { echo "ERR: Cannot cd to script dir"; 
 
 DIR_BE="/opt/web-backend"
 
+if [ "$SEMINAR_GIT_URL" == "::local::" ]; then
+  SEMINAR_GIT_URL=""
+fi
+
 bindfs /etc /opt/etc || { echo "ERR: Bind mount for isolate"; exit 1; }
 bindfs /opt/data "$DIR_BE/data" -u ksi -g ksi -o nonempty --create-for-user=1000 || { echo "ERR: Bind mount for data"; exit 1; }
 bindfs /opt/database /var/ksi-be/ -u ksi -g ksi --create-for-user=1000 || { echo "ERR: Bind mount for database dir"; exit 1; }
+if [ -z "$SEMINAR_GIT_URL" ]; then
+  bindfs /opt/seminar.git /var/ksi-seminar.git/ -u ksi -g ksi --create-for-user=1000 || { echo "ERR: Bind mount for seminar dir"; exit 1; }
+fi
 
 bash init-makedirs.sh || { echo "ERR: Cannot create directories"; exit 1; }
 
@@ -43,7 +50,6 @@ if [ ! -d "$DIR_BE/data/seminar" ] || [ ! "$(ls -A "$DIR_BE/data/seminar")" ]; t
     export SEMINAR_GIT_URL="<MASKED>" ||  # prevent leaking the URL
     { echo "ERR: Prepare first seminar"; rm -rf "$DIR_BE/data/seminar"; exit 1; }
   else
-    bindfs /opt/seminar.git /var/ksi-seminar.git/ -u ksi -g ksi --create-for-user=1000 || { echo "ERR: Bind mount for seminar dir"; exit 1; }
     echo "[*] Creating new seminar repo as SEMINAR_GIT_URL is NOT set ...." &&
     sudo -Hu ksi git clone https://github.com/esoadamo/seminar-template.git "$DIR_BE/data/seminar" &&
     rm -rf "$DIR_BE/data/seminar/.git" &&

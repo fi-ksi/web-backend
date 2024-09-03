@@ -21,7 +21,7 @@ import git
 import pypandoc
 import pyparsing as pp
 from lockfile import LockFile
-from sqlalchemy import and_, func
+from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
 import model

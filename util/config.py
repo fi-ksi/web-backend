@@ -2,7 +2,7 @@ from time import time
 from typing import Optional, List, Dict, TypedDict
 
 from db import session
-from logger import get_log
+from util.logger import get_log
 import model
 
 MAX_UPLOAD_FILE_SIZE = 25 * 1024 ** 2  # set to slightly larger than on FE as to prevent MB vs MiB mismatches

@@ -27,17 +27,20 @@ class ConfigCache:
         self.__cache = get_all(include_secret=True)
         self.__cache_time = time()
 
+    def refresh(self) -> None:
+        try:
+            self.__fetch_cache()
+        except Exception as e:
+            get_log().error(e)
+
     @property
     def cache(self) -> Dict[str, ConfigRecord]:
         if time() - self.__cache_time > self.cache_ttl:
-            try:
-                self.__fetch_cache()
-            except Exception as e:
-                get_log().error(e)
+            self.refresh()
         return self.__cache
 
     def get(self, key: str, default: Optional[str] = None) -> Optional[str]:
-        return self.cache.get(key, default)
+        return self.cache.get(key, default)['value']
     
     @classmethod
     def instance(cls) -> "ConfigCache":
@@ -54,14 +57,15 @@ def get(key: str, default: Optional[str] = None) -> Optional[str]:
     :param default: default value in case the key does not exist
     :return: value in database if the key exists, default otherwise
     """
-    return ConfigCache.instance.get(key, default).value
+    return ConfigCache.instance().get(key, default)
 
 
-def set_config(key: str, value: str):
+def set_config(key: str, value: str, secret: bool = False):
     """
     Set a property in the config table in database
     :param key: key to set value for
     :param value: value to set
+    :param secret: whether the value is secret
     """
     prop = session.query(model.Config).get(key)
     if prop is None:
@@ -70,7 +74,7 @@ def set_config(key: str, value: str):
     else:
         prop.value = value
     session.commit()
-    ConfigCache.instance.cache[key].value = value
+    ConfigCache.instance().refresh()
 
 
 def get_all(include_secret: bool = True) -> Dict[str, ConfigRecord]:

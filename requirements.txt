@@ -22,4 +22,5 @@ smmap==5.0.1
 smmap2==3.0.1
 SQLAlchemy==2.0.32
 python-dateutil==2.9.0
-mysqlclient==2.2.4
+PyMySQL==1.1.1
+

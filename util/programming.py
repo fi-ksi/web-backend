@@ -1,6 +1,6 @@
 import random
 import time
-from hashlib import md5
+from hashlib import sha256
 from pathlib import Path
 from secrets import token_hex
 from typing import Optional, List, Tuple, Callable
@@ -129,7 +129,7 @@ def to_json(db_dict, user_id, module_id, last_eval, task_id):
         'code': db_dict['programming']['default_code'],
     }
 
-    user_id_hashed = md5(f"{util.config.salt()}{user_id}".encode('ascii')).hexdigest()
+    user_id_hashed = sha256(f"{util.config.salt()}{user_id}".encode('ascii')).hexdigest()
     code["edulint_source_id"] = f"{util.config.seminar_name_short()}:taskId_{task_id}:moduleId_{module_id}:userId_{user_id_hashed}"
 
     # Pick last participant`s code and return it to participant.

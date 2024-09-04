@@ -1,19 +1,19 @@
-import copy
-import falcon
 import json
 import os
 import shutil
 import subprocess
 import sys
 import traceback
-from datetime import datetime, timedelta
-from sqlalchemy import func, desc
+from datetime import datetime, timezone
+
+import falcon
+from sqlalchemy import desc
 from sqlalchemy.exc import SQLAlchemyError
 
-import model
 import endpoint
+import model
 import util
-from db import engine, session
+from db import session
 from util import UserInfo
 
 # sets CORS header to *, applied when running in a docker container
@@ -43,6 +43,7 @@ class JSONTranslator(object):
 
 class Authorizer(object):
 
+    # noinspection PyMethodMayBeStatic
     def process_request(self, req, resp):
         if req.auth:
             token_str = req.auth.split(' ')[-1]
@@ -51,7 +52,7 @@ class Authorizer(object):
 
                 if token is not None:
                     if (req.relative_uri != '/auth' and
-                       token.expire < datetime.utcnow()):
+                       token.expire < datetime.now(tz=timezone.utc)):
                         # user timeouted
                         req.context['user'] = UserInfo()
                         return
@@ -198,8 +199,8 @@ def error_handler(ex, req, resp, params):
 
 
 # Add Logger() to middleware for logging
-api = falcon.API(middleware=[SourceAddressFill(), RemoveTrailingSlashMiddleware(), JSONTranslator(), Authorizer(), Year_fill(),
-                 Corser(), AddCORS(), Logger()])
+api = falcon.App(middleware=[SourceAddressFill(), RemoveTrailingSlashMiddleware(), JSONTranslator(), Authorizer(), Year_fill(),
+                             Corser(), AddCORS(), Logger()])
 api.add_error_handler(Exception, handler=error_handler)
 api.req_options.auto_parse_form_urlencoded = True
 

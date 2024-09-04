@@ -1,4 +1,4 @@
-FROM python:3.12-bookworm
+FROM python:3.11-bookworm
 ENV DIR_BE /opt/web-backend
 
 RUN mkdir $DIR_BE
@@ -9,7 +9,7 @@ EXPOSE 3030
 RUN wget -O - https://deb.adamhlavacek.com/pub.gpg | apt-key add - \
     && echo "deb https://deb.adamhlavacek.com ./" >> /etc/apt/sources.list \
     && apt-get update \
-    && apt-get install -y pandoc acl sudo curl isolate bindfs libpython3.7 libcap2 sqlite3 \
+    && apt-get install -y pandoc acl sudo curl isolate bindfs libpython3.7 libcap2 sqlite3 python3-distutils \
     && sudo apt-get clean \
     && pip3 install virtualenv --no-cache-dir \
     && virtualenv -p python3 ksi-py3-venv \

@@ -1,4 +1,5 @@
 from time import time
+from secrets import token_urlsafe
 from typing import Optional, List, Dict, TypedDict
 
 from db import session
@@ -40,7 +41,9 @@ class ConfigCache:
         return self.__cache
 
     def get(self, key: str, default: Optional[str] = None) -> Optional[str]:
-        return self.cache.get(key, default)['value']
+        if key not in self.cache:
+            return default
+        return self.cache[key]['value']
     
     @classmethod
     def instance(cls) -> "ConfigCache":
@@ -240,6 +243,15 @@ def seminar_name() -> str:
     return get("seminar_name", "Korespondenční seminář z informatiky")
 
 
+def seminar_name_short() -> str:
+    """
+    Get the short name of the seminar
+
+    :return: the short name of the seminar
+    """
+    return get("seminar_name_short", "KSI")
+
+
 def mail_registration_welcome() -> str:
     """
     Get the email template for the registration welcome email
@@ -248,3 +260,16 @@ def mail_registration_welcome() -> str:
     """
     return get("mail_registration_welcome",
                "Korespondenčním semináři z informatiky Fakulty informatiky Masarykovy univerzity.")
+
+
+def salt() -> str:
+    """
+    Get the salt for hashing secrets
+
+    :return: the salt for hashing passwords
+    """
+    saved_salt = get("salt")
+    if saved_salt is None:
+        saved_salt = token_urlsafe(32)
+        set_config("salt", saved_salt, secret=True)
+    return saved_salt

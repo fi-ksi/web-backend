@@ -69,10 +69,11 @@ def to_json(module, user_id):
     try:
         if _module.type == ModuleType.PROGRAMMING:
             prog = util.programming.to_json(
-                json.loads(_module.data), user_id, _module.id, evaluation
+                json.loads(_module.data), user_id, _module.id, evaluation, _module.task
             )
             module_json['code'] = prog['code']
             module_json['default_code'] = prog['default_code']
+            module_json['edulint_source_id'] = prog['edulint_source_id']
             if 'last_datetime' in prog:
                 module_json['last_datetime'] = prog['last_datetime'].isoformat()
             if 'last_origin' in prog:
@@ -103,6 +104,7 @@ def to_json(module, user_id):
             txt = util.text.to_json(json.loads(_module.data), user_id)
             module_json['fields'] = txt['questions']
     except Exception as e:
+        traceback.print_exc()
         module_json['description'] +=\
             "<pre><code><strong>Module parsing error:</strong><br>" + str(e)\
             + "</code></pre>"

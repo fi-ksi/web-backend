@@ -39,6 +39,7 @@ INSERT INTO `config` (`key`, `value`, `secret`) VALUES
 ('web_url_admin', NULL, 0),
 ('mail_subject_prefix', '[TEST SEMINAR]', 0),
 ('seminar_name', 'Testing Seminar of Informatics', 0),
+('seminar_name_short', 'TSI', 0),
 ('mail_registration_welcome', 'testing seminar of informatics.', 0),
 ('web_url', 'http://localhost:8080', 0);
 COMMIT;

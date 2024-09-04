@@ -443,7 +443,10 @@ def copy_icons(task: model.Task, source_path: str) -> None:
         os.makedirs(target_path)
     for f in files:
         if os.path.isfile(source_path + "/" + f):
-            shutil.copy2(source_path + "/" + f, target_path + f)
+            try:
+                shutil.copy2(source_path + "/" + f, target_path + f)
+            except shutil.SameFileError:
+                pass
 
 
 def mangled_dirname(base_directory: str, prefix: str) -> str:

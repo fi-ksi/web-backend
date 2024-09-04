@@ -697,7 +697,7 @@ def process_module_quiz(module, lines, specific, task, replacement_metadata: Opt
     text_end = 0
     while (line < len(lines)):
         while ((line < len(lines)) and
-               (not re.match(r"^##(.*?) \((r|c)\)", lines[line]))):
+               (not re.match(r"^##(.*?) \(([rc])\)", lines[line]))):
             line += 1
         if text_end == 0:
             text_end = line
@@ -706,7 +706,7 @@ def process_module_quiz(module, lines, specific, task, replacement_metadata: Opt
 
         # Parsovani otazky
         question = {}
-        head = re.match(r"^##(.*?) \((r|c)\)", lines[line])
+        head = re.match(r"^##(.*?) \(([rc])\)", lines[line])
         question['question'] = re.match("<p>(.*)</p>",
                                         parse_pandoc(head.group(1))).group(1)
         if head.group(2) == 'r':
@@ -865,11 +865,11 @@ def process_module_text(module, lines, specific, path, task, replacement_metadat
 def parse_pandoc(source: str) -> str:
     """Parsovani stringu \source pandocem"""
 
-    return pypandoc.convert(
+    return pypandoc.convert_text(
         source,
         'html5',
         format='markdown+smart',
-        extra_args=['--mathjax', '--email-obfuscation=none']
+        extra_args=['--mathjax', '--email-obfuscation=none', '--wrap=none']
     )
 
 

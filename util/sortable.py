@@ -3,7 +3,7 @@ import json
 from db import session
 import model
 
-"""
+r"""
 Specifikace \data v databazi modulu pro "sortable":
     "sortable": {
         "style": -- zatim nepodporovano, planovano do budoucna

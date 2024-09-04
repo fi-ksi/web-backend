@@ -9,7 +9,7 @@ import subprocess
 
 from util import UserInfo
 
-"""
+r"""
 Specifikace \data v databazi modulu pro "text":
     text = {
         inputs = 3

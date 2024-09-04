@@ -6,7 +6,7 @@ from db import session
 import model
 import json
 
-"""
+r"""
 Specifikace \data v databazi modulu pro "quiz":
     "quiz": [{
         "type": Enum('checkbox', 'radio')

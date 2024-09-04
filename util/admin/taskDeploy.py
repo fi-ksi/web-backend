@@ -1,8 +1,4 @@
 from dataclasses import dataclass
-from typing import Optional
-
-from sqlalchemy import and_
-from lockfile import LockFile
 import datetime
 import json
 import os
@@ -863,7 +859,7 @@ def process_module_text(module, lines, specific, path, task, replacement_metadat
 
 
 def parse_pandoc(source: str) -> str:
-    """Parsovani stringu \source pandocem"""
+    r"""Parsovani stringu \source pandocem"""
 
     return pypandoc.convert_text(
         source,
@@ -883,7 +879,7 @@ def replace_h(source: str) -> str:
 
 
 def one_ksi_pseudocode(match):
-    """Stara se o vnitrek jednoho pseudokodu
+    r"""Stara se o vnitrek jednoho pseudokodu
     na vstup dostane \match, \match.group() obsahuje
     "<ksi-pseudocode>TEXT</ksi-pseudocode>".
     """

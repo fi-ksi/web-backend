@@ -17,10 +17,10 @@ from db import session
 import model
 from util.logger import audit_log
 
-"""
+r"""
 Specifikace \data v databazi modulu pro "programming":
         "programming": {
-            "version": Text, <- default: 1.0
+            "version": Text, <- default: 1.0a
             "default_code": Text,
             "merge_script": Text (path/to/merge/script.py),
             "stdin": Text,
@@ -378,8 +378,8 @@ def run(module, user_id, code, exec_id, reporter):
         }
 
     try:
+        isolate_err = False
         try:
-            isolate_err = False
             res = _run(prog_info, code, box_id, reporter, user_id,
                        run_type='exec')
         except EIsolateError:
@@ -411,7 +411,7 @@ def run(module, user_id, code, exec_id, reporter):
 
 
 def _run(prog_info, code, box_id, reporter: Reporter, user_id, run_type = 'exec'):
-    """
+    r"""
     Run merge and runs the merged file inside of a sandbox. Requires
     initialized sandbox with id \box_id (str). \data is participant`s code.
     This function can throw exceptions, exceptions must be handled.
@@ -424,7 +424,7 @@ def _run(prog_info, code, box_id, reporter: Reporter, user_id, run_type = 'exec'
     merged_code_backup = os.path.join(sandbox_root, '.run.backup')
 
     # Save participant`s 'raw' code
-    reporter += "Saving raw code into %s...\n" % (raw_code)
+    reporter += "Saving raw code into %s...\n" % raw_code
     with open(raw_code, "w") as f:
         f.write(code)
 

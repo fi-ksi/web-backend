@@ -430,11 +430,12 @@ def details_to_json(task: model.Task,
 
 
 def best_scores(task_id: int):
+    # noinspection PyComparisonWithNone
     per_modules = session.query(model.User.id.label('user_id'),
                                 func.max(model.Evaluation.points).
                                 label('points')).\
         join(model.Evaluation, model.Evaluation.user == model.User.id).\
-        filter(model.Module.task == task_id, 'points' is not None).\
+        filter(model.Module.task == task_id, 'points' != None).\
         join(model.Module, model.Evaluation.module == model.Module.id).\
         join(model.Task, model.Task.id == model.Module.task).\
         filter(model.Task.evaluation_public).\

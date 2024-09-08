@@ -175,7 +175,7 @@ def successful_participants(year_obj):
     return [
         (user, points)
         for user, points, cheat in results
-        if points >= 0.9*max_points and not cheat
+        if points >= (util.config.successful_participant_percentage() / 100)*max_points and not cheat
     ]
 
 
@@ -240,7 +240,7 @@ def to_json(user, year_obj, total_score=None, tasks_cnt=None, profile=None,
         data['school_name'] = profile.school_name
         data['seasons'] = seasons if seasons is not None\
             else [key for (key,) in active_years(user.id)]
-        data['successful'] = total_score >= (0.9 * max_points) and not cheat
+        data['successful'] = total_score >= ((util.config.successful_participant_percentage() / 100) * max_points) and not cheat
         data['cheat'] = cheat
 
     elif user.role == 'org' or user.role == 'admin':

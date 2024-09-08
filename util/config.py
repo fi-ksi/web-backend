@@ -133,6 +133,14 @@ def mail_sender() -> Optional[str]:
     return get("mail_sender")
 
 
+def box_prefix_id() -> int:
+    """
+    Get the ID of the box prefix, needed if multiple instances of backend are running on the same host
+    :return: ID of the box prefix
+    """
+    return int(get("box_prefix_id", "1"))
+
+
 def successful_participant_trophy_id() -> Optional[int]:
     """
     Get the ID of the trophy that is awarded to successful participants
@@ -140,6 +148,14 @@ def successful_participant_trophy_id() -> Optional[int]:
     """
     text = get('successful_participant_trophy_id')
     return int(text) if text is not None else None
+
+
+def successful_participant_percentage() -> int:
+    """
+    Get the percentage of points that a participant must have to be considered successful
+    :return: percentage of  points that a participant must have to be considered successful
+    """
+    return int(get("successful_participant_percentage", "60"))
 
 
 def backend_url() -> str:

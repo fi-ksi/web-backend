@@ -32,7 +32,7 @@ class UserExport(object):
                 user.last_name + ";" +\
                 user.first_name + ";" +\
                 str(points) + ";" +\
-                ('A' if points >= 0.9 * sum_points and not cheat else 'N') + ";" +\
+                ('A' if points >= (util.config.successful_participant_percentage() / 100) * sum_points and not cheat else 'N') + ";" +\
                 ('A' if cheat else 'N') + ";" +\
                 user.email + ";" +\
                 user.sex + ";" +\

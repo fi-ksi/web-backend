@@ -36,8 +36,6 @@ DEFAULT_META_TAG = '#KSI_META_OUTPUT_0a859a#'
 MODULE_LIB_PATH = 'data/module_lib/'
 EXEC_PATH = '/tmp/box/'
 MAX_CONCURRENT_EXEC = 3
-BOX_ID_PREFIX: int = 2
-assert BOX_ID_PREFIX > 0
 STORE_PATH = 'data/exec/'
 SOURCE_FILE = 'source'
 RESULT_FILE = 'eval.out'
@@ -258,14 +256,15 @@ def find_free_box_id() -> Optional[str]:
     non-existing directories in /tmp/box.
     """
     dir_boxes = Path(EXEC_PATH)
+    box_prefix_id = util.config.box_prefix_id()
 
     if len(list(
-            filter(lambda x: x.name.startswith(f"{BOX_ID_PREFIX}"), dir_boxes.iterdir())
+            filter(lambda x: x.name.startswith(f"{box_prefix_id}"), dir_boxes.iterdir())
     )) >= MAX_CONCURRENT_EXEC:
         return None
 
     while True:
-        box_name = f"{BOX_ID_PREFIX}{int(((time.time() * 1000 % 10**5) * random.randint(0, 1000))%1000):03d}"
+        box_name = f"{box_prefix_id}{random.randint(0, 1000):03d}"
         if not dir_boxes.joinpath(box_name).exists():
             return box_name
         time.sleep(0.001)

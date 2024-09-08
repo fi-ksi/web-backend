@@ -35,11 +35,13 @@ INSERT INTO `config` (`key`, `value`, `secret`) VALUES
 ('return_path', 'mail-error@localhost', 0),
 ('seminar_repo', 'seminar', 0),
 ('successful_participant_trophy_id', NULL, 0),
+('successful_participant_percentage', '60', 0),
 ('webhook_discord_username_change', NULL, 0),
 ('web_url_admin', NULL, 0),
 ('mail_subject_prefix', '[TEST SEMINAR]', 0),
 ('seminar_name', 'Testing Seminar of Informatics', 0),
 ('seminar_name_short', 'TSI', 0),
 ('mail_registration_welcome', 'testing seminar of informatics.', 0),
+('box_prefix_id', '1', 0),
 ('web_url', 'http://localhost:8080', 0);
 COMMIT;

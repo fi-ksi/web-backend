@@ -155,7 +155,7 @@ def send(
             params['List-Unsubscribe'] = '<' + unsubscribe.link() + '>'
 
     if plaintext is None:
-        plaintext = pypandoc.convert(text, 'markdown', format='html')
+        plaintext = pypandoc.convert_text(text, 'markdown', format='html')
     elif plaintext == '':
         plaintext = None
 
@@ -168,7 +168,7 @@ EMailRecipient = namedtuple('EMailRecipient', ['to', 'unsunscribe'])
 def send_multiple(recipients, subject, text, params={}, bcc=[]):
     """Odeslani hromadnych emailu"""
 
-    plaintext = pypandoc.convert(text, 'markdown', format='html')
+    plaintext = pypandoc.convert_text(text, 'markdown', format='html')
 
     bcc_params = copy.deepcopy(params)
     bcc_params['To'] = config.ksi_conf()

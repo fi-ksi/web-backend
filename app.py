@@ -1,4 +1,3 @@
-import copy
 import falcon
 import json
 import os
@@ -15,9 +14,6 @@ import endpoint
 import util
 from db import engine, session
 from util import UserInfo
-
-# sets CORS header to *, applied when running in a docker container
-DISABLE_CORS = False
 
 # Cache of the current year.
 c_year = None
@@ -120,8 +116,9 @@ class AddCORS:
         return
 
     def process_response(self, req, resp, *_):
-        if DISABLE_CORS:
-            resp.set_header('Access-Control-Allow-Origin', '*')
+        cors = util.config.access_control_allow_origin()
+        if cors:
+            resp.set_header('Access-Control-Allow-Origin', cors)
 
 
 def log(req, resp):

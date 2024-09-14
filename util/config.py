@@ -278,6 +278,15 @@ def mail_registration_welcome() -> str:
                "Korespondenčním semináři z informatiky Fakulty informatiky Masarykovy univerzity.")
 
 
+def access_control_allow_origin() -> Optional[str]:
+    """
+    Get the Access-Control-Allow-Origin header value
+
+    :return: the Access-Control-Allow-Origin header value
+    """
+    return get("access_control_allow_origin")
+
+
 def salt() -> str:
     """
     Get the salt for hashing secrets

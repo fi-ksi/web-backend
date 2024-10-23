@@ -21,7 +21,7 @@ class Registration(object):
                 first()
 
             if existing_user is not None:
-                req.context['result'] = {'error': "duplicate_user"}
+                req.context['result'] = {'error': "Na tento e-mail je již někdo zaregistrovaný."}
                 return
         except SQLAlchemyError:
             session.rollback()

@@ -4,12 +4,13 @@ import falcon
 import json
 import random
 import string
-from sqlalchemy import func, distinct, desc, text, or_
+from sqlalchemy import func, distinct, desc, text, or_, select
 from sqlalchemy.exc import SQLAlchemyError
 import traceback
 
 from db import session
 import model
+import model.user
 import util
 import auth
 from util import config
@@ -96,6 +97,28 @@ class DiscordInviteLink(object):
             return
 
         req.context['result'] = config.discord_invite_link()
+
+class DiscordBotValidateUser(object):
+    
+    def on_get(self, req, resp, username):
+        
+        if username is None:
+            resp.status = falcon.HTTP_400
+            return
+        
+        statement = select(model.User).where(model.User.discord == username)
+        linked_profile = session.execute(statement).one_or_none()
+        
+        if linked_profile is None:
+            resp.status = falcon.HTTP_404
+            return
+        req.context['result'] = {
+            "first_name": linked_profile[0].first_name,
+            "last_name": linked_profile[0].last_name,
+            "nick_name": linked_profile[0].nick_name,
+        }
+        
+        
 
 
 class Users(object):

@@ -182,6 +182,13 @@ def github_token() -> Optional[str]:
     """
     return get("github_token")
 
+def discord_bot_secret() -> Optional[str]:
+    """
+    Get the secret for the Discord bot
+
+    This secret is used for verifying that the request comes from the official Discord bot
+    """
+    return get("discord_bot_secret")
 
 def seminar_repo() -> Optional[str]:
     """

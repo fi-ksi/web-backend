@@ -102,6 +102,10 @@ class DiscordBotValidateUser(object):
     
     def on_get(self, req, resp, username):
         
+        if req.get_header("Secret") != config.discord_bot_secret():
+            resp.status = falcon.HTTP_403
+            return
+        
         if username is None:
             resp.status = falcon.HTTP_400
             return
@@ -112,6 +116,7 @@ class DiscordBotValidateUser(object):
         if linked_profile is None:
             resp.status = falcon.HTTP_404
             return
+        
         req.context['result'] = {
             "first_name": linked_profile[0].first_name,
             "last_name": linked_profile[0].last_name,

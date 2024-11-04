@@ -105,6 +105,10 @@ class DiscordBotValidateUser(object):
         data = json.loads(req.stream.read().decode('utf-8'))
         api_key = config.discord_bot_secret()
         
+        if "Secret" not in data or "Username" not in data:
+            resp.status = falcon.HTTP_400
+            return
+        
         if not api_key or data["Secret"] != api_key:
             resp.status = falcon.HTTP_403
             return

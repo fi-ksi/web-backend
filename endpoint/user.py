@@ -98,6 +98,7 @@ class DiscordInviteLink(object):
 
         req.context['result'] = config.discord_invite_link()
 
+
 class DiscordBotValidateUser(object):
     
     def on_get(self, req, resp, username):

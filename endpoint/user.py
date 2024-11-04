@@ -101,13 +101,15 @@ class DiscordInviteLink(object):
 
 class DiscordBotValidateUser(object):
     
-    def on_get(self, req, resp, username):
-        
+    def on_post(self, req, resp):
+        data = json.loads(req.stream.read().decode('utf-8'))
         api_key = config.discord_bot_secret()
-        if not api_key or req.get_header("Secret") != api_key:
+        
+        if not api_key or data["Secret"] != api_key:
             resp.status = falcon.HTTP_403
             return
         
+        username = data["Username"]
         if username is None:
             resp.status = falcon.HTTP_400
             return

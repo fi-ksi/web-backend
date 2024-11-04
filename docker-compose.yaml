@@ -13,7 +13,7 @@ services:
       - ./.docker/data/data:/opt/data
       - ./.docker/data/seminar.git:/opt/seminar.git  # Not needed if SEMINAR_GIT_URL is set to value other than ::local::
     environment:
-      - SEMINAR_GIT_URL=${SEMINAR_GIT_URL}  #  If set to value other than ::local::, clones seminar repository from this origin instead of creating a blank one
+      - SEMINAR_GIT_URL=${SEMINAR_GIT_URL:-::local::}  #  If set to value other than ::local::, clones seminar repository from this origin instead of creating a blank one
     container_name: ksi-be
     devices:
       - /dev/fuse:/dev/fuse

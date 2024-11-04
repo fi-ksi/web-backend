@@ -108,6 +108,40 @@ def create_task(task: MockKSITask, backend_url: str, token: str) -> bool:
     return True
 
 
+def create_year(title: str, backend_url: str, token: str) -> int:
+    """
+    Creates a new year on the backend
+    :param title: year to be created
+    :param backend_url: url of the backend, including https
+    :param token: login token
+    :return: None
+    """
+    with request.urlopen(request.Request(
+        f"{backend_url}/years",
+        headers={'Authorization': token, 'Content-Type': 'application/json'},
+        data=json.dumps({'id': None, 'year': title, 'sealed': False, 'point_pad': 0.0}).encode('utf8')
+    )) as res:
+        return json.loads(res.read())['year']['id']
+
+
+def create_wave(title: str, year: int, garant: int, backend_url: str, token: str) -> int:
+    """
+    Creates a new wave on the backend
+    :param title: wave name
+    :param year: year id
+    :param garant: garant id
+    :param backend_url: url of the backend, including https
+    :param token: login token
+    :return: None
+    """
+    with request.urlopen(request.Request(
+        f"{backend_url}/waves",
+        headers={'Authorization': token, 'Content-Type': 'application/json', 'Year': str(year)},
+        data=json.dumps({'caption': title, 'index': None, 'garant': garant, 'time_published': '2099-01-01'}).encode('utf8')
+    )) as res:
+        return res.read()['wave']['id']
+
+
 def extract_task_author(repo: Path, branch: str, task_root: str) -> int:
     """
     Extracts author ID from task.json

@@ -114,10 +114,6 @@ class DiscordBotValidateUser(object):
             return
         
         username = data["Username"]
-        if username is None:
-            resp.status = falcon.HTTP_400
-            return
-        
         statement = select(model.User).where(model.User.discord == username)
         linked_profile = session.execute(statement).one_or_none()
         

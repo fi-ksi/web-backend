@@ -102,7 +102,8 @@ class DiscordBotValidateUser(object):
     
     def on_get(self, req, resp, username):
         
-        if req.get_header("Secret") != config.discord_bot_secret():
+        api_key = config.discord_bot_secret()
+        if not api_key or req.get_header("Secret") != api_key:
             resp.status = falcon.HTTP_403
             return
         

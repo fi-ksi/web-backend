@@ -108,7 +108,7 @@ class Registration(object):
         try:
             util.mail.send(
                 user.email,
-                f'{util.config.mail_subject_prefix()} Potvrzení registrace do {util.config.seminar_name()}',
+                f'{util.config.mail_subject_prefix()} Potvrzení registrace {util.config.seminar_name()}',
                 f'Ahoj!<br/>{util.config.mail_registration_welcome()} Nyní můžeš začít řešit naplno. '
                 f'Stačí se přihlásit na {util.config.ksi_web()} pomocí e-mailu a zvoleného hesla. '
                 'Přejeme ti hodně úspěchů při řešení semináře!'

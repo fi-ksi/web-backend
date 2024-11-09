@@ -15,7 +15,7 @@ This will build the image and start the container, together with development ver
 - frontend will be running at [http://localhost:4200](http://localhost:4200)
 - old frontend will be running at [http://localhost:8080](http://localhost:8080)
 
-The master account is `admin@localsite` with password `change-me`.
+The master account is `admin@localhost` with password `change-me`.
 
 The backend is created together with a sample [seminar repository](https://github.com/fi-ksi/seminar-template).
 To use the repository, you must clone it locally after starting the container:

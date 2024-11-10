@@ -6,6 +6,7 @@ import dateutil.parser
 from db import session
 import model
 import util
+import datetime
 
 
 class Wave(object):
@@ -103,6 +104,7 @@ class Waves(object):
     def on_get(self, req, resp):
         try:
             user = req.context['user']
+            can_see_unrealesed = user.is_logged_in() and (user.is_org() or user.is_tester())
             waves = session.query(model.Wave).\
                 filter(model.Wave.year == req.context['year']).all()
 
@@ -111,7 +113,7 @@ class Waves(object):
             req.context['result'] = {
                 'waves': [
                     util.wave.to_json(wave, max_points[wave.id])
-                    for wave in waves
+                    for wave in waves if (can_see_unrealesed or wave.time_published < datetime.datetime.now())
                 ]
             }
 

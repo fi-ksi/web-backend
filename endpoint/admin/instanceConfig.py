@@ -34,11 +34,12 @@ class InstanceConfig:
                 }
                 return
 
+            current_value = util.config.ConfigCache.instance().get(key, none_if_secret=True)
             audit_log(
                 scope="CONFIG",
                 user_id=userinfo.id,
                 message=f"Changed instance config {key}",
-                message_meta={"key": key, "value": value}
+                message_meta={"key": key, "previous": current_value}
             )
             util.config.set_config(key, value)
             req.context['result'] = {}

@@ -1,32 +1,51 @@
 from time import time
 from secrets import token_urlsafe
+from threading import Lock
 from typing import Optional, List, Dict, TypedDict
 
 from db import session
 from util.logger import get_log
+from encryption import encrypt, decrypt
 import model
 
 MAX_UPLOAD_FILE_SIZE = 25 * 1024 ** 2  # set to slightly larger than on FE as to prevent MB vs MiB mismatches
 MAX_UPLOAD_FILE_COUNT = 20
+ENCRYPTION_PREFIX = "ENCRYPTED:v1:"
 
 
 class ConfigRecord(TypedDict):
     key: str
-    value: str
-    
+    value: Optional[str]
+    secret: bool
+    encrypted: bool
+
     
 class ConfigCache:
     __instance: Optional["ConfigCache"] = None
-    
+    __instance_lock = Lock()
+
     def __init__(self) -> None:
         self.__cache: Dict[str, ConfigRecord] = {}
         self.__cache_time = 0
         self.cache_ttl = 300
         self.__fetch_cache()
-        
-    def __fetch_cache(self):
+
+    def __fetch_cache(self) -> None:
+        """
+        Fetch all properties from the config table in database
+        :return: None
+        """
         self.__cache = get_all(include_secret=True)
         self.__cache_time = time()
+
+    def encrypt_secrets(self) -> None:
+        """
+        Encrypt all secret values that are not encrypted
+        :return: None
+        """
+        for key, record in self.__cache.items():
+            if record['value'] is not None and record['secret'] and not record['encrypted']:
+                set_config(key, record['value'], secret=True)
 
     def refresh(self) -> None:
         try:
@@ -40,15 +59,23 @@ class ConfigCache:
             self.refresh()
         return self.__cache
 
-    def get(self, key: str, default: Optional[str] = None) -> Optional[str]:
+    def get(self, key: str, default: Optional[str] = None, none_if_secret: bool = False) -> Optional[str]:
         if key not in self.cache:
             return default
+        if none_if_secret and self.cache[key]['secret']:
+            return None
         return self.cache[key]['value']
-    
+
     @classmethod
     def instance(cls) -> "ConfigCache":
         if cls.__instance is None:
-            cls.__instance = ConfigCache()
+            first_instance = False
+            with cls.__instance_lock:
+                if cls.__instance is None:
+                    cls.__instance = ConfigCache()
+                    first_instance = True
+            if first_instance:
+                cls.__instance.encrypt_secrets()
         return cls.__instance
 
 
@@ -71,8 +98,13 @@ def set_config(key: str, value: str, secret: bool = False):
     :param secret: whether the value is secret
     """
     prop = session.query(model.Config).get(key)
+    cache = ConfigCache.instance().cache
+
+    if secret or (key in cache and cache[key]['secret']):
+        value = ENCRYPTION_PREFIX + encrypt(value)
+
     if prop is None:
-        prop = model.Config(key=key, value=value)
+        prop = model.Config(key=key, value=value, secret=secret)
         session.add(prop)
     else:
         prop.value = value
@@ -86,7 +118,31 @@ def get_all(include_secret: bool = True) -> Dict[str, ConfigRecord]:
     :param include_secret: whether to include secret properties
     :return: dictionary of all properties
     """
-    return {prop.key: {'key': prop.key, 'value': prop.value} for prop in session.query(model.Config).all() if not prop.secret or include_secret}
+    return {
+        prop.key: {'key': prop.key, 'value': decrypt_value(prop.value), 'secret': prop.secret, 'encrypted': is_value_encrypted(prop.value)}
+        for prop in session.query(model.Config).all()
+        if not prop.secret or include_secret
+    }
+
+
+def is_value_encrypted(value: Optional[str]) -> bool:
+    """
+    Check if the value is encrypted
+    :param value: value to check
+    :return: True if the value is encrypted, False otherwise
+    """
+    return value is not None and value.startswith(ENCRYPTION_PREFIX)
+
+
+def decrypt_value(value: Optional[str]) -> Optional[str]:
+    """
+    Decrypt the value if it is encrypted
+    :param value: value to decrypt
+    :return: decrypted value
+    """
+    if not is_value_encrypted(value):
+        return value
+    return decrypt(value[len(ENCRYPTION_PREFIX):])
 
 
 def ksi_conf() -> str:

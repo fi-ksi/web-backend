@@ -14,7 +14,8 @@ RUN wget -O - https://deb.adamhlavacek.com/pub.gpg | apt-key add - \
     && pip3 install virtualenv --no-cache-dir \
     && virtualenv -p python3 ksi-py3-venv \
     && mkdir /opt/etc \
-    && echo 'SQL_ALCHEMY_URI = "sqlite:////var/ksi-be/db.sqlite"' > config.py
+    && echo 'SQL_ALCHEMY_URI = "sqlite:////var/ksi-be/db.sqlite"' > config.py \
+    && echo 'ENCRYPTION_KEY = "AGE-SECRET-KEY-1TLU9YP9V55UDN4LE9Q0QYDH6ZXDA2JWRCZTHQTWPTYV7U800PFFS3PDNS9"' >> config.py
 
 ADD requirements.txt $DIR_BE/requirements.txt
 RUN bash -c 'cd $DIR_BE && source ksi-py3-venv/bin/activate && pip install --no-cache-dir -r requirements.txt'

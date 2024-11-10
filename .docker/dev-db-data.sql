@@ -34,7 +34,7 @@ INSERT INTO `config` (`key`, `value`, `secret`) VALUES
 ('monitoring_dashboard_url', NULL, 0),
 ('return_path', 'mail-error@localhost', 0),
 ('seminar_repo', 'seminar', 0),
-('successful_participant_trophy_id', NULL, 0),
+('successful_participant_trophy_id', '-1', 0),
 ('successful_participant_percentage', '60', 0),
 ('webhook_discord_username_change', NULL, 0),
 ('web_url_admin', NULL, 0),

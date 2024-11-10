@@ -227,7 +227,8 @@ def evaluate(task, module, user_id, code, eval_id, reporter: Reporter):
             message=f"Tried to cheat with evaluation {eval_id} (module {module.id})",
             message_meta={
                 'eval': eval_id,
-                'module': module.id
+                'module': module.id,
+                "code": code
             }
         )
 
@@ -403,7 +404,8 @@ def run(module, user_id, code, exec_id, reporter):
             message=f"Tried to cheat with execution {exec_id}",
             message_meta={
                 'exec': exec_id,
-                'module': module.id
+                'module': module.id,
+                'code': code
             }
         )
 

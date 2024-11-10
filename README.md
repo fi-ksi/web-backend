@@ -12,7 +12,7 @@ docker-compose up --build
 
 This will build the image and start the container, together with development versions of the frontend.
 - backend will be running at [http://localhost:3030](http://localhost:3030)
-- frontend will be running at [http://localhost:4200](http://localhost:4200)
+- frontend will be running at [http://localhost:4201](http://localhost:4201)
 - old frontend will be running at [http://localhost:8080](http://localhost:8080)
 
 The master account is `admin@localhost` with password `change-me`.

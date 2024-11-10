@@ -44,5 +44,6 @@ INSERT INTO `config` (`key`, `value`, `secret`) VALUES
 ('mail_registration_welcome', 'testing seminar of informatics.', 0),
 ('box_prefix_id', '1', 0),
 ('access_control_allow_origin', '*', 0),
-('web_url', 'http://localhost:8080', 0);
+('web_url', 'http://localhost:8080', 0),
+('discord_bot_secret', NULL, 1);
 COMMIT;

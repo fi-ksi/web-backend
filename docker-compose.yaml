@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: .docker/Dockerfile
-    image: esoadamo/ksi-be
+    image: fi0ksi/ksi-be
     ports:
       - "3030:3030"
     volumes:
@@ -25,11 +25,11 @@ services:
     entrypoint: ["/bin/bash", "./.docker/entrypoint.sh"]
   ksi-fe-dev:
     container_name: ksi-fe-local
-    image: esoadamo/ksi-fe-local
+    image: fi0ksi/ksi-fe-local
     ports:
       - "4201:80"
   ksi-fe-old-dev:
     container_name: ksi-fe-old-dev
-    image: esoadamo/ksi-fe-old-local
+    image: fi0ksi/ksi-fe-old-local
     ports:
       - "8080:80"

@@ -10,3 +10,7 @@ ksi-py3-venv
 .docker/data
 docker-compose.yaml
 gunicorn_cfg.py
+.git
+.gitignore
+.venv
+venv

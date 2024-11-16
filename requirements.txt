@@ -23,4 +23,4 @@ smmap2==3.0.1
 SQLAlchemy==2.0.32
 python-dateutil==2.9.0
 PyMySQL==1.1.1
-age==0.5.1
+ssage==1.4.0

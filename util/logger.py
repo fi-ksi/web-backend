@@ -14,7 +14,7 @@ def get_log() -> Logger:
     return logging.getLogger('gunicorn.error')
 
 
-def audit_log(scope: str, user_id: int, message: str, message_meta: Optional[dict] = None, year_id: Optional[int] = None) -> None:
+def audit_log(scope: str, user_id: Optional[int], message: str, message_meta: Optional[dict] = None, year_id: Optional[int] = None) -> None:
     log_db = AuditLog(
         scope=scope,
         user_id=user_id,

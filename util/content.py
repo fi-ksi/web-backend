@@ -32,7 +32,7 @@ def dir_to_json(path: Union[str, Path]) -> Content:
 
     if os.path.isdir(path_full):
         return {
-            'id': str(path.relative_to(path_base)),
+            'id': str(path_full.relative_to(path_base)),
             'files': [f for f in os.listdir(path_full)
                       if (path_full / f).is_file()],
             'dirs':  [f for f in os.listdir(path_full)

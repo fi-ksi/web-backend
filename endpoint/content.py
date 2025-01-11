@@ -159,17 +159,16 @@ class TaskContent(object):
     def on_get(self, req, resp, id, view):
         user = req.context['user']
 
-        # TODO: Enable after frontend is sending auth token in headers
-        # if time_published(id) > datetime.now() and not user.is_org() and not user.is_tester():
-        #     req.context['result'] = {
-        #         'errors': [{
-        #             'status': '403',
-        #             'title': 'Forbidden',
-        #             'detail': 'Obsah úlohy ještě nebyl zveřejněn.'
-        #         }]
-        #     }
-        #     resp.status = falcon.HTTP_403
-        #     return
+        if time_published(id) > datetime.now() and not user.is_org() and not user.is_tester():
+            req.context['result'] = {
+                'errors': [{
+                    'status': '403',
+                    'title': 'Forbidden',
+                    'detail': 'Obsah úlohy ještě nebyl zveřejněn.'
+                }]
+            }
+            resp.status = falcon.HTTP_403
+            return
 
         if (view != 'icon' and not view.startswith('reseni')
                 and not view.startswith('zadani')):

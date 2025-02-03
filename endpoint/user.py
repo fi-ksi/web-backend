@@ -1,4 +1,3 @@
-import os
 import sys
 import falcon
 import json
@@ -13,7 +12,7 @@ import model
 import model.user
 import util
 import auth
-from util import config
+from util import config, cache
 from util.logger import audit_log
 
 
@@ -137,6 +136,12 @@ class Users(object):
         sort = req.get_param('sort')
         usr = req.context['user']
         year = req.context['year_obj']
+
+        cache_key = cache.get_key(None, 'org' if usr.is_org() else 'participant', req.context['year'], f'users_score:{filt=}:{sort=}')
+        cached_data = cache.get_record(cache_key)
+        if cached_data is not None:
+            req.context['result'] = cached_data
+            return
 
         """
         Tady se dela spoustu magie kvuli tomu, aby se usetrily SQL dotazy
@@ -310,7 +315,7 @@ class Users(object):
                             if usr_task[0].id == user.User.id
                         ]
                     ] if users_tasks else None,
-                    admin_data=req.context['user'].is_org(),
+                    admin_data=usr.is_org(),
                     org_seasons=[
                         item.year_id
                         for item in org_seasons if item.user_id == user.User.id
@@ -338,6 +343,7 @@ class Users(object):
         req.context['result'] = {
             'users': users_json
         }
+        cache.save_cache(cache_key, req.context['result'], 30 * 60)
 
 
 class ChangePassword(object):

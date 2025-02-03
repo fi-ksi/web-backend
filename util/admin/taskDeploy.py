@@ -22,6 +22,7 @@ from sqlalchemy.orm import Session
 
 import model
 import util
+from util import cache
 from util.logger import get_log
 from util.task import max_points
 
@@ -148,6 +149,7 @@ def deploy(task_id: int, year_id: int, deployLock: LockFile, scoped: Callable) -
             thread.title = task.title
 
         session.commit()
+        cache.invalidate_cache(cache.get_key(None, "org", year_id, 'admin_tasks'))
     except Exception as e:
         exc_type, exc_obj, exc_tb = sys.exc_info()
         log("Exception: " + traceback.format_exc(), task=task_id)

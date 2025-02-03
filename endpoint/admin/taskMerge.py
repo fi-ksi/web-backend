@@ -7,6 +7,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from db import session
 import model
 import util
+from util import cache
 
 
 class TaskMerge(object):
@@ -79,6 +80,7 @@ class TaskMerge(object):
                 session.commit()
                 resp.status = falcon.HTTP_200
                 req.context['result'] = {}
+                cache.invalidate_cache(cache.get_key(None, "org", req.context['year'], 'admin_tasks'))
             finally:
                 mergeLock.release()
         except SQLAlchemyError:

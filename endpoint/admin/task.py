@@ -7,6 +7,7 @@ from lockfile import LockFile
 from db import session
 import model
 import util
+from util import cache
 
 
 class Task(object):
@@ -41,6 +42,7 @@ class Task(object):
                 return
 
             req.context['result'] = {'atask': util.admin.task.admin_to_json(task, do_fetch_testers=fetch_testers)}
+            cache.invalidate_cache(cache.get_key(None, "org", req.context['year'], 'admin_tasks'))
         except SQLAlchemyError:
             session.rollback()
             raise
@@ -86,6 +88,7 @@ class Task(object):
                 task.eval_comment = data['eval_comment']
 
             session.commit()
+            cache.invalidate_cache(cache.get_key(None, "org", req.context['year'], 'admin_tasks'))
         except SQLAlchemyError:
             session.rollback()
             raise
@@ -148,6 +151,7 @@ class Task(object):
             session.commit()
 
             req.context['result'] = {}
+            cache.invalidate_cache(cache.get_key(None, "org", req.context['year'], 'admin_tasks'))
         except SQLAlchemyError:
             session.rollback()
             raise
@@ -174,6 +178,12 @@ class Tasks(object):
                 resp.status = falcon.HTTP_400
                 return
 
+            cache_key = cache.get_key(None, "org", req.context['year'], 'admin_tasks')
+            cached = cache.get_record(cache_key)
+            if cached is not None:
+                req.context['result'] = cached
+                return
+
             tasks = session.query(model.Task, model.Wave).\
                 join(model.Wave, model.Task.wave == model.Wave.id)
 
@@ -192,6 +202,7 @@ class Tasks(object):
                     for task in tasks
                 ]
             }
+            cache.save_cache(cache_key, req.context['result'], 3600)
         except SQLAlchemyError:
             session.rollback()
             raise
@@ -290,6 +301,7 @@ class Tasks(object):
             session.commit()
 
             req.context['result'] = {'atask': util.admin.task.admin_to_json(task)}
+            cache.invalidate_cache(cache.get_key(None, "org", req.context['year'], 'admin_tasks'))
         except SQLAlchemyError:
             session.rollback()
             raise

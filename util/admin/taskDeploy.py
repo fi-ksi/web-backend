@@ -111,7 +111,7 @@ def deploy(task_id: int, year_id: int, deployLock: LockFile, scoped: Callable) -
         max_points_before: float = max_points(task.id)
         log(f"Current task max points: {max_points_before}", task=task_id)
         log(f"Current year point pad: {year.point_pad}", task=task_id)
-
+        
         # Parse task
         log("Parsing " + util.git.GIT_SEMINAR_PATH + task.git_path)
         process_task(task, util.git.GIT_SEMINAR_PATH + task.git_path)
@@ -493,7 +493,8 @@ def process_modules(task, git_path, replacement_metadata: Optional[ReplacementMe
                 task=task.id,
                 type="general",
                 name="",
-                order=i
+                order=i,
+                submit_ratelimit=20
             )
             session.add(module)
             session.commit()
@@ -578,6 +579,7 @@ def process_module_json(module: model.Module, filename: str) -> ModuleSpecs:
     module.autocorrect = data['autocorrect']
     module.bonus = data['bonus'] if 'bonus' in data else False
     module.action = data['action'] if 'action' in data else ""
+    module.submit_ratelimit = data["submit_ratelimit"] if "submit_ratelimit" in data else 20
     if isinstance(module.action, dict):
         module.action = json.dumps(module.action, indent=2, ensure_ascii=False)
 

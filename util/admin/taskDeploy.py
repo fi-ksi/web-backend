@@ -579,7 +579,7 @@ def process_module_json(module: model.Module, filename: str) -> ModuleSpecs:
     module.autocorrect = data['autocorrect']
     module.bonus = data['bonus'] if 'bonus' in data else False
     module.action = data['action'] if 'action' in data else ""
-    module.submit_ratelimit = data["submit_ratelimit"] if "submit_ratelimit" in data else 20
+    module.submit_ratelimit = data["submit_ratelimit"] if "submit_ratelimit" in data else util.config.unsuccessful_tries_per_day()
     if isinstance(module.action, dict):
         module.action = json.dumps(module.action, indent=2, ensure_ascii=False)
 

@@ -278,8 +278,6 @@ class ModuleSubmit(object):
                     count()
 
                 if subm_in_last_day >= module.submit_ratelimit:
-                    print(subm_in_last_day)
-                    print(module.submit_ratelimit)
                     req.context['result'] = {
                         'result': 'error',
                         'error': ('Překročen limit odevzdání '

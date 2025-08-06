@@ -31,9 +31,7 @@ RUN bash -c 'cd $DIR_BE  && ./init-makedirs.sh' \
     && chmod 644 /usr/local/etc/isolate \
     && chmod u+s /usr/bin/isolate \
     && chown root:root /usr/local/etc/isolate \
-    && sed -e 's/READ COMMITTED",/SERIALIZABLE", connect_args={"check_same_thread": False},/' -i db.py \
-    && sed -e 's/127.0.0.1/0.0.0.0/' -i gunicorn_cfg.py.example \
-    && sed -e 's/CURRENT_TIMESTAMP + INTERVAL 1 SECOND/datetime("now", "+1 seconds")/' -i endpoint/post.py
+    && sed -e 's/127.0.0.1/0.0.0.0/' -i gunicorn_cfg.py.example
 
 RUN useradd -mru 999 ksi
 

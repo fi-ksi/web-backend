@@ -6,10 +6,11 @@ WORKDIR $DIR_BE
 EXPOSE 3030
 
 # install and setup required software
-RUN wget -O - https://deb.adamhlavacek.com/pub.gpg | apt-key add - \
-    && echo "deb https://deb.adamhlavacek.com ./" >> /etc/apt/sources.list \
+RUN wget -O isolate-1.8.1.deb https://deb.adamhlavacek.com/isolate/isolate-1.8.1.deb  \
+    && dpkg -i isolate-1.8.1.deb \
+    && rm isolate-1.8.1.deb \
     && apt-get update \
-    && apt-get install -y pandoc acl sudo curl isolate bindfs libpython3.7 libcap2 sqlite3 python3-distutils \
+    && apt-get install -y pandoc acl sudo curl isolate=1.8.1 bindfs libpython3.7 libcap2 sqlite3 python3-distutils \
     && sudo apt-get clean \
     && pip3 install virtualenv --no-cache-dir \
     && virtualenv -p python3 ksi-py3-venv \

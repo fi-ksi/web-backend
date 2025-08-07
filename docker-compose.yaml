@@ -12,7 +12,7 @@ services:
       - ./.docker/data/db:/opt/database
       - ./.docker/data/data:/opt/data
       - ./.docker/data/seminar.git:/opt/seminar.git  # Not needed if SEMINAR_GIT_URL is set to value other than ::local::
-#      - ./config.py:/opt/web-backend/config.py
+#      - ./config.py:/opt/web-backend/config.py # Uncomment to use custom config.py (e.g. for MySQL database instead of SQLite)
     environment:
       - SEMINAR_GIT_URL=${SEMINAR_GIT_URL:-::local::}  #  If set to value other than ::local::, clones seminar repository from this origin instead of creating a blank one
     container_name: ksi-be

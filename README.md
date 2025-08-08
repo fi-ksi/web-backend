@@ -7,7 +7,7 @@
 The backend can be run inside a docker container for testing purposes. To build the image, run:
 
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 
 This will build the image and start the container, together with development versions of the frontend.
@@ -25,6 +25,16 @@ git clone .docker/data/seminar.git seminar-dev
 ```
 
 The backend will automatically push and pull from the repository in the container, you can work with your own clone.
+
+### Using MySQL database with docker
+
+To use MySQL database instead of SQLite, you need to change the `DB_URL` environment variable in the `config.py` file and 
+then mount the file into the container. This can be done by uncommenting following line in `docker-compose.yml`:
+
+```yaml
+    volumes:
+      - ./config.py:/opt/web-backend/config.py # Uncomment to use custom config.py (e.g. for MySQL database instead of SQLite)
+```
 
 ## Running manually
 

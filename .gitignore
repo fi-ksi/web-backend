@@ -9,3 +9,4 @@ ksi-py3-venv
 */.vscode
 .docker/data
 gunicorn_cfg.py
+.env

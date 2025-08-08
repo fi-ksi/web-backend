@@ -14,3 +14,4 @@ gunicorn_cfg.py
 .gitignore
 .venv
 venv
+.env

@@ -3,6 +3,15 @@ cd "$(realpath "$(dirname "$0")")/.." || { echo "ERR: Cannot cd to script dir"; 
 
 DIR_BE="/opt/web-backend"
 
+touch "$DIR_BE/config.py" || { echo "ERR: Cannot create config.py"; exit 1; }
+truncate -s 0 "$DIR_BE/config.py" || { echo "ERR: Cannot truncate config.py"; exit 1; }
+chmod 640 "$DIR_BE/config.py" || { echo "ERR: Cannot set permissions for config.py"; exit 1; }
+chown root:ksi "$DIR_BE/config.py" || { echo "ERR: Cannot set owner for config.py"; exit 1; }
+echo "SQL_ALCHEMY_URI=r'$SQL_ALCHEMY_URI'" > "$DIR_BE/config.py"
+echo "ENCRYPTION_KEY=r'$ENCRYPTION_KEY'" >> "$DIR_BE/config.py"
+unset SQL_ALCHEMY_URI
+unset ENCRYPTION_KEY
+
 if [ "$SEMINAR_GIT_URL" == "::local::" ]; then
   SEMINAR_GIT_URL=""
 fi

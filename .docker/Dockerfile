@@ -14,9 +14,7 @@ RUN wget -O isolate-1.8.1.deb https://deb.adamhlavacek.com/isolate/isolate-1.8.1
     && sudo apt-get clean \
     && pip3 install virtualenv --no-cache-dir \
     && virtualenv -p python3 ksi-py3-venv \
-    && mkdir /opt/etc \
-    && echo 'SQL_ALCHEMY_URI = "sqlite:////var/ksi-be/db.sqlite"' > config.py \
-    && echo 'ENCRYPTION_KEY = "AGE-SECRET-KEY-1TLU9YP9V55UDN4LE9Q0QYDH6ZXDA2JWRCZTHQTWPTYV7U800PFFS3PDNS9"' >> config.py
+    && mkdir /opt/etc
 
 ADD requirements.txt $DIR_BE/requirements.txt
 RUN bash -c 'cd $DIR_BE && source ksi-py3-venv/bin/activate && pip install --no-cache-dir -r requirements.txt'

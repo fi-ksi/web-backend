@@ -165,6 +165,7 @@ class Tasks(object):
         try:
             user = req.context['user']
             wave = req.get_param_as_int('wave')
+            fetch_testers = req.get_param_as_bool('fetch_testers')
 
             # Zobrazovat task_admin mohou jen orgove
             if (not user.is_logged_in()) or (not user.is_org()):
@@ -198,7 +199,7 @@ class Tasks(object):
             req.context['result'] = {
                 'atasks': [
                     util.admin.task.admin_to_json(task.Task,
-                                            max_points[task.Task.id])
+                                            max_points[task.Task.id], do_fetch_testers=fetch_testers)
                     for task in tasks
                 ]
             }

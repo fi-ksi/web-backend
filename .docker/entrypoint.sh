@@ -3,6 +3,15 @@ cd "$(realpath "$(dirname "$0")")/.." || { echo "ERR: Cannot cd to script dir"; 
 
 DIR_BE="/opt/web-backend"
 
+touch "$DIR_BE/config.py" || { echo "ERR: Cannot create config.py"; exit 1; }
+truncate -s 0 "$DIR_BE/config.py" || { echo "ERR: Cannot truncate config.py"; exit 1; }
+chmod 640 "$DIR_BE/config.py" || { echo "ERR: Cannot set permissions for config.py"; exit 1; }
+chown root:ksi "$DIR_BE/config.py" || { echo "ERR: Cannot set owner for config.py"; exit 1; }
+echo "SQL_ALCHEMY_URI=r'$SQL_ALCHEMY_URI'" > "$DIR_BE/config.py"
+echo "ENCRYPTION_KEY=r'$ENCRYPTION_KEY'" >> "$DIR_BE/config.py"
+unset SQL_ALCHEMY_URI
+unset ENCRYPTION_KEY
+
 if [ "$SEMINAR_GIT_URL" == "::local::" ]; then
   SEMINAR_GIT_URL=""
 fi
@@ -67,14 +76,22 @@ if [ ! -d "$DIR_BE/data/seminar" ] || [ ! "$(ls -A "$DIR_BE/data/seminar")" ]; t
 fi
 
 # create database if not exists
-if [ ! -f '/var/ksi-be/db.sqlite' ]; then
-  echo "Database does not exist yet, creating all tables" &&
-  cp app.py gen-db.py &&
-  sed -e 's/# model/model/' -i gen-db.py &&
-  sudo -Hu ksi bash -c 'source ksi-py3-venv/bin/activate && python gen-db.py' &&
-  rm gen-db.py &&
-  sqlite3 "/var/ksi-be/db.sqlite" < "$DIR_BE/.docker/dev-db-data.sql" &&
-  echo "Database created" || { echo "ERR: Cannot start the DB"; rm -f '/var/ksi-be/db.sqlite'; exit 1; }
+DB_NEEDS_INIT="false"
+if [ ! -f '/var/ksi-be/.db-init-done' ]; then
+  echo "[*] Database init file does not exist, checking if init should be performed"
+  DB_NEEDS_INIT="$(sudo -Hu ksi bash -c "source ksi-py3-venv/bin/activate && python -c \"import db; import model; model.Base.metadata.create_all(db.engine); print('true' if db.session.query(model.Year).first() is None else 'false')\"")" || { echo "ERR: Cannot check database init"; exit 1; }
+  echo "[*] Database needs init: $DB_NEEDS_INIT"
+fi
+
+if [ "$DB_NEEDS_INIT" == "true" ]; then
+  echo "[*] Database does not exist yet, creating initial database" &&
+  DB_MODE="$(sudo -Hu ksi bash -c "source ksi-py3-venv/bin/activate && python -c \"import db; print(db.db_mode.value); db.session.close()\"")" &&
+  echo "[*] Database mode is $DB_MODE" &&
+  mv "$DIR_BE/.docker/init_dev_data.py" "$DIR_BE/init_dev_data.py" &&
+  sudo -Hu ksi bash -c "source ksi-py3-venv/bin/activate && python $DIR_BE/init_dev_data.py" &&
+  echo "[*] Database created, now populating with initial data" &&
+  touch /var/ksi-be/.db-init-done &&
+  echo "[*] Database created" || { echo "ERR: Cannot start the DB"; rm -f '/var/ksi-be/db.sqlite' &> /dev/null; exit 1; }
 fi
 
 # Start the backend

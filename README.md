@@ -7,7 +7,7 @@
 The backend can be run inside a docker container for testing purposes. To build the image, run:
 
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 
 This will build the image and start the container, together with development versions of the frontend.
@@ -25,6 +25,8 @@ git clone .docker/data/seminar.git seminar-dev
 ```
 
 The backend will automatically push and pull from the repository in the container, you can work with your own clone.
+
+You can also use MySQL database by modifying environment variables. For example, see [config.py.example](./config.py.example).
 
 ## Running manually
 

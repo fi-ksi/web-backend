@@ -6,16 +6,15 @@ WORKDIR $DIR_BE
 EXPOSE 3030
 
 # install and setup required software
-RUN wget -O - https://deb.adamhlavacek.com/pub.gpg | apt-key add - \
-    && echo "deb https://deb.adamhlavacek.com ./" >> /etc/apt/sources.list \
+RUN wget -O isolate-1.8.1.deb https://deb.adamhlavacek.com/isolate/isolate-1.8.1.deb  \
+    && dpkg -i isolate-1.8.1.deb \
+    && rm isolate-1.8.1.deb \
     && apt-get update \
-    && apt-get install -y pandoc acl sudo curl isolate bindfs libpython3.7 libcap2 sqlite3 python3-distutils \
+    && apt-get install -y pandoc acl sudo curl isolate=1.8.1 bindfs libpython3.7 libcap2 sqlite3 python3-distutils \
     && sudo apt-get clean \
     && pip3 install virtualenv --no-cache-dir \
     && virtualenv -p python3 ksi-py3-venv \
-    && mkdir /opt/etc \
-    && echo 'SQL_ALCHEMY_URI = "sqlite:////var/ksi-be/db.sqlite"' > config.py \
-    && echo 'ENCRYPTION_KEY = "AGE-SECRET-KEY-1TLU9YP9V55UDN4LE9Q0QYDH6ZXDA2JWRCZTHQTWPTYV7U800PFFS3PDNS9"' >> config.py
+    && mkdir /opt/etc
 
 ADD requirements.txt $DIR_BE/requirements.txt
 RUN bash -c 'cd $DIR_BE && source ksi-py3-venv/bin/activate && pip install --no-cache-dir -r requirements.txt'
@@ -31,9 +30,7 @@ RUN bash -c 'cd $DIR_BE  && ./init-makedirs.sh' \
     && chmod 644 /usr/local/etc/isolate \
     && chmod u+s /usr/bin/isolate \
     && chown root:root /usr/local/etc/isolate \
-    && sed -e 's/READ COMMITTED",/SERIALIZABLE", connect_args={"check_same_thread": False},/' -i db.py \
-    && sed -e 's/127.0.0.1/0.0.0.0/' -i gunicorn_cfg.py.example \
-    && sed -e 's/CURRENT_TIMESTAMP + INTERVAL 1 SECOND/datetime("now", "+1 seconds")/' -i endpoint/post.py
+    && sed -e 's/127.0.0.1/0.0.0.0/' -i gunicorn_cfg.py.example
 
 RUN useradd -mru 999 ksi
 

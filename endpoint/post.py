@@ -5,6 +5,7 @@ from sqlalchemy import text, distinct
 from sqlalchemy.exc import SQLAlchemyError
 import traceback
 
+import db
 from db import session
 import model
 import util
@@ -206,15 +207,20 @@ class Posts(object):
 
             # Aktualizace navstivenosti vlakna
             visit = util.thread.get_visit(user.id, thread_id)
+            last_visit_time = text(
+                'CURRENT_TIMESTAMP + INTERVAL 1 SECOND' if db.db_mode == 'mysql' else 'datetime("now", "+1 seconds")'
+            )
             if visit:
                 visit.last_last_visit = visit.last_visit
-                visit.last_visit = text(
-                    'CURRENT_TIMESTAMP + INTERVAL 1 SECOND')
+                visit.last_visit = last_visit_time
             else:
-                time = text('CURRENT_TIMESTAMP + INTERVAL 1 SECOND')
-                visit = model.ThreadVisit(thread=thread_id, user=user.id,
-                                          last_visit=time,
-                                          last_last_visit=time)
+                # noinspection PyTypeChecker
+                visit = model.ThreadVisit(
+                    thread=thread_id,
+                    user=user.id,
+                    last_visit=last_visit_time,
+                    last_last_visit=last_visit_time
+                )
                 session.add(visit)
             session.commit()
 

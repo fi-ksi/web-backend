@@ -9,11 +9,13 @@ services:
     ports:
       - "3030:3030"
     volumes:
-      - ./.docker/data/db:/opt/database
-      - ./.docker/data/data:/opt/data
+      - ksi-backend-data:/opt/data
+      - ksi-backend-db:/opt/database #  Not needed if not using SQLite as the database
       - ./.docker/data/seminar.git:/opt/seminar.git  # Not needed if SEMINAR_GIT_URL is set to value other than ::local::
     environment:
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-AGE-SECRET-KEY-1TLU9YP9V55UDN4LE9Q0QYDH6ZXDA2JWRCZTHQTWPTYV7U800PFFS3PDNS9} # Change this to a secure key for production use
       - SEMINAR_GIT_URL=${SEMINAR_GIT_URL:-::local::}  #  If set to value other than ::local::, clones seminar repository from this origin instead of creating a blank one
+      - SQL_ALCHEMY_URI=${SQL_ALCHEMY_URI:-sqlite:////var/ksi-be/db.sqlite} # If set, uses this SQLAlchemy URI instead of the default SQLite database
     container_name: ksi-be
     devices:
       - /dev/fuse:/dev/fuse
@@ -33,3 +35,8 @@ services:
     image: fi0ksi/ksi-fe-old-local
     ports:
       - "8080:80"
+
+
+volumes:
+    ksi-backend-data:
+    ksi-backend-db:

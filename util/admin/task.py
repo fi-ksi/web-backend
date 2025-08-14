@@ -146,7 +146,7 @@ class AdminJson(TypedDict):
     eval_comment: str
 
 
-def admin_to_json(task: model.Task, amax_points: Optional[float] = None, do_fetch_testers: bool = True)\
+def admin_to_json(task: model.Task, amax_points: Optional[float] = None, do_fetch_testers: bool = False)\
         -> AdminJson:
     if not amax_points:
         amax_points = max_points(task.id)

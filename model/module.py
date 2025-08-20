@@ -38,4 +38,4 @@ class Module(Base):
     custom = Column(Boolean, nullable=False, default=False)
     action = Column(Text)
     data = Column(Text)
-    submit_ratelimit = Column(Integer, nullable=False)
+    submit_ratelimit = Column(Integer, nullable=True)

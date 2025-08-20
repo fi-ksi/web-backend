@@ -494,7 +494,7 @@ def process_modules(task, git_path, replacement_metadata: Optional[ReplacementMe
                 type="general",
                 name="",
                 order=i,
-                submit_ratelimit=20
+                submit_ratelimit=None
             )
             session.add(module)
             session.commit()

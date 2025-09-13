@@ -208,7 +208,7 @@ class Posts(object):
             # Aktualizace navstivenosti vlakna
             visit = util.thread.get_visit(user.id, thread_id)
             last_visit_time = text(
-                'CURRENT_TIMESTAMP + INTERVAL 1 SECOND' if db.db_mode == 'mysql' else 'datetime("now", "+1 seconds")'
+                'CURRENT_TIMESTAMP + INTERVAL 1 SECOND' if db.db_mode == db.DBMode.MYSQL else 'datetime("now", "+1 seconds")'
             )
             if visit:
                 visit.last_last_visit = visit.last_visit

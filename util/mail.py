@@ -62,6 +62,14 @@ class sendThread(threading.Thread):
 
                 try:
                     s = smtplib.SMTP(util.config.smtp_server())
+                    
+                    # Authenticate if username and password are provided
+                    smtp_username = util.config.smtp_username()
+                    smtp_password = util.config.smtp_password()
+                    if smtp_username and smtp_password:
+                        s.starttls()
+                        s.login(smtp_username, smtp_password)
+                    
                     s.sendmail(data.frm, data.to, data.msg)
                 except Exception as e:
                     print(str(e))

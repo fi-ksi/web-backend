@@ -282,6 +282,13 @@ def process_meta(task: model.Task, filename: str) -> None:
         try:
             parsed = parse_prereq_text(data['prerequisities'])
             parse_prereq_logic(parsed[0], prq, task.wave_.year)
+            
+            # Kontrola cyklických prerekvizit
+            cycle_check = check_prerequisite_cycles(task.id, prq, task.wave_.year)
+            if cycle_check:
+                log(f"WARNING: Cyklická prerekvizita detekována pro úlohu {task.id}: {cycle_check}")
+                raise Exception(f"Cyklická prerekvizita detekována: {cycle_check}")
+            
             session.commit()
         except BaseException:
             # TODO: pass meaningful error message to user
@@ -304,6 +311,53 @@ def parse_prereq_text(text: str):
         ("||", 2, pp.opAssoc.LEFT, ),
     ])
     return expr.parseString(text)
+
+
+def _collect_task_dependencies_from_prereq(prereq: model.Prerequisite, task_id: int, visited_tasks: set) -> Optional[str]:
+    """
+    Rekurzivně sbírá všechny task_id ze stromu prerekvizit a kontroluje cykly
+    
+    :param prereq: prerekvizita k prohledání
+    :param task_id: ID úlohy, pro kterou kontrolujeme prerekvizity
+    :param visited_tasks: množina již navštívených úloh
+    :return: None pokud není cykl, jinak popis cyklu
+    """
+    if session is None:
+        return None
+        
+    if prereq.type == model.PrerequisiteType.ATOMIC and prereq.task:
+        if prereq.task == task_id:
+            return f"úloha {task_id} závisí sama na sobě"
+        if prereq.task in visited_tasks:
+            return f"cyklická závislost zahrnující úlohu {prereq.task}"
+        
+        visited_tasks.add(prereq.task)
+        
+        task_obj = session.query(model.Task).get(prereq.task)
+        if task_obj and task_obj.prerequisite_obj:
+            cycle = _collect_task_dependencies_from_prereq(task_obj.prerequisite_obj, task_id, visited_tasks.copy())
+            if cycle:
+                return cycle
+                
+    elif prereq.type in [model.PrerequisiteType.AND, model.PrerequisiteType.OR]:
+        for child in prereq.children:
+            cycle = _collect_task_dependencies_from_prereq(child, task_id, visited_tasks.copy())
+            if cycle:
+                return cycle
+    
+    return None
+
+
+def check_prerequisite_cycles(task_id: int, prereq_root: model.Prerequisite, year: int) -> Optional[str]:
+    """
+    Kontroluje, zda nejsou prerekvizity cyklické
+    
+    :param task_id: ID úlohy, pro kterou kontrolujeme prerekvizity
+    :param prereq_root: kořenová prerekvizita
+    :param year: rok, ve kterém se kontrolují úlohy
+    :return: None pokud není cykl, jinak popis cyklu
+    """
+    return _collect_task_dependencies_from_prereq(prereq_root, task_id, set())
 
 
 def parse_prereq_logic(logic, prereq, year: int) -> None:

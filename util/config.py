@@ -295,6 +295,24 @@ def smtp_server() -> str:
     return get("smtp_server", "relay.fi.muni.cz")
 
 
+def smtp_username() -> Optional[str]:
+    """
+    Get the SMTP server username for authentication
+
+    :return: the SMTP server username
+    """
+    return get("smtp_username", default=None)
+
+
+def smtp_password() -> Optional[str]:
+    """
+    Get the SMTP server password for authentication
+
+    :return: the SMTP server password
+    """
+    return get("smtp_password", default=None)
+
+
 def unsuccessful_tries_per_day() -> int:
     """
     Get the number of unsuccessful tries per day per each module per user

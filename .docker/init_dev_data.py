@@ -205,6 +205,7 @@ def init_dev_data(destruct: bool = False):
             ('successful_participant_percentage', '60', False),
             ('webhook_discord_username_change', None, False),
             ('web_url_admin', None, False),
+            ('access_control_allow_origin', '*', False),
         ]
 
         for key, value, secret in config_entries:

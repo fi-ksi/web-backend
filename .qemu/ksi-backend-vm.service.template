@@ -1,0 +1,27 @@
+[Unit]
+Description=KSI Backend QEMU Virtual Machine
+After=network.target
+
+[Service]
+Type=forking
+User=%USER%
+Group=%USER%
+WorkingDirectory=%PROJECT_DIR%/.qemu
+
+# PID file for tracking
+PIDFile=%PROJECT_DIR%/.qemu/vms/ksi-backend.pid
+
+# Start/Stop commands
+ExecStart=%PROJECT_DIR%/.qemu/qemu-start.sh
+ExecStop=%PROJECT_DIR%/.qemu/qemu-stop.sh
+
+# Restart policy
+Restart=on-failure
+RestartSec=10
+
+# Timeout settings
+TimeoutStartSec=120
+TimeoutStopSec=60
+
+[Install]
+WantedBy=multi-user.target

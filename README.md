@@ -2,7 +2,7 @@
 
 [ksi.fi.muni.cz](https://ksi.fi.muni.cz/)
 
-## Running with docker
+## Running with Docker
 
 The backend can be run inside a docker container for testing purposes. To build the image, run:
 
@@ -27,6 +27,30 @@ git clone .docker/data/seminar.git seminar-dev
 The backend will automatically push and pull from the repository in the container, you can work with your own clone.
 
 You can also use MySQL database by modifying environment variables. For example, see [config.py.example](./config.py.example).
+
+## Running with QEMU (without root access)
+
+If you don't have root access to run Docker directly, you can run the backend in a QEMU virtual machine:
+
+```bash
+# 1. Setup VM (downloads Debian 12 image, ~5 minutes first time)
+.qemu/qemu-setup.sh
+
+# 2. Start the VM
+.qemu/qemu-start.sh
+
+# 3. Wait 2-3 minutes for provisioning, then access:
+# Backend: http://localhost:3030
+```
+
+The VM automatically:
+- Mounts the project directory as a shared folder
+- Builds and starts the Docker container inside the VM
+- Forwards port 3030 to localhost
+
+Use `--gui` flag to see the VM display: `.qemu/qemu-start.sh --gui`
+
+For more options (systemd service, configuration, troubleshooting), see [.qemu/README.md](.qemu/README.md).
 
 ## Running manually
 

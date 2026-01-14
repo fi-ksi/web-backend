@@ -10,3 +10,4 @@ ksi-py3-venv
 .docker/data
 gunicorn_cfg.py
 .env
+.qemu/vms/

@@ -282,7 +282,7 @@ class ModuleSubmit(object):
                     req.context['result'] = {
                         'result': 'error',
                         'error': ('Překročen limit odevzdání '
-                                  f'({module.submit_ratelimit} odevzdání / 24 hodin).')
+                                  f'({ratelimit} odevzdání / 24 hodin).')
                     }
                     return
 

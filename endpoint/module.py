@@ -277,7 +277,11 @@ class ModuleSubmit(object):
                            datetime.timedelta(days=1)).\
                     count()
 
-                ratelimit = module.submit_ratelimit or util.config.unsuccessful_tries_per_day()
+                ratelimit = (
+                    module.submit_ratelimit
+                    if module.submit_ratelimit is not None
+                    else util.config.unsuccessful_tries_per_day()
+                )
                 if subm_in_last_day >= ratelimit:
                     req.context['result'] = {
                         'result': 'error',

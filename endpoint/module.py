@@ -277,11 +277,16 @@ class ModuleSubmit(object):
                            datetime.timedelta(days=1)).\
                     count()
 
-                if subm_in_last_day >= util.config.unsuccessful_tries_per_day():
+                ratelimit = (
+                    module.submit_ratelimit
+                    if module.submit_ratelimit is not None
+                    else util.config.unsuccessful_tries_per_day()
+                )
+                if subm_in_last_day >= ratelimit:
                     req.context['result'] = {
                         'result': 'error',
                         'error': ('Překročen limit odevzdání '
-                                  '(20 odevzdání / 24 hodin).')
+                                  f'({ratelimit} odevzdání / 24 hodin).')
                     }
                     return
 

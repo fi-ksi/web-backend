@@ -25,7 +25,7 @@ class User(object):
             session.rollback()
             raise
 
-        if user is None:
+        if user is None or (user.role == 'participant_hidden' and not req.context['user'].is_org()):
             req.context['result'] = {
                 'errors': [{
                     'status': '404',
@@ -291,6 +291,10 @@ class Users(object):
                 util.task.sum_points(req.context['year'], bonus=False),
                 year.point_pad
             )
+
+            # Schovany ucastnik by mel byt neviditelny pokud nejsi organizator
+            if not usr.is_org():
+                users = [u for u in users if not u.role == 'participant_hidden']
 
             # Uzivatele s nedefinovanymi tasks_cnt v tomto rocniku
             # neodevzdali zadnou ulohu

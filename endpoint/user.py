@@ -294,7 +294,7 @@ class Users(object):
 
             # Schovany ucastnik by mel byt neviditelny pokud nejsi organizator
             if not usr.is_org():
-                users = [u for u in users if not u.role == 'participant_hidden']
+                users = [u for u in users if not u.User.role == 'participant_hidden']
 
             # Uzivatele s nedefinovanymi tasks_cnt v tomto rocniku
             # neodevzdali zadnou ulohu

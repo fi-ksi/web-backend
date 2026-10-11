@@ -161,6 +161,9 @@ def max_points_wave_dict(bonus: bool = False) -> Dict[int, Tuple[float, int]]:
 def max_points_year_dict(bonus: bool = False) -> Dict[int, Tuple[float, int]]:
     """Vraci slovnik s klicem year.id a hodnotami
     (year_max_points, year_tasks_count)
+
+    Zapocteny jsou pouze ulohy ze zverejnenych vln (viz issue #225):
+    body a pocty nezverejnenych uloh nesmi unikat pres verejne endpointy.
     """
     points_per_wave = _max_points_per_wave(bonus).subquery()
     points_per_year = session.query(
@@ -169,7 +172,9 @@ def max_points_year_dict(bonus: bool = False) -> Dict[int, Tuple[float, int]]:
         func.sum(points_per_wave.c.tasks_count).label('tasks_count')
     ).\
         outerjoin(model.Wave, model.Wave.year == model.Year.id).\
-        outerjoin(points_per_wave, points_per_wave.c.id == model.Wave.id).\
+        outerjoin(points_per_wave,
+                  and_(points_per_wave.c.id == model.Wave.id,
+                       model.Wave.time_published <= datetime.datetime.utcnow())).\
         group_by(model.Year).all()
 
     return {

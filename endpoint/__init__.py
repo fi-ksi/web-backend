@@ -1,6 +1,6 @@
 from endpoint.article import Article, Articles
 from endpoint.achievement import Achievement, Achievements, AchievementSuccessfulParticipant
-from endpoint.post import Post, Posts
+from endpoint.post import Post, Posts, PostResolve
 from endpoint.task import Task, Tasks, TaskDetails
 from endpoint.module import Module, ModuleSubmit, ModuleSubmittedFile
 from endpoint.thread import Thread, Threads, ThreadDetails

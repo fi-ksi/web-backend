@@ -1,4 +1,5 @@
 import json
+import datetime
 import falcon
 import sys
 from sqlalchemy import text, distinct
@@ -118,6 +119,59 @@ class Post(object):
             session.delete(post)
             session.commit()
             req.context['result'] = {}
+        except SQLAlchemyError:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+
+class PostResolve(object):
+
+    # Manualni oznaceni prispevku jako vyreseneho (jen orgove)
+    def on_post(self, req, resp, id):
+        try:
+            user = req.context['user']
+
+            if (not user.is_logged_in()) or (not user.is_org()):
+                resp.status = falcon.HTTP_403
+                return
+
+            post = session.query(model.Post).get(id)
+            if post is None:
+                resp.status = falcon.HTTP_404
+                return
+
+            post.resolved_at = datetime.datetime.utcnow()
+            session.commit()
+
+            req.context['result'] = {'post': util.post.to_json(
+                post, user.id if user.is_logged_in() else None)}
+        except SQLAlchemyError:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+    # Manualni znovuotevreni prispevku (jen orgove)
+    def on_delete(self, req, resp, id):
+        try:
+            user = req.context['user']
+
+            if (not user.is_logged_in()) or (not user.is_org()):
+                resp.status = falcon.HTTP_403
+                return
+
+            post = session.query(model.Post).get(id)
+            if post is None:
+                resp.status = falcon.HTTP_404
+                return
+
+            post.resolved_at = None
+            session.commit()
+
+            req.context['result'] = {'post': util.post.to_json(
+                post, user.id if user.is_logged_in() else None)}
         except SQLAlchemyError:
             session.rollback()
             raise
@@ -357,6 +411,17 @@ class Posts(object):
                               body=data['body'], parent=data['parent'])
             session.add(post)
             session.commit()
+
+            # ------------------------------------------
+            # Automaticke oznacovani vyresenosti rodicovskeho prispevku:
+            # odpoved orga -> vyreseno; odpoved resitele na vyreseny
+            # prispevek -> znovu otevreno (konverzace pokracuje).
+            if parent:
+                if user.is_org():
+                    parent.resolved_at = datetime.datetime.utcnow()
+                elif parent.resolved_at:
+                    parent.resolved_at = None
+                session.commit()
 
             # ------------------------------------------
             # Odesilani emailu v reakci na muj prispevek:

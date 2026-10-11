@@ -27,5 +27,7 @@ class Post(Base):
                           server_default=text('CURRENT_TIMESTAMP'))
     parent = Column(Integer, ForeignKey(__tablename__ + '.id',
                     ondelete='CASCADE'))
+    # NULL = prispevek jeste nebyl vyresen, jinak cas vyreseni.
+    resolved_at = Column(TIMESTAMP, nullable=True)
 
     reactions = relationship('Post')

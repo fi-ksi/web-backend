@@ -26,6 +26,8 @@ def to_json(post, user_id, last_visit=None,
         'author': post.author,
         'body': post.body,
         'published_at': post.published_at.isoformat(),
+        'resolved_at': post.resolved_at.isoformat()
+        if post.resolved_at else None,
         'reaction': [reaction.id for reaction in reactions],
         'is_new': is_new
     }

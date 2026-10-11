@@ -499,6 +499,65 @@ def copy_icons(task: model.Task, source_path: str) -> None:
                 shutil.copy2(source_path + "/" + f, target_path + f)
             except shutil.SameFileError:
                 pass
+    generate_icon_variants(source_path, target_path)
+
+
+# Varianty ikon odvozene z base.svg odkrytim prislusneho odznaku.
+# Klic je id <g> elementu v base.svg, hodnota je jmeno generovaneho souboru.
+ICON_BADGES = {
+    "correcting": "correcting.svg",  # oranzovy odznak se sipkou (odevzdano)
+    "done": "done.svg",              # zeleny odznak s fajfkou (opraveno)
+}
+
+SVG_NAMESPACE = "http://www.w3.org/2000/svg"
+
+
+def generate_icon_variants(source_path: str, target_path: str) -> list:
+    """Automatically generate missing icon variants from base.svg (issue #235).
+
+    Variants (correcting.svg, done.svg) differ from base.svg only by a badge
+    that is already embedded in base.svg as a hidden <g> element. Explicitly
+    provided files always win -- generation only fills in missing variants.
+    Returns the list of generated file names.
+    """
+    import xml.etree.ElementTree as ET
+
+    generated = []
+    base_file = os.path.join(source_path, "base.svg")
+    if not os.path.isfile(base_file):
+        return generated
+
+    ET.register_namespace("", SVG_NAMESPACE)
+
+    for badge_id, variant_file in ICON_BADGES.items():
+        if os.path.isfile(os.path.join(source_path, variant_file)):
+            continue  # organizer-provided variant wins
+        try:
+            # parse anew for each variant so badges don't leak into each other
+            tree = ET.parse(base_file)
+        except ET.ParseError as e:
+            get_log().warning(
+                f"Cannot parse {base_file} for icon variants: {e}")
+            return generated
+        badge = tree.getroot().find(
+            f".//{{{SVG_NAMESPACE}}}g[@id='{badge_id}']")
+        if badge is None:
+            # fallback for SVGs without a default namespace
+            badge = tree.getroot().find(f".//g[@id='{badge_id}']")
+        if badge is None:
+            get_log().warning(
+                f"{base_file} has no badge group id='{badge_id}', "
+                f"skipping {variant_file}")
+            continue
+        if badge.get("display") == "none":
+            del badge.attrib["display"]
+        target_file = os.path.join(target_path, variant_file)
+        try:
+            tree.write(target_file, encoding="utf-8", xml_declaration=True)
+            generated.append(variant_file)
+        except OSError as e:
+            get_log().warning(f"Cannot write {target_file}: {e}")
+    return generated
 
 
 def mangled_dirname(base_directory: str, prefix: str) -> str:

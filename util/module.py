@@ -3,7 +3,7 @@ import datetime
 import json
 import shutil
 from sqlalchemy import func, desc
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 import copy
 import subprocess
 import traceback
@@ -181,6 +181,17 @@ def perform_action(module, user, action):
         try:
             session.add(achievement)
             session.commit()
+        except IntegrityError:
+            # Soubezny pozadavek mohl trofej udelit driv (duplicita primarniho
+            # klice) -- overime, ze zaznam skutecne existuje, a povazujeme
+            # udeleni za uspesne (viz issue #162).
+            session.rollback()
+            granted = session.query(model.UserAchievement).\
+                filter(model.UserAchievement.user_id == user.id,
+                       model.UserAchievement.achievement_id == achievement_id).\
+                first()
+            if granted is None:
+                raise
         except BaseException:
             session.rollback()
             raise

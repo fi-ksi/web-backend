@@ -7,6 +7,7 @@ import os
 from db import session
 import model
 import util
+from util.logger import get_log
 
 class SubmFilesTask(object):
 
@@ -33,6 +34,11 @@ class SubmFilesTask(object):
                     filter(model.Evaluation.module == module.id).all()
 
                 for user in users:
+                    evaluations = session.query(model.Evaluation.id).\
+                        filter(model.Evaluation.user == user.id,
+                               model.Evaluation.module == module.id).all()
+                    evaluation_ids = [e for (e, ) in evaluations]
+
                     files = [
                         r for (r, ) in
                         session.query(model.SubmittedFile.path).
@@ -52,14 +58,53 @@ class SubmFilesTask(object):
                         )
                     ).replace(' ', '_')
 
+                    files_added = 0
+
                     for fname in files:
                         if os.path.isfile(fname):
                             zipFile.write(
                                 fname,
                                 os.path.join(userdir, os.path.basename(fname))
                             )
+                            files_added += 1
+                        else:
+                            get_log().warning(
+                                "submFilesTask: soubor %s (module %d, user %d) "
+                                "nenalezen na disku, preskakuji" %
+                                (fname, module.id, user.id)
+                            )
+
+                    # Odevzdane kody programovacich modulu nejsou soubory
+                    # na disku, ale text v databazi -- pridame je jako .txt.
+                    if evaluation_ids:
+                        codes = session.query(
+                            model.SubmittedCode.evaluation,
+                            model.SubmittedCode.code).\
+                            filter(model.SubmittedCode.evaluation.
+                                   in_(evaluation_ids)).all()
+                        for evaluation_id, code in codes:
+                            zipFile.writestr(
+                                os.path.join(
+                                    userdir,
+                                    "code_%d.txt" % evaluation_id),
+                                code if isinstance(code, str)
+                                else code.decode('utf-8', 'replace')
+                            )
+                            files_added += 1
 
             zipFile.close()
+
+            if files_added == 0:
+                resp.status = falcon.HTTP_404
+                req.context['result'] = {
+                    'errors': [{
+                        'status': '404',
+                        'title': 'Not Found',
+                        'detail': ('Pro tuto úlohu nebyla nalezena žádná '
+                                   'odevzdání ke stažení.')
+                    }]
+                }
+                return
 
             resp.set_header(
                 'Content-Disposition',

@@ -31,13 +31,11 @@ class Content(object):
     # a) soubor, pokud je v \path cesta k souboru,
     # b) obsah adresare, pokud je v \path cesta k adresari.
     def on_get(self, req, resp):
-        if req.get_param('path'):
-            short_path = req.get_param('path').replace('..', '')
-        else:
-            short_path = "."
-        file_path = str(self.__parse_short_path(req, resp, req.context['user']))
+        file_path = self.__parse_short_path(req, resp, req.context['user'])
         if not file_path:
             return
+
+        short_path = str(file_path)
 
         if os.path.isdir(file_path):
             req.context['result'] = {
@@ -135,7 +133,7 @@ class Content(object):
         path_base = (Path('data') / 'content').absolute()
 
         if req.get_param('path'):
-            short_path = req.get_param('path')
+            short_path = req.get_param('path').replace('..', '')
         else:
             short_path = "."
 
